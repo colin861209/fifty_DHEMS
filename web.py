@@ -1,12 +1,12 @@
 
-from os import chmod, close, system
+
+from socket import socket
 from time import time, sleep
 from time import time
 from typing import Container
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys  import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
@@ -24,6 +24,11 @@ class URL:
         self.btn_sweetalert = '/html/body/div[7]/div/div[6]/button[1]'
         self.loadFix_Price = '//*[@id="priceVsLoad"]'
         self.loadFix_SOC = '//*[@id="SOCVsLoad"]'
+        self.baseParameter_table = '//*[@id="flag_table"]'
+        self.baseParameter_table_SOCthresh = '//*[@id="SOCthres"]'
+        self.baseParameter_table_dr_mode = '//*[@id="dr_mode"]'
+        self.baseParameter_table_simulate_weather = '//*[@id="simulate_weather"]'
+        self.baseParameter_table_simulate_price = '//*[@id="simulate_price"]'
 
 class Xpath:
     def __init__(self) -> None:
@@ -55,7 +60,9 @@ class Xpath:
 def webdriver_init(url):
     options = Options()
     options.add_argument("--disable-notifications")  #不啟用通知
-    options.add_argument("--start-maximized")
+    options.add_experimental_option("excludeSwitches", ['enable-automation', 'ignore-certificate-errors']) # 關閉 "chrome目前受到自動測試軟體控制”信息"
+    if "html" in url:
+        options.add_argument("--start-fullscreen")
     chrome = webdriver.Chrome('./chromedriver', chrome_options=options)
     chrome.get(url)
     return chrome
@@ -141,34 +148,70 @@ def gotoExport(table_name, default_type = 'CSV'):
         status = "ERROR"
     return status
 
-# def 
-if __name__ == "__main__":
-    
-    xpath = Xpath()
-    url = URL()
-    '''
-    chrome = webdriver_init(url.DHEMS_web_loadFix)
-    wait = WebDriverWait(chrome, timeout=30)
+def screenshot_file(screenshot_path, file):
+    sleep(1)
+    if "GHEMS" in file:
+        chrome.get(url.DHEMS_web_loadFix)
+        scrollDown_script = "document.documentElement.scrollTop=280"
+    elif "LHEMS" in file:
+        chrome.get(url.DHEMS_web_index)
+        scrollDown_script = "document.documentElement.scrollTop=340"
+    sleep(1)
+    chrome.execute_script(scrollDown_script)
+    chrome.save_screenshot(screenshot_path + file)
+    sleep(0.5)     
+
+def choose_DB_by_btn(DB_name):
+    sleep(1)
     webinfo = chrome.find_element_by_xpath(url.breadcrumb).text
-    print(webinfo)
-    if "fiftyHousehold" not in webinfo:
+    if DB_name not in webinfo:
         chrome.get(url.DHEMS_web_baseParameter)
         chrome.find_element_by_xpath(url.btn_fiftyHousehold).click()
         wait.until(expected_conditions.element_to_be_clickable((By.XPATH, url.btn_sweetalert)))
         chrome.find_element_by_xpath(url.btn_sweetalert).click()
-        chrome.get(url.DHEMS_web_loadFix)
-    sleep(2)
+        sleep(1)
 
-    print("smaller")
-    # chrome.execute_script("document.body.style.zoom='90%'")
-    chrome.find_element_by_tag_name('body').send_keys(Keys.F5)
-    # html.send_keys(Keys.CONTROL).send_keys(Keys.SUBTRACT).perform()
-    sleep(2)
-    print("scroll down")
-    content = chrome.find_element_by_xpath(url.loadFix_SOC)
-    chrome.execute_script("document.documentElement.scrollTop=300")
-    sleep(2)
-    '''
+# !!!!!! IMPORTANT !!!!!!
+# because history weather did not show in anywhere, so should manually modify when change cases
+def setting_screenshot_path(history_weather="sunny\\"):
+    # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\not_summer_price\\sunny\\SOCinit0.7_dr1\\sunny\\"
+    screenshot_path = "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\"
+    chrome.execute_script("document.documentElement.scrollTop=10000")
+    chrome.find_element_by_xpath(url.baseParameter_table).click()
+    chrome.execute_script("document.documentElement.scrollTop=10000")
+    
+    SOC_threshold = chrome.find_element_by_xpath(url.baseParameter_table_SOCthresh).get_attribute("value")
+    dr_mode = chrome.find_element_by_xpath(url.baseParameter_table_dr_mode).get_attribute("value")
+    price = chrome.find_element_by_xpath(url.baseParameter_table_simulate_price).get_attribute("value")
+    weather = chrome.find_element_by_xpath(url.baseParameter_table_simulate_weather).get_attribute("value")
+    price += "\\"
+    weather += "\\"
+    if dr_mode != 0:
+        SOC_threshold = "SOCinit" + SOC_threshold + "_dr" + dr_mode + "\\"
+        screenshot_path = screenshot_path + price + history_weather + SOC_threshold + weather
+    else:
+        SOC_threshold = "SOCinit" + SOC_threshold + "\\"
+        screenshot_path = screenshot_path + price + weather + SOC_threshold
+    return screenshot_path, dr_mode
+
+if __name__ == "__main__":
+    
+    xpath = Xpath()
+    url = URL()
+
+    # '''
+    # =-=-=-=-=-=- Get GHEMS and LHEMS screen shot -=-=-=-=-=-=
+    chrome = webdriver_init(url.DHEMS_web_loadFix)
+    wait = WebDriverWait(chrome, timeout=30)
+    choose_DB_by_btn("DHEMS_fiftyHousehold")
+    screenshot_path, dr_mode = setting_screenshot_path()
+    
+    screenshot_file(screenshot_path, "LHEMS.jpg")
+    screenshot_file(screenshot_path, "GHEMS.jpg")
+    chrome.close()
+    
+    # '''
+    # =-=-=-=-=-=- Export csv file from DB DHEMS_fiftyHousehold -=-=-=-=-=-=
     chrome = webdriver_init(url.phpmyadmin)
     wait = WebDriverWait(chrome, timeout=30)
     db_user = "root"
@@ -178,7 +221,8 @@ if __name__ == "__main__":
 
     export_tables = []
     export_tables.append(xpath.text_BaseParameter)
-    export_tables.append(xpath.text_dr_alpha)
+    if dr_mode != 0:
+        export_tables.append(xpath.text_dr_alpha)
     export_tables.append(xpath.text_GHEMS_control_status)
     export_tables.append(xpath.text_GHEMS_flag)
     export_tables.append(xpath.text_LHEMS_control_status)
@@ -190,6 +234,6 @@ if __name__ == "__main__":
         sleep(0.5)
         gotoExport(export_table)
     sleep(1)
-    # '''
     chrome.close()
+    # '''
 
