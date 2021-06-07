@@ -4,7 +4,11 @@
 
 > Use crontab setting execute time and shell script to do the script, the script will optimize 50 household load deployment first, then feedback the total amount of load to community, final community will optimized the energy supply we have
 
-> `web.py` is automatically script for export related tables to csv into `download folder`, only use on windows OS, and related libs are in `anaconda ENV: webDriver`
+> `web.py` is automatically script for 
+> 1. export related tables to csv into `download folder` 
+> 2. screenshot web page into `customized folder`,
+> 
+> only use on windows OS, and related libs are in `anaconda ENV: webDriver`
 ---
 ### 2021/06/03
 
