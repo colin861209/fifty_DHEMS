@@ -1,4 +1,7 @@
-
+# python 3.7.10
+# selenium 3.141.0
+# chromeDriver & chrome version 91.0.xxxx
+# https://chromedriver.chromium.org/downloads
 
 from socket import socket
 from time import time, sleep
