@@ -1,7 +1,4 @@
-# python 3.7.10
-# selenium 3.141.0
-# chromeDriver & chrome version 91.0.xxxx
-# https://chromedriver.chromium.org/downloads
+
 
 from socket import socket
 from time import time, sleep
@@ -32,6 +29,7 @@ class URL:
         self.baseParameter_table_dr_mode = '//*[@id="dr_mode"]'
         self.baseParameter_table_simulate_weather = '//*[@id="simulate_weather"]'
         self.baseParameter_table_simulate_price = '//*[@id="simulate_price"]'
+        self.baseParameter_table_simulate_history_weather = '//*[@id="simulate_history_weather"]'
 
 class Xpath:
     def __init__(self) -> None:
@@ -60,12 +58,16 @@ class Xpath:
         self.type_csv_export = '//*[@id="plugins"]/option[11]'
         self.submit_export = '//*[@id="buttonGo"]'
 
-def webdriver_init(url):
+def webdriver_init(url, db_download_path = ""):
     options = Options()
     options.add_argument("--disable-notifications")  #不啟用通知
     options.add_experimental_option("excludeSwitches", ['enable-automation', 'ignore-certificate-errors']) # 關閉 "chrome目前受到自動測試軟體控制”信息"
     if "html" in url:
         options.add_argument("--start-fullscreen")
+    else:
+        prefs = {"download.default_directory" : db_download_path}
+        options.add_experimental_option("prefs", prefs)
+
     chrome = webdriver.Chrome('./chromedriver', chrome_options=options)
     chrome.get(url)
     return chrome
@@ -176,7 +178,7 @@ def choose_DB_by_btn(DB_name):
 
 # !!!!!! IMPORTANT !!!!!!
 # because history weather did not show in anywhere, so should manually modify when change cases
-def setting_screenshot_path(history_weather="sunny\\"):
+def setting_screenshot_path():
     # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\not_summer_price\\sunny\\SOCinit0.7_dr1\\sunny\\"
     screenshot_path = "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\"
     chrome.execute_script("document.documentElement.scrollTop=10000")
@@ -187,8 +189,10 @@ def setting_screenshot_path(history_weather="sunny\\"):
     dr_mode = chrome.find_element_by_xpath(url.baseParameter_table_dr_mode).get_attribute("value")
     price = chrome.find_element_by_xpath(url.baseParameter_table_simulate_price).get_attribute("value")
     weather = chrome.find_element_by_xpath(url.baseParameter_table_simulate_weather).get_attribute("value")
+    history_weather = chrome.find_element_by_xpath(url.baseParameter_table_simulate_history_weather).get_attribute("value")
     price += "\\"
     weather += "\\"
+    history_weather += "\\"
     if dr_mode != 0:
         SOC_threshold = "SOCinit" + SOC_threshold + "_dr" + dr_mode + "\\"
         screenshot_path = screenshot_path + price + history_weather + SOC_threshold + weather
@@ -208,20 +212,24 @@ if __name__ == "__main__":
     wait = WebDriverWait(chrome, timeout=30)
     choose_DB_by_btn("DHEMS_fiftyHousehold")
     screenshot_path, dr_mode = setting_screenshot_path()
-    
+    print("\n=-=-=-=-=-=-=-=-=-=")
+    print("file import to ===> ", screenshot_path)
+    print("=-=-=-=-=-=-=-=-=-=\n")
     screenshot_file(screenshot_path, "LHEMS.jpg")
     screenshot_file(screenshot_path, "GHEMS.jpg")
     chrome.close()
     
     # '''
     # =-=-=-=-=-=- Export csv file from DB DHEMS_fiftyHousehold -=-=-=-=-=-=
-    chrome = webdriver_init(url.phpmyadmin)
+    chrome = webdriver_init(url.phpmyadmin, screenshot_path)
     wait = WebDriverWait(chrome, timeout=30)
     db_user = "root"
     db_password = "fuzzy314"
-    print("login pass") if login(db_user, db_password) else exit()
-    print("Go to DB pass") if choose_DHEMS_DB(xpath.btn_DHEMS_group, xpath.text_DB_DHMES_fiftyHousehold) else exit()
-
+    print("\n=-=-=-=-=-=-=-=-=-= login pass =-=-=-=-=-=-=-=-=-=") if login(db_user, db_password) else exit()
+    print("=-=-=-=-=-=-=-=-=-= Go to DB pass =-=-=-=-=-=-=-=-=-=") if choose_DHEMS_DB(xpath.btn_DHEMS_group, xpath.text_DB_DHMES_fiftyHousehold) else exit()
+    print("=-=-=-=-=-=-=-=-=-=")
+    print("DB table import to ===> ", screenshot_path)
+    print("=-=-=-=-=-=-=-=-=-=\n")
     export_tables = []
     export_tables.append(xpath.text_BaseParameter)
     if dr_mode != 0:
