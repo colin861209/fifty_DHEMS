@@ -176,8 +176,6 @@ def choose_DB_by_btn(DB_name):
         chrome.find_element_by_xpath(url.btn_sweetalert).click()
         sleep(1)
 
-# !!!!!! IMPORTANT !!!!!!
-# because history weather did not show in anywhere, so should manually modify when change cases
 def setting_screenshot_path():
     # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\not_summer_price\\sunny\\SOCinit0.7_dr1\\sunny\\"
     screenshot_path = "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\"
