@@ -71,8 +71,8 @@ ${LIBMYSQLCLIENT_LIBRARIES}
 /usr/local/lib/libglpk.a
 )
 
-add_executable(fifty_GHEMS src/GHEMS.cpp src/new2D.cpp src/SQLFunction.cpp src/scheduling_parameter.cpp)
-target_link_libraries(fifty_GHEMS 
+add_executable(GHEMS src/GHEMS.cpp src/new2D.cpp src/SQLFunction.cpp src/scheduling_parameter.cpp)
+target_link_libraries(GHEMS 
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )

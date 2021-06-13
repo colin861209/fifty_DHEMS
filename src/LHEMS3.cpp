@@ -37,7 +37,7 @@ int main(void)
 	for (i = 1; i <= 3; i++)
 		base_par[i - 1] = value_receive("BaseParameter", "parameter_id", i);
 
-	for (i = 8; i <= 14; i++)
+	for (i = 9; i <= 15; i++)
 		base_par[i - 5] = value_receive("BaseParameter", "parameter_id", i, 'F');
 
 	time_block = base_par[0];

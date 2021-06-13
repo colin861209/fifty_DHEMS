@@ -874,6 +874,8 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 	}
 	else
 	{
+		messagePrint(__LINE__, "First Time Mode...", 'S', 0, 'Y');
+
 		if (truncate_table_flag())
 		{
 			snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE LHEMS_control_status");
@@ -883,7 +885,7 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 			update_distributed_group("real_time", 0, "group_id", distributed_group_num);
 			sample_time = 0;
 			update_distributed_group("next_simulate_timeblock", sample_time, "group_id", distributed_group_num);
-			messagePrint(__LINE__, "truncate LHEMS control status", 'S', 0, 'Y');
+			messagePrint(__LINE__, "Truncate LHEMS control status: Group %d", 'I', distributed_group_num, 'Y');
 		}
 
 		if (Pess_flag)
@@ -1292,8 +1294,8 @@ float *household_weighting()
 	}
 	else
 	{
-		sql_table = "LHEMS_histroy_control_status";
-		if (household_id == 1)
+		sql_table = "LHEMS_history_control_status";
+		if (truncate_table_flag())
 		{
 			snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE `demand_response_alpha`");
 			sent_query();
