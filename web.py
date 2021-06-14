@@ -10,7 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
-
+from selenium.webdriver.common.action_chains import ActionChains
 
 class URL:
     def __init__(self) -> None:
@@ -18,18 +18,6 @@ class URL:
         self.DHEMS_web_loadFix = 'http://140.124.42.65/how/DHEMS_web/loadFix.html'
         self.DHEMS_web_index = 'http://140.124.42.65/how/DHEMS_web/index.html'
         self.DHEMS_web_baseParameter = 'http://140.124.42.65/how/DHEMS_web/baseParameter.html'
-
-        self.breadcrumb = '//*[@id="breadcrumb"]/div/div/li[2]'
-        self.btn_fiftyHousehold = '/html/body/div[2]/button[4]'
-        self.btn_sweetalert = '/html/body/div[7]/div/div[6]/button[1]'
-        self.loadFix_Price = '//*[@id="priceVsLoad"]'
-        self.loadFix_SOC = '//*[@id="SOCVsLoad"]'
-        self.baseParameter_table = '//*[@id="flag_table"]'
-        self.baseParameter_table_SOCthresh = '//*[@id="SOCthres"]'
-        self.baseParameter_table_dr_mode = '//*[@id="dr_mode"]'
-        self.baseParameter_table_simulate_weather = '//*[@id="simulate_weather"]'
-        self.baseParameter_table_simulate_price = '//*[@id="simulate_price"]'
-        self.baseParameter_table_simulate_history_weather = '//*[@id="simulate_history_weather"]'
 
 class Xpath:
     def __init__(self) -> None:
@@ -57,6 +45,23 @@ class Xpath:
         self.select_type_export = '//*[@id="plugins"]'
         self.type_csv_export = '//*[@id="plugins"]/option[11]'
         self.submit_export = '//*[@id="buttonGo"]'
+
+        self.breadcrumb = '//*[@id="breadcrumb"]/div/div/li[2]'
+        self.btn_fiftyHousehold = '/html/body/div[2]/button[4]'
+        self.btn_sweetalert = '/html/body/div[7]/div/div[6]/button[1]'
+
+        self.GHEMS_Price = '//*[@id="priceVsLoad"]'
+        self.GHEMS_SOC = '//*[@id="SOCVsLoad"]'
+        self.GHEMS_loadModel = '//*[@id="loadModel"]'
+        self.GHEMS_table = '/html/body/table'
+        self.LHEMS_loadSum = '//*[@id="households_loadsSum"]'
+
+        self.baseParameter_table = '//*[@id="flag_table"]'
+        self.baseParameter_table_SOCthresh = '//*[@id="SOCthres"]'
+        self.baseParameter_table_dr_mode = '//*[@id="dr_mode"]'
+        self.baseParameter_table_simulate_weather = '//*[@id="simulate_weather"]'
+        self.baseParameter_table_simulate_price = '//*[@id="simulate_price"]'
+        self.baseParameter_table_simulate_history_weather = '//*[@id="simulate_history_weather"]'
 
 def webdriver_init(url, db_download_path = ""):
     options = Options()
@@ -154,44 +159,54 @@ def gotoExport(table_name, default_type = 'CSV'):
     return status
 
 def screenshot_file(screenshot_path, file):
+    offset = 79
     sleep(1)
     if "GHEMS" in file:
-        chrome.get(url.DHEMS_web_loadFix)
-        scrollDown_script = "document.documentElement.scrollTop=280"
+        if chrome.current_url != url.DHEMS_web_loadFix:
+            chrome.get(url.DHEMS_web_loadFix)        
+        if "_Price" in file:
+            element = chrome.find_element_by_xpath(xpath.GHEMS_Price)
+        elif "_SOC" in file:
+            element = chrome.find_element_by_xpath(xpath.GHEMS_SOC)
+        elif "_loadModel" in file:
+            element = chrome.find_element_by_xpath(xpath.GHEMS_loadModel)
+        elif "_table" in file:
+            element = chrome.find_element_by_xpath(xpath.GHEMS_table)
+        chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-offset))
     elif "LHEMS" in file:
         chrome.get(url.DHEMS_web_index)
-        scrollDown_script = "document.documentElement.scrollTop=340"
+        element = chrome.find_element_by_xpath(xpath.LHEMS_loadSum)
+        chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-offset))
     sleep(1)
-    chrome.execute_script(scrollDown_script)
-    chrome.save_screenshot(screenshot_path + file)
+    element.screenshot(screenshot_path + file)
     sleep(0.5)     
 
 def choose_DB_by_btn(DB_name):
     sleep(1)
-    webinfo = chrome.find_element_by_xpath(url.breadcrumb).text
+    webinfo = chrome.find_element_by_xpath(xpath.breadcrumb).text
     if DB_name not in webinfo:
         chrome.get(url.DHEMS_web_baseParameter)
-        chrome.find_element_by_xpath(url.btn_fiftyHousehold).click()
-        wait.until(expected_conditions.element_to_be_clickable((By.XPATH, url.btn_sweetalert)))
-        chrome.find_element_by_xpath(url.btn_sweetalert).click()
+        chrome.find_element_by_xpath(xpath.btn_fiftyHousehold).click()
+        wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.btn_sweetalert)))
+        chrome.find_element_by_xpath(xpath.btn_sweetalert).click()
         sleep(1)
 
-def setting_screenshot_path():
+def setting_screenshot_path(target_folder, fix_path = "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\"):
     # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\not_summer_price\\sunny\\SOCinit0.7_dr1\\sunny\\"
-    screenshot_path = "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\"
+    screenshot_path = fix_path + target_folder
     chrome.execute_script("document.documentElement.scrollTop=10000")
-    chrome.find_element_by_xpath(url.baseParameter_table).click()
+    chrome.find_element_by_xpath(xpath.baseParameter_table).click()
     chrome.execute_script("document.documentElement.scrollTop=10000")
     
-    SOC_threshold = chrome.find_element_by_xpath(url.baseParameter_table_SOCthresh).get_attribute("value")
-    dr_mode = chrome.find_element_by_xpath(url.baseParameter_table_dr_mode).get_attribute("value")
-    price = chrome.find_element_by_xpath(url.baseParameter_table_simulate_price).get_attribute("value")
-    weather = chrome.find_element_by_xpath(url.baseParameter_table_simulate_weather).get_attribute("value")
-    history_weather = chrome.find_element_by_xpath(url.baseParameter_table_simulate_history_weather).get_attribute("value")
+    SOC_threshold = chrome.find_element_by_xpath(xpath.baseParameter_table_SOCthresh).get_attribute("value")
+    dr_mode = chrome.find_element_by_xpath(xpath.baseParameter_table_dr_mode).get_attribute("value")
+    price = chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_price).get_attribute("value")
+    weather = chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_weather).get_attribute("value")
     price += "\\"
     weather += "\\"
-    history_weather += "\\"
-    if dr_mode != 0:
+    if int(dr_mode) != 0:
+        history_weather = chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_history_weather).get_attribute("value")
+        history_weather += "\\"
         SOC_threshold = "SOCinit" + SOC_threshold + "_dr" + dr_mode + "\\"
         screenshot_path = screenshot_path + price + history_weather + SOC_threshold + weather
     else:
@@ -203,18 +218,29 @@ if __name__ == "__main__":
     
     xpath = Xpath()
     url = URL()
-
+    ###############################################################
+    ## need to change:                                           ##
+    ## Classes: Xpath & URL                                      ##
+    ## functions:                                                ##
+    ## setting_screenshot_path: 'target_folder' & default path   ##
+    ## screenshot_file: name of the file                         ##
+    ## choose_DHEMS_DB: 'DHEMS group' Process                    ##
+    ###############################################################
+    
     # '''
     # =-=-=-=-=-=- Get GHEMS and LHEMS screen shot -=-=-=-=-=-=
     chrome = webdriver_init(url.DHEMS_web_loadFix)
     wait = WebDriverWait(chrome, timeout=30)
     choose_DB_by_btn("DHEMS_fiftyHousehold")
-    screenshot_path, dr_mode = setting_screenshot_path()
+    screenshot_path, dr_mode = setting_screenshot_path("8.publicLoad\\")
     print("\n=-=-=-=-=-=-=-=-=-=")
     print("file import to ===> ", screenshot_path)
     print("=-=-=-=-=-=-=-=-=-=\n")
     screenshot_file(screenshot_path, "LHEMS.jpg")
-    screenshot_file(screenshot_path, "GHEMS.jpg")
+    screenshot_file(screenshot_path, "GHEMS_Price.jpg")
+    screenshot_file(screenshot_path, "GHEMS_SOC.jpg")
+    screenshot_file(screenshot_path, "GHEMS_loadModel.jpg")
+    screenshot_file(screenshot_path, "GHEMS_table.jpg")
     chrome.close()
     
     # '''
@@ -230,7 +256,7 @@ if __name__ == "__main__":
     print("=-=-=-=-=-=-=-=-=-=\n")
     export_tables = []
     export_tables.append(xpath.text_BaseParameter)
-    if dr_mode != 0:
+    if int(dr_mode) != 0:
         export_tables.append(xpath.text_dr_alpha)
     export_tables.append(xpath.text_GHEMS_control_status)
     export_tables.append(xpath.text_GHEMS_flag)
