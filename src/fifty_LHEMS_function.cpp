@@ -11,7 +11,7 @@
 
 char column[400] = "A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A29,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95";
 
-void optimization(vector<string> variable_name, int household_id, int *interrupt_start, int *interrupt_end, int *interrupt_ot, int *interrupt_reot, float *interrupt_p, int *uninterrupt_start, int *uninterrupt_end, int *uninterrupt_ot, int *uninterrupt_reot, float *uninterrupt_p, int *uninterrupt_flag, int *varying_start, int *varying_end, int *varying_ot, int *varying_reot, int *varying_flag, int **varying_t_pow, float **varying_p_pow, int app_count, float *price, float *uncontrollable_load)
+void optimization(vector<string> variable_name, int household_id, int *interrupt_start, int *interrupt_end, int *interrupt_ot, int *interrupt_reot, float *interrupt_p, int *uninterrupt_start, int *uninterrupt_end, int *uninterrupt_ot, int *uninterrupt_reot, float *uninterrupt_p, bool *uninterrupt_flag, int *varying_start, int *varying_end, int *varying_ot, int *varying_reot, bool *varying_flag, int **varying_t_pow, float **varying_p_pow, int app_count, float *price, float *uncontrollable_load)
 {
 	functionPrint(__func__);
 
@@ -912,7 +912,7 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 	return real_time;
 }
 
-void countUninterruptAndVaryingLoads_Flag(int *uninterrupt_flag, int *varying_flag, int household_id)
+void countUninterruptAndVaryingLoads_Flag(bool *uninterrupt_flag, bool *varying_flag, int household_id)
 {
 	printf("\nFunction: %s\n\t", __func__);
 	int flag = 0;
@@ -993,7 +993,7 @@ void count_interruptLoads_RemainOperateTime(int interrupt_num, int *interrupt_ot
 	}
 }
 
-void count_uninterruptAndVaryingLoads_RemainOperateTime(int group_id, int loads_total, int *total_operateTime, int *remain_operateTime, int *end_time, int *flag, int *buff)
+void count_uninterruptAndVaryingLoads_RemainOperateTime(int group_id, int loads_total, int *total_operateTime, int *remain_operateTime, int *end_time, bool *flag, int *buff)
 {
 	switch (group_id)
 	{
@@ -1360,6 +1360,7 @@ void init_totalLoad_flag_and_table(int distributed_group_num)
 		}
 	}
 }
+
 int truncate_table_flag()
 {
 	// household id = 1 in every sample time,
