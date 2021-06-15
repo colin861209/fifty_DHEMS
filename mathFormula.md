@@ -7,14 +7,14 @@
 * $P^{j}_{grid}$ 第 j 個時刻之社區市電功率
 * $\rho_{b}^{j}$ 第 j 個時刻之時間電價
 * $\rho_{f}^{j}$ 第 j 個時刻之回饋報價 (定值)
-* $\epsilon_{it}^{s}$ 即時備轉開啟時刻
-* $\epsilon_{it}^{e}$ 即時備轉結束時刻
+* $\tau_{r}^{s}$ 即時備轉開啟時刻
+* $\tau_{r}^{e}$ 即時備轉結束時刻
 * $d$ 抑低用電日
 * $P_{grid}^{j,d}$ 第d天第j時刻的市電功率
 * $P_{max}^{d}$ 第d天抑低用電時段市電最大功率
 * $P_{grid}^{avg}$ 抑低用電時段平均值 (基準用電容量 CBL)
 
-$$ P_{max}^{d}= \max_{j=\epsilon_{it}^{s},...,\epsilon_{it}^{e}}P_{grid}^{j,d}, \quad d=1,...,5 $$
+$$ P_{max}^{d}= \max_{j=\tau_{r}^{s},...,\tau_{r}^{e}}P_{grid}^{j,d}, \quad d=1,...,5 $$
 $$ P_{grid}^{avg} = \frac{\sum_{d=1}^{D} P_{max}^{d}} {D} $$
 
 * Objective Function
@@ -32,18 +32,18 @@ $$
     \lambda_{i}^{j}, i=0,...,M-1,~j=0,...,N-1 \\
 }}
 \sum_{j=k}^{N} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} -
-\sum_{j=\epsilon_{it}^{s}}^{\epsilon_{it}^{e}} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
+\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
 $$
 
 * Constraint
   
   * Deamnd Response
 
-    $$ E_{s} \leq \sum_{j = \epsilon_{it}^{s}}^{\epsilon_{it}^{e}} (P_{grid}^{avg} - P_{grid}^{j})T_{s} $$
+    $$ E_{s} \leq \sum_{j = \tau_{r}^{s}}^{\tau_{r}^{e}} (P_{grid}^{avg} - P_{grid}^{j})T_{s} $$
   
   * Blanced Function
     
-    $$ P^{j}_{grid} + P^{j}_{PV} + P^{j}_{FC} - P^{j}_{sell} - P^{j}_{ESS} = \sum_{u=1}^{U}(\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} + \sum_{a \in A_{uc}} P_{u, uc}^{j}) $$
+    $$ P^{j}_{grid} + P^{j}_{PV} + P^{j}_{FC} - P^{j}_{sell} - P^{j}_{ESS} = \sum_{ca \in A_{c1}} P_{ca}^{j} + \sum_{u=1}^{U}(\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} + \sum_{a \in A_{uc}} P_{u, uc}^{j}) $$
 
   * Grid & Sell
   <!-- * $P_{u, grid}^{j}$ 第 u 個住戶在第 j 個時刻消耗的市電功率 -->
@@ -103,6 +103,25 @@ $$
 
     $$ \sum_{j=0}^{T-1} SOC_{j}^{-} \geq 0.8$$
 
+  * Community Public Load
+    * constraint
+    $$ P_{ca}^{j} =
+      \left\{ 
+        \begin{array}
+          rr_{ca}^{j} P_{ca}^{max}, \qquad &\forall k \in [\tau_{ca}^{s}, \tau_{ca}^{e}]\\
+          0 \qquad, \qquad &otherwise
+        \end{array}
+      \right.
+      $$
+
+      $$ r_{ca}^{j} \in \{0,1\}, \qquad \forall j \in [\tau_{ca}^{s}, \tau_{ca}^{e}] $$
+
+      $$ r_{ca}^{j} = 0, \qquad \forall j \in [0,N-1] \backslash [\tau_{ca}^{s}, \tau_{ca}^{e}] $$
+      
+      $$ \forall a \in A_{c1} $$
+
+      $$ \sum_{k=0}^{T-1} r_{ca}^{j} \geq Q_{ca} $$
+
     <!-- * For GHEMS => LHEMS
     $$ P_{ESS}^{j} = \sum_{u=1}^{U} \beta_{u}^{j} P_{u,ESS}^{j} $$
     $$ P_{u,discharge}^{max} \leq P_{u,ESS}^{j} \leq P_{u,charge}^{max} $$
@@ -155,21 +174,24 @@ $$ \min_{\substack{
     P_{u, grid}^{j},~j=0,...,N-1
 }}
 \sum_{j=k}^{N} \rho_{b}^{j}P^{j}_{u,grid} T_{s} -
-\sum_{j=\epsilon_{it}^{s}}^{\epsilon_{it}^{e}} \rho_{f}^{j}P^{j}_{u,grid} T_{s} 
+\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}} \rho_{f}^{j}P^{j}_{u,grid} T_{s} 
 $$
 
 <!-- HEMS Constraint -->
 * Constraint
  
   * Demand response
-  
+    
+    * variable
+    
     $$ 0 \leq \alpha_{u}^{j} \leq 1 $$
-
+   
+    * constraint
     $$ \omega_{u}^{j} = \frac{P_{u, grid}^{j}}{\sum_{u=1}^{U} P_{u, grid}^{j}}  $$
 
-    $$ 0 \leq \alpha_{u}^{j} \leq \frac{P_{u,grid}^{max}-\omega_{u}^{j}*E_{s}}{P_{u,grid}^{max}}, \qquad \forall j \in [\epsilon_{it}^{s}, \epsilon_{it}^{e}] $$
+    $$ 0 \leq \alpha_{u}^{j} \leq \frac{P_{u,grid}^{max}-\omega_{u}^{j}*E_{s}}{P_{u,grid}^{max}}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
     
-    $$ \alpha_{u}^{j} = 1, \qquad  \forall j \in [0, N-1] \backslash  [\epsilon_{it}^{s}, \epsilon_{it}^{e}] $$
+    $$ \alpha_{u}^{j} = 1, \qquad  \forall j \in [0, N-1] \backslash  [\tau_{r}^{s}, \tau_{r}^{e}] $$
 
   * Balanced Function
     * $A_{u,uc}$第u個住戶的不可控負載類型
