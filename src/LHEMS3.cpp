@@ -38,7 +38,7 @@ int main(void)
 		base_par[i - 1] = value_receive("BaseParameter", "parameter_id", i);
 
 	for (i = 9; i <= 15; i++)
-		base_par[i - 5] = value_receive("BaseParameter", "parameter_id", i, 'F');
+		base_par[i - 6] = value_receive("BaseParameter", "parameter_id", i, 'F');
 
 	time_block = base_par[0];
 	// householdTotal / distributed_householdTotal	總用戶數 / 各組總用戶
