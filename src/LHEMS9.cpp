@@ -20,7 +20,7 @@ vector<string> variable_name;
 #define distributed_group_num 9
 // base parameter
 int time_block = 0, variable = 0, divide = 0, sample_time = 0, distributed_householdTotal = 0, interrupt_num, uninterrupt_num, varying_num, app_count, distributed_household_id, household_id, householdTotal;
-int Pgrid_flag, Pess_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag;
+bool Pgrid_flag, Pess_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag;
 int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 float delta_T = 0.0;
 float Cbat = 0.0, Vsys = 0.0, SOC_ini = 0.0, SOC_min = 0.0, SOC_max = 0.0, SOC_thres = 0.0, Pbat_min = 0.0, Pbat_max = 0.0, Pgrid_max = 0.0, Psell_max;
@@ -170,7 +170,7 @@ int main(void)
 	int *uninterrupt_ot = new int[uninterrupt_num];
 	int *uninterrupt_reot = new int[uninterrupt_num];
 	float *uninterrupt_p = new float[uninterrupt_num];
-	int *uninterrupt_flag = new int[uninterrupt_num];
+	bool *uninterrupt_flag = new bool[uninterrupt_num];
 
 	int *varying_start = new int[varying_num];
 	int *varying_end = new int[varying_num];
@@ -178,7 +178,7 @@ int main(void)
 	int *varying_reot = new int[varying_num];
 	int **varying_t_pow = NEW2D(varying_num, 3, int);
 	float **varying_p_pow = NEW2D(varying_num, 3, float);
-	int *varying_flag = new int[varying_num];
+	bool *varying_flag = new bool[varying_num];
 
 	char *s_time = new char[3];
 	char *token = strtok(s_time, "-");
@@ -247,7 +247,7 @@ int main(void)
 		time_tmp.clear();
 	}
 
-	optimization(variable_name, household_id, interrupt_start, interrupt_end, interrupt_ot, interrupt_reot, interrupt_p, uninterrupt_start, uninterrupt_end, uninterrupt_ot, uninterrupt_reot, uninterrupt_p, uninterrupt_flag, varying_start, varying_end, varying_ot, varying_reot, varying_flag, varying_t_pow, varying_p_pow, app_count, price, uncontrollable_load);
+	optimization(variable_name, household_id, interrupt_start, interrupt_end, interrupt_ot, interrupt_reot, interrupt_p, uninterrupt_start, uninterrupt_end, uninterrupt_ot, uninterrupt_reot, uninterrupt_p, uninterrupt_flag, varying_start, varying_end, varying_ot, varying_reot, varying_flag, varying_t_pow, varying_p_pow, app_count, price, uncontrollable_load, distributed_group_num);
 
 	update_loadModel(interrupt_p, uninterrupt_p, household_id, distributed_group_num);
 
