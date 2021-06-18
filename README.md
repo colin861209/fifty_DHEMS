@@ -14,3 +14,13 @@
 
 + Commit Link [f521b6f](https://github.com/colin861209/fifty_DHEMS/commit/f521b6ffeb56e13600e8cb9f75031692987bd828)
 + **INITIAL** files from [DHEMS](https://github.com/colin861209/DHEMS) repository
+
+---
+### 2021/06/18
+
++ Commit Link [e5ea65a](https://github.com/colin861209/fifty_DHEMS/commit/e5ea65a307779ddf633804eefd2094d9c5e5b386)
++ Community Public Load
++ Demand Response `alpha constraint`
++ Type `bool` for flags
+
+---
