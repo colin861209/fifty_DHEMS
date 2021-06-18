@@ -58,7 +58,7 @@
     * Get old uncontrollable load data
   * Output array `size = 96, value = {uncontrollable load}`
 
-> `household_weighting()`
+> `household_alpha_upperBnds()`
   * No change yet, same as the five household LHEMS version
 
 > `truncate_table_flag()`

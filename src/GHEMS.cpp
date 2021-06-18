@@ -200,16 +200,9 @@ int main(int argc, const char **argv)
 	{
 		for (int i = 0; i < time_block - sample_time; i++)
 		{
-			if (dr_startTime - sample_time <= i && dr_endTime - sample_time > i)
-			{
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `demand_response_alpha` WHERE `dr_timeblock` = %d", sample_time, i + sample_time);
-				float dr_weighting_sumOfAlpha = turn_value_to_float(0) / parameter_tmp[1];
-				Pgrid_max_array.push_back(Pgrid_max * dr_weighting_sumOfAlpha);
-			}
-			else
-			{
-				Pgrid_max_array.push_back(Pgrid_max);
-			}
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_control_status` WHERE equip_name = 'dr_alpha' ", i + sample_time);
+			float dr_weighting_sumOfAlpha = turn_value_to_float(0);
+			Pgrid_max_array.push_back(Pgrid_max / parameter_tmp[1] * dr_weighting_sumOfAlpha);
 		}
 	}
 
