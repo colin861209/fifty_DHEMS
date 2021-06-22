@@ -9,10 +9,8 @@
 * $\rho_{f}^{j}$ 第 j 個時刻之回饋報價 (定值)
 * $\tau_{r}^{s}$ 即時備轉開啟時刻
 * $\tau_{r}^{e}$ 即時備轉結束時刻
-
-
-
 * Objective Function
+
 $$
 \min_{\substack {
     P_{grid}^{j}, j=0,...,N-1 \\ 
@@ -31,17 +29,18 @@ $$
 $$
  
 * Deamnd Response
-  * $d$ 抑低用電日
-  * $P_{grid}^{j,d}$ 第d天第j時刻的市電功率
-  * $P_{max}^{d}$ 第d天抑低用電時段市電最大功率
-  * $P_{grid}^{avg}$ 抑低用電時段平均值 (基準用電容量 CBL)
-  * $E_{s}$ 輔助服務時段最少降載度數
-  * Formula
+    * $d$ 抑低用電日
+    * $P_{grid}^{j,d}$ 第d天第j時刻的市電功率
+    * $P_{max}^{d}$ 第d天抑低用電時段市電最大功率
+    * $P_{grid}^{avg}$ 抑低用電時段平均值 (基準用電容量 CBL)
+    * $E_{s}$ 輔助服務時段最少降載度數
+    * Formula
+    
     $$ P_{max}^{d}= \max_{j=\tau_{r}^{s},...,\tau_{r}^{e}}P_{grid}^{j,d}, \quad d=1,...,5 $$
-
     $$ P_{grid}^{avg} = \frac{\sum_{d=1}^{D} P_{max}^{d}} {D} $$
   
-  * Constraint
+    * Constraint
+    
     $$ E_{s} \leq \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} (P_{grid}^{avg} - P_{grid}^{j})T_{s} $$
   
 * Blanced Function
@@ -52,14 +51,17 @@ $$
   <!-- * $P_{u, grid}^{j}$ 第 u 個住戶在第 j 個時刻消耗的市電功率 -->
   <!-- * $P_{u, grid}^{max}$ 第 u 個住戶的市電最大功率限制 -->
   <!-- * $\alpha_{u}^{j}$ 第 u 個住戶在第 j 個時刻同意使用多少百分比之市電功率 -->
-  * $P_{grid}^{j, max}$ 社區第j時刻的市電最大功率限制
-  * Formula
+    * $P_{grid}^{j, max}$ 社區第j時刻的市電最大功率限制
+    * Formula
+    
     $$ P_{grid}^{j,max} = \sum_{u=1}^{U} \alpha_{u}^{j} P_{u, grid}^{j,max} $$
 
-  * Variable
+    * Variable
+    
     $$ 0 \leq P_{grid}^{j} \leq P_{grid}^{j,max} $$
 
-  * Constraint
+    * Constraint
+    
     $$ P_{grid}^{j} \leq \mu_{grid}^{j}P_{grid}^{j,max} $$
 
     $$ P_{sell}^{j} \leq [1 - \mu_{grid}^{j}] P_{sell}^{max} $$
@@ -76,19 +78,22 @@ $$
   
     <!-- * $P_{u,ESS}^{j}$ 第 u 個住戶在第 j 個時刻使用的電池功率 -->
     <!-- * $\beta_{u}^{j}$ 第 u 個住戶在第 j 個時刻同意使用多少百分比之電池功率 -->
-  * Variable
+    * Variable
+  
     $$P_{discharge}^{max} \leq P^{j}_{ESS} \leq P_{charge}^{max}$$
     
     $$SOC^{min} \leq SOC_{j} \leq SOC^{max}$$
     
-  * Constraint
+    * Constraint
+  
     $$SOC_{j-1} + \sum_{j=k}^{T-1} \frac{P^{j}_{ESS}T_{s}}{C_{ESS}V_{ESS}} \geq SOC^{threshold}$$
 
     $$SOC_{j} = SOC_{j-1} + \frac {P^{j}_{ESS}T_{s}}{C_{ESS}V_{ESS}}$$
     
     ---
-  * For constraint SOC need discharge 80% a day
-  * Variable
+    * For constraint SOC need discharge 80% a day
+    * Variable
+  
     $$ \frac {P^{max}_{discharge}T_{s}}{C_{ESS}V_{ESS}} \leq SOC_{j}^{change} \leq \frac {P^{max}_{charge}T_{s}}{C_{ESS}V_{ESS}}$$
 
     $$ 0 \leq SOC_{j}^{+} \leq \frac {P^{max}_{charge}T_{s}}{C_{ESS}V_{ESS}}$$
@@ -192,38 +197,50 @@ $$
 <!-- HEMS Constraint -->
 * Demand response
     
-  $D_{u}^{j}$: 住戶u在j時刻是否參與輔助服務
-  $P_{s}$: 輔助服務時段最少降載功率(kW)
-  $P_{s}^{j}$: 輔助服務時段第 j 時刻最少降載功率(kW)
-  $\omega_{u}^{j}$: 住戶 u 在 j 時刻占用市電百分比
-  $\alpha_{u}^{j}$: 住戶 u 在 j 時刻最大市電縮小百分比
-  * Formula
+	* $D_{u}^{j}$: 住戶u在j時刻是否參與輔助服務
+	* $P_{s}$: 輔助服務時段最少降載功率(kW)
+	* $P_{s}^{j}$: 輔助服務時段第 j 時刻最少降載功率(kW)
+	* $\omega_{u}^{j}$: 住戶 u 在 j 時刻占用市電百分比
+	* $\alpha_{u}^{j}$: 住戶 u 在 j 時刻最大市電縮小百分比
+    * Formula
+    
     $$ P_{s}=E_{s}/T_{s} $$
     
     $$ P_{s}^{j}=\frac{P_{s}}{\tau_{r}^{e}-\tau_{r}^{s}-1}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
-  * variable
+    
+    $$ P_{s}^{j}=\sum_{u=1}^{U}\frac{D_{u}^{j}}{\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1}D_{u}^{j}}P_{s}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
+    
     $$ 0 \leq \alpha_{u}^{j} \leq 1 $$
    
-    $$ D_{u}^{j} \in \{0, 1\}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}]$$ 
+    $$ D_{u}^{j} \in \{0, 1\} $$
+ 
+    $$ \omega_{u}^{j} = \frac{D_{u}^{j}P_{u, grid}^{j}}{\sum_{u=1}^{U} D_{u}^{j}P_{u, grid}^{j}}  $$
     
-    $$ D_{u}^{j} = 0, \qquad \forall j \in [0, N-1]\backslash [\tau_{r}^{s}, \tau_{r}^{e}] $$
+    $$ \omega_{u}^{j} =
+    \left\{ 
+      \begin{array}{c}
+        \frac{P_{u, grid}^{j}}{\sum_{u=1}^{U} D_{u}^{j}P_{u, grid}^{j}}, &\qquad D_{u}^{j} = 1\\
+        0 \qquad,&\qquad D_{u}^{j} = 0
+      \end{array}
+    \right.
+    $$
 
-  * constraint
-    $$ \omega_{u}^{j} = \frac{P_{u, grid}^{j}}{\sum_{u=1}^{U} D_{u}^{j}P_{u, grid}^{j}}  $$
-
+    * constraint
+    
     $$ 0 \leq \alpha_{u}^{j} \leq \frac{P_{u,grid}^{max}-\omega_{u}^{j}*P_{s}^{j}}{P_{u,grid}^{max}}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
     
     $$ \alpha_{u}^{j} = 1, \qquad  \forall j \in [0, N-1] \backslash  [\tau_{r}^{s}, \tau_{r}^{e}] $$
 
 * Balanced Function
-  $A_{u,uc}$第u個住戶的不可控負載類型
-  $P_{u,uc}^{j}$第u個住戶在第j個時刻的不可控負載功率
+	* $A_{u,uc}$第u個住戶的不可控負載類型
+	* $P_{u,uc}^{j}$第u個住戶在第j個時刻的不可控負載功率
 
     $$ P_{u,grid}^{j} - P_{u,ESS}^{j}= \sum_{a \in A_{u, c1} \cup A_{u, c2} \cup A_{u, c3}} P_{u,a}^{j}  + \sum_{a \in A_{u, uc}} P_{u,uc}^{j}$$
 
 * Pgrid
-  * Variable or Constraint
-  $$ 0 \leq P_{u,grid}^{j} \leq \alpha_{u}^{j}P_{u, grid}^{max} $$
+    * Variable or Constraint
+  
+    $$ 0 \leq P_{u,grid}^{j} \leq \alpha_{u}^{j}P_{u, grid}^{max} $$
 
 * Battery
   
