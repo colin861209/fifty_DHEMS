@@ -41,10 +41,13 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 	init_VaryingLoads_OperateTimeAndPower(varying_t_d, varying_p_d, varying_ot);
 	putValues_VaryingLoads_OperateTimeAndPower(varying_t_d, varying_p_d, varying_t_pow, varying_p_pow, varying_start, varying_end, varying_p_max);
 
-	float *weighting_array;
+	// float *weighting_array;
+	int *participate_array;
 	if (dr_mode != 0)
-		weighting_array = household_alpha_upperBnds(distributed_group_num);
-
+	{
+		// weighting_array = household_alpha_upperBnds(distributed_group_num);
+		participate_array = household_participation(household_id, "LHEMS_demand_response_participation");
+	}
 	printf("\n------ Starting GLPK Part ------\n");
 
 	/*============================(GLPK matrix row & col definition)==================================*/
@@ -235,7 +238,7 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 			glp_set_row_name(mip, app_count + i, "");
 			glp_set_row_bnds(mip, app_count + i, GLP_UP, 0.0, 0.0);
 		}
-
+		// 0 < alpha < 1 in operate time, else alpha is 1
 		for (int i = 0; i < time_block - sample_time; i++)
 		{
 			coefficient[(time_block - sample_time) + app_count + i][i * variable + find_variableName_position(variable_name, "dr_alpha")] = 1.0;
@@ -248,8 +251,12 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 			{
 				if (sample_time + i - 1 >= dr_startTime)
 				{
-					glp_set_row_name(mip, (time_block - sample_time) + app_count + i, "");
-					glp_set_row_bnds(mip, (time_block - sample_time) + app_count + i, GLP_UP, 0.0, weighting_array[sample_time + i - 1 - dr_startTime]);
+					if (1 - participate_array[sample_time + i - 1 - dr_startTime] == 0)
+					{
+						glp_set_row_name(mip, (time_block - sample_time) + app_count + i, "");
+						glp_set_row_bnds(mip, (time_block - sample_time) + app_count + i, GLP_DB, (1-participate_array[sample_time + i - 1 - dr_startTime]), 1.0);
+						// glp_set_row_bnds(mip, (time_block - sample_time) + app_count + i, GLP_DB, 0.0, 1.0);
+					}
 				}
 			}
 		}
@@ -722,18 +729,32 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 		{
 			for (j = 0; j < dr_endTime - sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), dr_feedback_price * delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), participate_array[j + (sample_time - dr_startTime)] * dr_feedback_price * delta_T);
 			}
 		}
 		else if (sample_time - dr_startTime < 0)
 		{
 			for (j = dr_startTime - sample_time; j < dr_endTime - sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), dr_feedback_price * delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), participate_array[j - (dr_startTime - sample_time)] * dr_feedback_price * delta_T);
 			}
 		}
 	}
 
+	if ((interrupt_start[h] - sample_time) >= 0)
+	{
+		for (i = (interrupt_start[h] - sample_time); i <= (interrupt_end[h] - sample_time); i++)
+		{
+			coefficient[h][i * variable + find_variableName_position(variable_name, "interrupt" + to_string(h + 1))] = 1.0;
+		}
+	}
+	else if ((interrupt_start[h] - sample_time) < 0)
+	{
+		for (i = 0; i <= (interrupt_end[h] - sample_time); i++)
+		{
+			coefficient[h][i * variable + find_variableName_position(variable_name, "interrupt" + to_string(h + 1))] = 1.0;
+		}
+	}
 	/*==============================GLPK?g?J��x�X}(ia,ja,ar)===============================*/
 	int *ia = new int[rowTotal * colTotal + 1];		  //Row
 	int *ja = new int[rowTotal * colTotal + 1];		  //Column
@@ -1370,6 +1391,24 @@ float *household_alpha_upperBnds(int distributed_group_num)
 		}
 	}
 
+	return result;
+}
+
+int *household_participation(int household_id, string table)
+{
+	functionPrint(__func__);
+
+	int *result = new int[dr_endTime - dr_startTime];
+	
+	// =-=-=-=-=-=-=- calculate weighting then turn to alpha -=-=-=-=-=-=-= //
+	for (int i = dr_startTime; i < dr_endTime; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `%s` WHERE `household_id` = %d", i, table.c_str(), household_id);
+		result[i - dr_startTime] = turn_value_to_int(0);
+
+		printf("\thousehold %d timeblock %d status %d\n", household_id, i, result[i - dr_startTime]);
+	}
+	
 	return result;
 }
 

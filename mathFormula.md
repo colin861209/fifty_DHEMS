@@ -7,8 +7,8 @@
 * $P^{j}_{grid}$ 第 j 個時刻之社區市電功率
 * $\rho_{b}^{j}$ 第 j 個時刻之時間電價
 * $\rho_{f}^{j}$ 第 j 個時刻之回饋報價 (定值)
-* $\tau_{r}^{s}$ 即時備轉開啟時刻
-* $\tau_{r}^{e}$ 即時備轉結束時刻
+* $\tau_{r}^{s}$ 即時備轉(Spinning Reserve)開啟時刻
+* $\tau_{r}^{e}$ 即時備轉(Spinning Reserve)結束時刻
 * Objective Function
 
 $$
@@ -188,33 +188,33 @@ $$ \min_{\substack{
     r_{u,a}^{j},~j=0,...,N-1,~a \in A_{u, c1} \cup A_{u, c2} \cup A_{u, c3}\\ 
     \delta_{u,a}^{j},~j=0,...,N-1,~a \in A_{u, c2} \cup A_{u, c3}\\ 
     P_{u, a}^{j},~j=0,...,N-1,~a \in A_{u, c3}\\
-    P_{u, grid}^{j},~j=0,...,N-1
+    P_{u, grid}^{j},~j=0,...,N-1\\
+    \alpha_{u}^{j}, j=0,..., N-1
 }}
-\sum_{j=k}^{N} \rho_{b}^{j}P^{j}_{u,grid} T_{s} -
-\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}} \rho_{f}^{j}P^{j}_{u,grid} T_{s} 
+\sum_{j=k}^{N} \rho_{b}^{j}P^{j}_{u,grid} T_{s} +
+\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} D_{u}^{j}\rho_{f}^{j}P^{j}_{u,grid} T_{s}
 $$
 
 <!-- HEMS Constraint -->
 * Demand response
     
 	* $D_{u}^{j}$: 住戶u在j時刻是否參與輔助服務
-	* $P_{s}$: 輔助服務時段最少降載功率(kW)
-	* $P_{s}^{j}$: 輔助服務時段第 j 時刻最少降載功率(kW)
-	* $\omega_{u}^{j}$: 住戶 u 在 j 時刻占用市電百分比
 	* $\alpha_{u}^{j}$: 住戶 u 在 j 時刻最大市電縮小百分比
     * Formula
-    
-    $$ P_{s}=E_{s}/T_{s} $$
+
+    $$ D_{u}^{j} \in \{0, 1\} $$
+
+    <!-- $$ P_{s}=E_{s}/T_{s} $$
     
     $$ P_{s}^{j}=\frac{P_{s}}{\tau_{r}^{e}-\tau_{r}^{s}-1}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
     
-    $$ P_{s}^{j}=\sum_{u=1}^{U}\frac{D_{u}^{j}}{\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1}D_{u}^{j}}P_{s}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
+    $$ P_{s}^{j}=\sum_{u=1}^{U}\frac{D_{u}^{j}}{\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1}D_{u}^{j}}P_{s}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$ -->
     
-    $$ 0 \leq \alpha_{u}^{j} \leq 1 $$
-   
-    $$ D_{u}^{j} \in \{0, 1\} $$
- 
-    $$ \omega_{u}^{j} = \frac{D_{u}^{j}P_{u, grid}^{j}}{\sum_{u=1}^{U} D_{u}^{j}P_{u, grid}^{j}}  $$
+    * Variable
+    
+    $$ \alpha_{u}^{j} \in [0, 1] $$
+    
+    <!-- $$ \omega_{u}^{j} = \frac{D_{u}^{j}P_{u, grid}^{j}}{\sum_{u=1}^{U} D_{u}^{j}P_{u, grid}^{j}}  $$
     
     $$ \omega_{u}^{j} =
     \left\{ 
@@ -223,11 +223,11 @@ $$
         0 \qquad,&\qquad D_{u}^{j} = 0
       \end{array}
     \right.
-    $$
+    $$ -->
 
     * constraint
     
-    $$ 0 \leq \alpha_{u}^{j} \leq \frac{P_{u,grid}^{max}-\omega_{u}^{j}*P_{s}^{j}}{P_{u,grid}^{max}}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
+    $$ (1-D_{u}^{j}) \leq \alpha_{u}^{j} \leq 1, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
     
     $$ \alpha_{u}^{j} = 1, \qquad  \forall j \in [0, N-1] \backslash  [\tau_{r}^{s}, \tau_{r}^{e}] $$
 
