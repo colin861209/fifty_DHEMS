@@ -24,3 +24,11 @@
 + Type `bool` for flags
 
 ---
+### 2021/06/25
+
++ Commit Link [4d08c46](https://github.com/colin861209/fifty_DHEMS/commit/4d08c4628223385aff8e2d4fdcc0d4acd275d0e9)
++ Community Public Load `decrease operation time` when demand response mode
++ Demand Response **remove** `alpha constraint`, it's not a good constraint
++ Demand Response **increase** `household participation`, household determine their time to participate.
+
+---
