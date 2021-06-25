@@ -22,6 +22,7 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 void update_loadModel(float *interrupt_p, float *uninterrupt_p, int household_id, int distributed_group_num);
 float *rand_operationTime(int distributed_group_num);
 float *household_alpha_upperBnds(int distributed_group_num);
+int *household_participation(int household_id, string table);
 int truncate_table_flag();
 int get_distributed_group(string target, string condition_col = "", int condition_num = -1);
 void update_distributed_group(string target, int target_value, string condition_col, int condition_num);

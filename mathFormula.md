@@ -7,17 +7,10 @@
 * $P^{j}_{grid}$ 第 j 個時刻之社區市電功率
 * $\rho_{b}^{j}$ 第 j 個時刻之時間電價
 * $\rho_{f}^{j}$ 第 j 個時刻之回饋報價 (定值)
-* $\tau_{r}^{s}$ 即時備轉開啟時刻
-* $\tau_{r}^{e}$ 即時備轉結束時刻
-* $d$ 抑低用電日
-* $P_{grid}^{j,d}$ 第d天第j時刻的市電功率
-* $P_{max}^{d}$ 第d天抑低用電時段市電最大功率
-* $P_{grid}^{avg}$ 抑低用電時段平均值 (基準用電容量 CBL)
-
-$$ P_{max}^{d}= \max_{j=\tau_{r}^{s},...,\tau_{r}^{e}}P_{grid}^{j,d}, \quad d=1,...,5 $$
-$$ P_{grid}^{avg} = \frac{\sum_{d=1}^{D} P_{max}^{d}} {D} $$
-
+* $\tau_{r}^{s}$ 即時備轉(Spinning Reserve)開啟時刻
+* $\tau_{r}^{e}$ 即時備轉(Spinning Reserve)結束時刻
 * Objective Function
+
 $$
 \min_{\substack {
     P_{grid}^{j}, j=0,...,N-1 \\ 
@@ -31,27 +24,44 @@ $$
     z_{i}^{j}, i=0,...,M-1,~j=0,...,N-1 \\
     \lambda_{i}^{j}, i=0,...,M-1,~j=0,...,N-1 \\
 }}
-\sum_{j=k}^{N} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} -
-\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
+\sum_{j=k}^{N-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} -
+\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
 $$
-
-* Constraint
+ 
+* Deamnd Response
+    * $d$ 抑低用電日
+    * $P_{grid}^{j,d}$ 第d天第j時刻的市電功率
+    * $P_{max}^{d}$ 第d天抑低用電時段市電最大功率
+    * $P_{grid}^{avg}$ 抑低用電時段平均值 (基準用電容量 CBL)
+    * $E_{s}$ 輔助服務時段最少降載度數
+    * Formula
+    
+    $$ P_{max}^{d}= \max_{j=\tau_{r}^{s},...,\tau_{r}^{e}}P_{grid}^{j,d}, \quad d=1,...,5 $$
+    $$ P_{grid}^{avg} = \frac{\sum_{d=1}^{D} P_{max}^{d}} {D} $$
   
-  * Deamnd Response
-
-    $$ E_{s} \leq \sum_{j = \tau_{r}^{s}}^{\tau_{r}^{e}} (P_{grid}^{avg} - P_{grid}^{j})T_{s} $$
+    * Constraint
+    
+    $$ E_{s} \leq \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} (P_{grid}^{avg} - P_{grid}^{j})T_{s} $$
   
-  * Blanced Function
+* Blanced Function
     
     $$ P^{j}_{grid} + P^{j}_{PV} + P^{j}_{FC} - P^{j}_{sell} - P^{j}_{ESS} = \sum_{ca \in A_{c1}} P_{ca}^{j} + \sum_{u=1}^{U}(\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} + \sum_{a \in A_{uc}} P_{u, uc}^{j}) $$
 
-  * Grid & Sell
+* Grid & Sell
   <!-- * $P_{u, grid}^{j}$ 第 u 個住戶在第 j 個時刻消耗的市電功率 -->
   <!-- * $P_{u, grid}^{max}$ 第 u 個住戶的市電最大功率限制 -->
   <!-- * $\alpha_{u}^{j}$ 第 u 個住戶在第 j 個時刻同意使用多少百分比之市電功率 -->
+    * $P_{grid}^{j, max}$ 社區第j時刻的市電最大功率限制
+    * Formula
+    
     $$ P_{grid}^{j,max} = \sum_{u=1}^{U} \alpha_{u}^{j} P_{u, grid}^{j,max} $$
+
+    * Variable
+    
     $$ 0 \leq P_{grid}^{j} \leq P_{grid}^{j,max} $$
 
+    * Constraint
+    
     $$ P_{grid}^{j} \leq \mu_{grid}^{j}P_{grid}^{j,max} $$
 
     $$ P_{sell}^{j} \leq [1 - \mu_{grid}^{j}] P_{sell}^{max} $$
@@ -64,22 +74,33 @@ $$
     $$ 0 \leq P_{u,grid}^{j} \leq P_{u, grid}^{max} $$
     $$ 0 \leq \alpha_{u}^{j} \leq 1 $$ -->
 
-  * Battery
+* Battery
   
     <!-- * $P_{u,ESS}^{j}$ 第 u 個住戶在第 j 個時刻使用的電池功率 -->
     <!-- * $\beta_{u}^{j}$ 第 u 個住戶在第 j 個時刻同意使用多少百分比之電池功率 -->
-    * variable
+    * Variable
+  
     $$P_{discharge}^{max} \leq P^{j}_{ESS} \leq P_{charge}^{max}$$
+    
+    $$SOC^{min} \leq SOC_{j} \leq SOC^{max}$$
+    
+    * Constraint
+  
+    $$SOC_{j-1} + \sum_{j=k}^{T-1} \frac{P^{j}_{ESS}T_{s}}{C_{ESS}V_{ESS}} \geq SOC^{threshold}$$
 
+    $$SOC_{j} = SOC_{j-1} + \frac {P^{j}_{ESS}T_{s}}{C_{ESS}V_{ESS}}$$
+    
+    ---
+    * For constraint SOC need discharge 80% a day
+    * Variable
+  
     $$ \frac {P^{max}_{discharge}T_{s}}{C_{ESS}V_{ESS}} \leq SOC_{j}^{change} \leq \frac {P^{max}_{charge}T_{s}}{C_{ESS}V_{ESS}}$$
 
     $$ 0 \leq SOC_{j}^{+} \leq \frac {P^{max}_{charge}T_{s}}{C_{ESS}V_{ESS}}$$
 
     $$ 0 \leq SOC_{j}^{-} \leq \frac {P^{max}_{discharge}T_{s}}{C_{ESS}V_{ESS}}$$
-    
-    $$SOC^{min} \leq SOC_{j} \leq SOC^{max}$$
-    
-    * constraint
+        
+  * Constraint
     $$ SOC_{j}^{change} = SOC_{j}^{+} - SOC_{j}^{-} $$
 
     $$ SOC_{j}^{change} = \frac {P^{j}_{ESS}T_{s}}{C_{ESS}V_{ESS}} $$
@@ -97,14 +118,10 @@ $$
 
     $$ SOC_{j}^{-} \leq (1-Z^{'}) \frac{P_{discharge}^{max}T_{s}}{C_{ESS}V_{ESS}}$$
 
-    $$SOC_{j-1} + \sum_{j=k}^{T-1} \frac{P^{j}_{ESS}T_{s}}{C_{ESS}V_{ESS}} \geq SOC^{threshold}$$
-
-    $$SOC_{j} = SOC_{j-1} + \frac {P^{j}_{ESS}T_{s}}{C_{ESS}V_{ESS}}$$
-
     $$ \sum_{j=0}^{T-1} SOC_{j}^{-} \geq 0.8$$
 
-  * Community Public Load
-    * constraint
+* Community Public Load
+    * Formula
     $$ P_{ca}^{j} =
       \left\{ 
         \begin{array}
@@ -113,13 +130,13 @@ $$
         \end{array}
       \right.
       $$
-
+    * Variable
       $$ r_{ca}^{j} \in \{0,1\}, \qquad \forall j \in [\tau_{ca}^{s}, \tau_{ca}^{e}] $$
 
       $$ r_{ca}^{j} = 0, \qquad \forall j \in [0,N-1] \backslash [\tau_{ca}^{s}, \tau_{ca}^{e}] $$
       
-      $$ \forall a \in A_{c1} $$
-
+      $$ \forall ca \in A_{c1} $$
+    * Constraint
       $$ \sum_{k=0}^{T-1} r_{ca}^{j} \geq Q_{ca} $$
 
     <!-- * For GHEMS => LHEMS
@@ -171,39 +188,61 @@ $$ \min_{\substack{
     r_{u,a}^{j},~j=0,...,N-1,~a \in A_{u, c1} \cup A_{u, c2} \cup A_{u, c3}\\ 
     \delta_{u,a}^{j},~j=0,...,N-1,~a \in A_{u, c2} \cup A_{u, c3}\\ 
     P_{u, a}^{j},~j=0,...,N-1,~a \in A_{u, c3}\\
-    P_{u, grid}^{j},~j=0,...,N-1
+    P_{u, grid}^{j},~j=0,...,N-1\\
+    \alpha_{u}^{j}, j=0,..., N-1
 }}
-\sum_{j=k}^{N} \rho_{b}^{j}P^{j}_{u,grid} T_{s} -
-\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}} \rho_{f}^{j}P^{j}_{u,grid} T_{s} 
+\sum_{j=k}^{N} \rho_{b}^{j}P^{j}_{u,grid} T_{s} +
+\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} D_{u}^{j}\rho_{f}^{j}P^{j}_{u,grid} T_{s}
 $$
 
 <!-- HEMS Constraint -->
-* Constraint
- 
-  * Demand response
+* Demand response
     
-    * variable
-    
-    $$ 0 \leq \alpha_{u}^{j} \leq 1 $$
-   
-    * constraint
-    $$ \omega_{u}^{j} = \frac{P_{u, grid}^{j}}{\sum_{u=1}^{U} P_{u, grid}^{j}}  $$
+	* $D_{u}^{j}$: 住戶u在j時刻是否參與輔助服務
+	* $\alpha_{u}^{j}$: 住戶 u 在 j 時刻最大市電縮小百分比
+    * Formula
 
-    $$ 0 \leq \alpha_{u}^{j} \leq \frac{P_{u,grid}^{max}-\omega_{u}^{j}*E_{s}}{P_{u,grid}^{max}}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
+    $$ D_{u}^{j} \in \{0, 1\} $$
+
+    <!-- $$ P_{s}=E_{s}/T_{s} $$
+    
+    $$ P_{s}^{j}=\frac{P_{s}}{\tau_{r}^{e}-\tau_{r}^{s}-1}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
+    
+    $$ P_{s}^{j}=\sum_{u=1}^{U}\frac{D_{u}^{j}}{\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1}D_{u}^{j}}P_{s}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$ -->
+    
+    * Variable
+    
+    $$ \alpha_{u}^{j} \in [0, 1] $$
+    
+    <!-- $$ \omega_{u}^{j} = \frac{D_{u}^{j}P_{u, grid}^{j}}{\sum_{u=1}^{U} D_{u}^{j}P_{u, grid}^{j}}  $$
+    
+    $$ \omega_{u}^{j} =
+    \left\{ 
+      \begin{array}{c}
+        \frac{P_{u, grid}^{j}}{\sum_{u=1}^{U} D_{u}^{j}P_{u, grid}^{j}}, &\qquad D_{u}^{j} = 1\\
+        0 \qquad,&\qquad D_{u}^{j} = 0
+      \end{array}
+    \right.
+    $$ -->
+
+    * constraint
+    
+    $$ (1-D_{u}^{j}) \leq \alpha_{u}^{j} \leq 1, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
     
     $$ \alpha_{u}^{j} = 1, \qquad  \forall j \in [0, N-1] \backslash  [\tau_{r}^{s}, \tau_{r}^{e}] $$
 
-  * Balanced Function
-    * $A_{u,uc}$第u個住戶的不可控負載類型
-    * $P_{u,uc}^{j}$第u個住戶在第j個時刻的不可控負載功率
+* Balanced Function
+	* $A_{u,uc}$第u個住戶的不可控負載類型
+	* $P_{u,uc}^{j}$第u個住戶在第j個時刻的不可控負載功率
 
     $$ P_{u,grid}^{j} - P_{u,ESS}^{j}= \sum_{a \in A_{u, c1} \cup A_{u, c2} \cup A_{u, c3}} P_{u,a}^{j}  + \sum_{a \in A_{u, uc}} P_{u,uc}^{j}$$
 
-  * Pgrid
+* Pgrid
+    * Variable or Constraint
+  
+    $$ 0 \leq P_{u,grid}^{j} \leq \alpha_{u}^{j}P_{u, grid}^{max} $$
 
-  $$ 0 \leq P_{u,grid}^{j} \leq \alpha_{u}^{j}P_{u, grid}^{max} $$
-
-  * Battery
+* Battery
   
   $$ P_{u,charge}^{max} = \frac{P_{charge}^{max}}{U}$$
   
@@ -219,48 +258,46 @@ $$
 
   $$ SOC_{j} = SOC_{j-1} + \frac {P^{j}_{u,ESS}T_{s}}{C_{ESS}V_{u,ESS}} $$
 
-  * Loads Constraint
-      <!-- Uncontrollable load Constraint -->
-      * Uncontrollable load
+* Loads Constraint
+  <!-- Uncontrollable load Constraint -->
+  * Uncontrollable load
+    $$ P_{u,uc}^{j} =
+    \left\{ 
+      \begin{array}
+        rr_{u,uc}^{j} P_{u,uc}^{}, \qquad &\forall k \in [\tau_{u}^{s}, \tau_{u}^{e}]\\
+        0 \qquad, \qquad &otherwise
+      \end{array}
+    \right.
+    $$
+
+    $$ r_{u,uc}^{j} \in \{0,1\}, \qquad \forall j \in [\tau_{u}^{s}, \tau_{u}^{e}] $$
+    $$ P_{u,uc}^{} \in [0.3, 1.0] $$
       
-      $$ P_{u,uc}^{j} =
-      \left\{ 
-        \begin{array}
-          rr_{u,uc}^{j} P_{u,uc}^{}, \qquad &\forall k \in [\tau_{u}^{s}, \tau_{u}^{e}]\\
-          0 \qquad, \qquad &otherwise
-        \end{array}
-      \right.
-      $$
+  <!-- Deploeyment load Constraint -->
+  * Deploeyment load
+    $$ P_{u,a}^{j} =
+    \left\{ 
+      \begin{array}
+        rr_{u,a}^{j} P_{u,a}^{max}, \qquad &\forall k \in [\tau_{u,a}^{s}, \tau_{u,a}^{e}]\\
+        0 \qquad, \qquad &otherwise
+      \end{array}
+    \right.
+    $$
 
-      $$ r_{u,uc}^{j} \in \{0,1\}, \qquad \forall j \in [\tau_{u}^{s}, \tau_{u}^{e}] $$
-      $$ P_{u,uc}^{} \in [0.3, 1.0] $$
-      
-      <!-- Deploeyment load Constraint -->
-      * Deploeyment load
+    $$ r_{u,a}^{j} \in \{0,1\}, \qquad \forall j \in [\tau_{u,a}^{s}, \tau_{u,a}^{e}] $$
 
-      $$ P_{u,a}^{j} =
-      \left\{ 
-        \begin{array}
-          rr_{u,a}^{j} P_{u,a}^{max}, \qquad &\forall k \in [\tau_{u,a}^{s}, \tau_{u,a}^{e}]\\
-          0 \qquad, \qquad &otherwise
-        \end{array}
-      \right.
-      $$
+    $$ r_{u,a}^{j} = 0, \qquad \forall j \in [0,N-1] \backslash [\tau_{u,a}^{s}, \tau_{u,a}^{e}] $$
 
-      $$ r_{u,a}^{j} \in \{0,1\}, \qquad \forall j \in [\tau_{u,a}^{s}, \tau_{u,a}^{e}] $$
+    $$ \forall a \in A_{u,c1} $$
 
-      $$ r_{u,a}^{j} = 0, \qquad \forall j \in [0,N-1] \backslash [\tau_{u,a}^{s}, \tau_{u,a}^{e}] $$
+    $$ \sum_{k=0}^{T-1} r_{u,a}^{j} \geq Q_{a} $$
 
-      $$ \forall a \in A_{u,c1} $$
+    $$ \forall a \in A_{u,c2} \cup A_{u,c3} $$
 
-      $$ \sum_{k=0}^{T-1} r_{u,a}^{j} \geq Q_{a} $$
+    $$ \sum_{k= \tau_{u,a}^{s}}^{\tau_{u,a}^{e}- \Gamma_{u, a} - 1} \delta_{u,a}^{j} = 1 $$
 
-      $$ \forall a \in A_{u,c2} \cup A_{u,c3} $$
+    $$ r_{u,a}^{j+n} \geq \delta_{u,a}^{j}, \qquad n = 0,...,\Gamma_a-1 $$
 
-      $$ \sum_{k= \tau_{u,a}^{s}}^{\tau_{u,a}^{e}- \Gamma_{u, a} - 1} \delta_{u,a}^{j} = 1 $$
+    $$ \forall a \in A_{u,c3} $$
 
-      $$ r_{u,a}^{j+n} \geq \delta_{u,a}^{j}, \qquad n = 0,...,\Gamma_a-1 $$
-
-      $$ \forall a \in A_{u,c3} $$
-
-      $$ \psi_{u, a}^{j+n} \geq \delta_{u,a}^{j} \sigma_{u,a}^{n} $$
+    $$ \psi_{u, a}^{j+n} \geq \delta_{u,a}^{j} \sigma_{u,a}^{n} $$

@@ -243,9 +243,27 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 		float **publicLoad = getPublicLoad(publicLoad_flag, publicLoad_num);
 		for (int i = 0; i < publicLoad_num; i++)
 		{
+			int decrease_ot = 0, start, end;
 			public_start[i] = int(publicLoad[i][0]);
 			public_end[i] = int(publicLoad[i][1]) - 1;
-			public_ot[i] = int(publicLoad[i][2]);
+			if (dr_mode != 0)
+			{
+				if (public_end[i] >= dr_startTime)
+				{
+					if (public_start[i] <= dr_startTime)
+						start = dr_startTime;
+					else
+						start = public_start[i]	;
+					
+					if (public_end[i] >= dr_endTime)
+						end = dr_endTime;
+					else
+						end = public_end[i];
+					
+					decrease_ot = end - start;
+				}
+			}
+			public_ot[i] = int(publicLoad[i][2]) - decrease_ot;
 			public_reot[i] = 0;
 			public_p[i] = publicLoad[i][3];
 		}
