@@ -32,13 +32,14 @@ class Xpath:
         self.serverinfo_table = '//*[@id="serverinfo"]/a[3]'
         # DHEMS_fiftyHousehold tables
         self.text_create_newTable = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[1]/a'
-        self.text_BaseParameter = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[5]/a'
-        self.text_dr_alpha = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[8]/a'
-        self.text_GHEMS_control_status = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[10]/a'
-        self.text_LHEMS_control_status = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[15]/a'
-        self.text_GHEMS_flag = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[11]/a'
-        self.text_LHEMS_flag = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[16]/a'
-        self.text_totalLoad_model = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[24]/a'
+        self.text_BaseParameter = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[6]/a'
+        self.text_cost = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[7]/a'
+        self.text_dr_alpha = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[9]/a'
+        self.text_GHEMS_control_status = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[11]/a'
+        self.text_LHEMS_control_status = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[16]/a'
+        self.text_GHEMS_flag = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[12]/a'
+        self.text_LHEMS_flag = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[18]/a'
+        self.text_totalLoad_model = '//*[@id="pma_navigation_tree_content"]/ul/li[2]/div[3]/ul/li[4]/div[4]/ul/li[26]/a'
         # page export
         self.btn_export = '//*[@id="topmenu"]/li[6]/a'
         self.title_text_export = '//*[@id="header"]'
@@ -256,6 +257,7 @@ if __name__ == "__main__":
     print("=-=-=-=-=-=-=-=-=-=\n")
     export_tables = []
     export_tables.append(xpath.text_BaseParameter)
+    export_tables.append(xpath.text_cost)
     if int(dr_mode) != 0:
         export_tables.append(xpath.text_dr_alpha)
     export_tables.append(xpath.text_GHEMS_control_status)
