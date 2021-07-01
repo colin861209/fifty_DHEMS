@@ -446,26 +446,30 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	}
 
 	//(Balanced function) Pgrid j + Pfc j + Ppv j = sum(Pa j) + Pess j + Psell j
-	for (h = 0; h < publicLoad_num; h++)
+	if (publicLoad_flag)
 	{
-		if ((public_end[h] - sample_time) >= 0)
+		for (h = 0; h < publicLoad_num; h++)
 		{
-			if ((public_start[h] - sample_time) >= 0)
+			if ((public_end[h] - sample_time) >= 0)
 			{
-				for (i = (public_start[h] - sample_time); i <= (public_end[h] - sample_time); i++)
+				if ((public_start[h] - sample_time) >= 0)
 				{
-					coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "publicLoad" + to_string(h + 1))] = public_p[h];
+					for (i = (public_start[h] - sample_time); i <= (public_end[h] - sample_time); i++)
+					{
+						coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "publicLoad" + to_string(h + 1))] = public_p[h];
+					}
 				}
-			}
-			else if ((public_start[h] - sample_time) < 0)
-			{
-				for (i = 0; i <= (public_end[h] - sample_time); i++)
+				else if ((public_start[h] - sample_time) < 0)
 				{
-					coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "publicLoad" + to_string(h + 1))] = public_p[h];
+					for (i = 0; i <= (public_end[h] - sample_time); i++)
+					{
+						coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "publicLoad" + to_string(h + 1))] = public_p[h];
+					}
 				}
 			}
 		}
 	}
+	
 	for (i = 0; i < (time_block - sample_time); i++)
 	{
 		if (Pgrid_flag)
@@ -1231,7 +1235,7 @@ void calculateCostInfo(float *price, bool publicLoad_flag, bool Pgrid_flag, bool
 			{
 				if (i >= dr_startTime && i < dr_endTime)
 				{
-					demandResponse_feedback[i] = (dr_customer_baseLine - grid_tmp) * delta_T;
+					demandResponse_feedback[i] = dr_feedback_price * (dr_customer_baseLine - grid_tmp) * delta_T;
 					demandResponse_feedbackSum += demandResponse_feedback[i];
 				}
 			}

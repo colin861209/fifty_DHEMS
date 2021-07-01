@@ -23,6 +23,7 @@ $$
     P_{FC\_OFF}^{j}, j=0,...,N-1 \\
     z_{i}^{j}, i=0,...,M-1,~j=0,...,N-1 \\
     \lambda_{i}^{j}, i=0,...,M-1,~j=0,...,N-1 \\
+    r_{ca}^{j}, j=0,...,N-1,~ca \in A_{c1} \\
 }}
 \sum_{j=k}^{N-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} -
 \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
@@ -90,8 +91,8 @@ $$
 
     $$SOC_{j} = SOC_{j-1} + \frac {P^{j}_{ESS}T_{s}}{C_{ESS}V_{ESS}}$$
     
-    ---
-    * For constraint SOC need discharge 80% a day
+  ---
+  * For constraint SOC need discharge 80% a day
     * Variable
   
     $$ \frac {P^{max}_{discharge}T_{s}}{C_{ESS}V_{ESS}} \leq SOC_{j}^{change} \leq \frac {P^{max}_{charge}T_{s}}{C_{ESS}V_{ESS}}$$
@@ -100,7 +101,7 @@ $$
 
     $$ 0 \leq SOC_{j}^{-} \leq \frac {P^{max}_{discharge}T_{s}}{C_{ESS}V_{ESS}}$$
         
-  * Constraint
+    * Constraint
     $$ SOC_{j}^{change} = SOC_{j}^{+} - SOC_{j}^{-} $$
 
     $$ SOC_{j}^{change} = \frac {P^{j}_{ESS}T_{s}}{C_{ESS}V_{ESS}} $$
@@ -119,17 +120,18 @@ $$
     $$ SOC_{j}^{-} \leq (1-Z^{'}) \frac{P_{discharge}^{max}T_{s}}{C_{ESS}V_{ESS}}$$
 
     $$ \sum_{j=0}^{T-1} SOC_{j}^{-} \geq 0.8$$
+  ---
 
 * Community Public Load
     * Formula
     $$ P_{ca}^{j} =
       \left\{ 
-        \begin{array}
-          rr_{ca}^{j} P_{ca}^{max}, \qquad &\forall k \in [\tau_{ca}^{s}, \tau_{ca}^{e}]\\
+        \begin{array}{c}
+          r_{ca}^{j} P_{ca}^{max}, \qquad &\forall k \in [\tau_{ca}^{s}, \tau_{ca}^{e}]\\
           0 \qquad, \qquad &otherwise
         \end{array}
       \right.
-      $$
+    $$
     * Variable
       $$ r_{ca}^{j} \in \{0,1\}, \qquad \forall j \in [\tau_{ca}^{s}, \tau_{ca}^{e}] $$
 
@@ -137,7 +139,7 @@ $$
       
       $$ \forall ca \in A_{c1} $$
     * Constraint
-      $$ \sum_{k=0}^{T-1} r_{ca}^{j} \geq Q_{ca} $$
+      $$ \sum_{k=0}^{T-1} r_{ca}^{j} \geq Q_{ca} - |d|, \qquad \forall d \in [\tau_{ca}^{s}, \tau_{ca}^{e}] \cap [\tau_{r}^{s}, \tau_{r}^{e}] $$
 
     <!-- * For GHEMS => LHEMS
     $$ P_{ESS}^{j} = \sum_{u=1}^{U} \beta_{u}^{j} P_{u,ESS}^{j} $$
@@ -175,8 +177,6 @@ $$
     &+ 5.8717 \cdot z^{j}_{3} + (9.0692-8.8717) \cdot \lambda^{j}_{3} \\
     &+ 9.0692 \cdot z^{j}_{4} + (12.8214-9.0692) \cdot \lambda^{j}_{4} \\
     \end{aligned} $$ -->
-
----
 
 ## Home Enerage Management System (HEMS)
 * $u$ 代表第u個家庭
@@ -238,7 +238,10 @@ $$
     $$ P_{u,grid}^{j} - P_{u,ESS}^{j}= \sum_{a \in A_{u, c1} \cup A_{u, c2} \cup A_{u, c3}} P_{u,a}^{j}  + \sum_{a \in A_{u, uc}} P_{u,uc}^{j}$$
 
 * Pgrid
-    * Variable or Constraint
+    * Variable 
+    
+    $$ 0 \leq P_{u, grid}^{j} \leq P_{u, grid}^{max} $$
+    *  Constraint
   
     $$ 0 \leq P_{u,grid}^{j} \leq \alpha_{u}^{j}P_{u, grid}^{max} $$
 
