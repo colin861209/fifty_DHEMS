@@ -729,32 +729,18 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 		{
 			for (j = 0; j < dr_endTime - sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), participate_array[j + (sample_time - dr_startTime)] * dr_feedback_price * delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), (price[j + sample_time] + participate_array[j + (sample_time - dr_startTime)] * dr_feedback_price) * delta_T);
 			}
 		}
 		else if (sample_time - dr_startTime < 0)
 		{
 			for (j = dr_startTime - sample_time; j < dr_endTime - sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), participate_array[j - (dr_startTime - sample_time)] * dr_feedback_price * delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), (price[j + sample_time] + participate_array[j - (dr_startTime - sample_time)] * dr_feedback_price) * delta_T);
 			}
 		}
 	}
 
-	if ((interrupt_start[h] - sample_time) >= 0)
-	{
-		for (i = (interrupt_start[h] - sample_time); i <= (interrupt_end[h] - sample_time); i++)
-		{
-			coefficient[h][i * variable + find_variableName_position(variable_name, "interrupt" + to_string(h + 1))] = 1.0;
-		}
-	}
-	else if ((interrupt_start[h] - sample_time) < 0)
-	{
-		for (i = 0; i <= (interrupt_end[h] - sample_time); i++)
-		{
-			coefficient[h][i * variable + find_variableName_position(variable_name, "interrupt" + to_string(h + 1))] = 1.0;
-		}
-	}
 	/*==============================GLPK?g?J��x�X}(ia,ja,ar)===============================*/
 	int *ia = new int[rowTotal * colTotal + 1];		  //Row
 	int *ja = new int[rowTotal * colTotal + 1];		  //Column

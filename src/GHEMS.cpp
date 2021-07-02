@@ -756,14 +756,14 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 		{
 			for (j = 0; j < dr_endTime - sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), dr_feedback_price * delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), (price[j + sample_time] + dr_feedback_price) * delta_T);
 			}
 		}
 		else if (sample_time - dr_startTime < 0)
 		{
 			for (j = dr_startTime - sample_time; j < dr_endTime - sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), dr_feedback_price * delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), (price[j + sample_time] + dr_feedback_price) * delta_T);
 			}
 		}
 	}
