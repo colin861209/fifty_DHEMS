@@ -63,14 +63,6 @@ int main(void)
 	int real_time = value_receive("BaseParameter", "parameter_name", "real_time");
 	sample_time = get_distributed_group("next_simulate_timeblock", "group_id", distributed_group_num);
 
-	real_time = determine_realTimeOrOneDayMode_andGetSOC(real_time, variable_name, distributed_group_num);
-	if ((sample_time + 1) == 97)
-	{
-		messagePrint(__LINE__, "Time block to the end !!");
-		exit(0);
-	}
-
-	messagePrint(__LINE__, "sample time from database = ", 'I', sample_time);
 	// =-=-=-=-=-=-=- get load_list loads category's amount -=-=-=-=-=-=-= //
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = 1");
 	interrupt_num = turn_value_to_int(0);
@@ -97,6 +89,15 @@ int main(void)
 	varyingLoad_flag = flag_receive("LHEMS_flag", "varying");
 	Pgrid_flag = flag_receive("LHEMS_flag", "Pgrid");
 	Pess_flag = flag_receive("LHEMS_flag", "Pess");
+	
+	real_time = determine_realTimeOrOneDayMode_andGetSOC(real_time, variable_name, distributed_group_num);
+	if ((sample_time + 1) == 97)
+	{
+		messagePrint(__LINE__, "Time block to the end !!");
+		exit(0);
+	}
+
+	messagePrint(__LINE__, "sample time from database = ", 'I', sample_time);
 	// =-=-=-=-=-=-=- Define variable name and use in GLPK -=-=-=-=-=-=-= //
 	// Most important thing, helping in GLPK big matrix setting
 	if (interruptLoad_flag == 1)
