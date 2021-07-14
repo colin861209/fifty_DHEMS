@@ -28,7 +28,6 @@ int value_receive(string table_name, string condition_col_name, string condition
 int value_receive(string table_name, string condition_col_name, int condition_col_number);
 float value_receive(string table_name, string condition_col_name, string condition_col_target, char target_dataType);
 float value_receive(string table_name, string condition_col_name, int condition_col_number, char target_dataType);
-float **getPublicLoad(int publicLoad_flag, int publicLoad_num);
 void *new2d(int, int, int);
 #define NEW2D(H, W, TYPE) (TYPE **)new2d(H, W, sizeof(TYPE))
 #endif 

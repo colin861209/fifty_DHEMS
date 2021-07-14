@@ -27,7 +27,5 @@ int truncate_table_flag();
 int get_distributed_group(string target, string condition_col = "", int condition_num = -1);
 void update_distributed_group(string target, int target_value, string condition_col, int condition_num);
 void init_totalLoad_flag_and_table(int distributed_group_num);
-void update_household_load_reduction(int dr_mode, int dr_startTime, int dr_endTime, int household_id, float household_customer_baseLine);
-float get_each_household_minDecrease_power(int* participate_array, int dr_startTime, int dr_endTime, int household_id, float total_household_minDecrease_power);
 
 #endif
