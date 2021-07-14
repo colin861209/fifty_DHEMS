@@ -1353,44 +1353,6 @@ float *get_totalLoad_power(bool uncontrollable_load_flag)
 	return load_model;
 }
 
-float **getPublicLoad(int publicLoad_flag, int publicLoad_num)
-{
-	float **info = new float *[publicLoad_num];
-	for (int i = 0; i < publicLoad_num; i++)
-		info[i] = new float[4];
-
-	if (publicLoad_flag)
-	{
-		for (int i = 0; i < publicLoad_num; i++)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT public_loads FROM load_list WHERE group_id = 5 LIMIT %d, %d", i, i + 1);
-			fetch_row_value();
-			char *seo_time = mysql_row[0];
-			char *token = strtok(seo_time, "~");
-			int j = 0;
-			while (token != NULL)
-			{
-				info[i][j] = atof(token);
-				j++;
-				token = strtok(NULL, "~");
-			}
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = 5 LIMIT %d, %d", i, i + 1);
-			info[i][j] = turn_value_to_float(0);
-		}
-	}
-	else
-	{
-		for (int i = 0; i < publicLoad_num; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				info[i][j] = 0.0;
-			}
-		}
-	}
-	return info;
-}
-
 int *countPublicLoads_AlreadyOpenedTimes(int publicLoad_num)
 {
 	functionPrint(__func__);

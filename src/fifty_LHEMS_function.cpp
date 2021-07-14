@@ -34,10 +34,47 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 
 	// float *weighting_array;
 	int *participate_array;
+	float household_customer_baseLine = 0.0, household_minDecrease_power = 0.0;
 	if (dr_mode != 0)
 	{
 		// weighting_array = household_alpha_upperBnds(distributed_group_num);
 		participate_array = household_participation(household_id, "LHEMS_demand_response_participation");
+		household_customer_baseLine = dr_customer_baseLine / householdTotal;
+		
+		// bool publicLoad_flag = flag_receive("GHEMS_flag", "publicLoad");
+		// if (publicLoad_flag)
+		// {
+		// 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = 5");
+		// 	int publicLoad_num = turn_value_to_int(0);
+		// 	float **publicLoad = getPublicLoad(publicLoad_flag, publicLoad_num);
+		// 	int *public_ot = new int[publicLoad_num];
+		// 	int *public_reot = new int[publicLoad_num];
+		// 	float *public_p = new float[publicLoad_num];
+		// 	for (int i = 0; i < publicLoad_num; i++)
+		// 	{
+		// 		int decrease_ot = 0, start, end;
+		// 		if (int(publicLoad[i][1]) - 1 >= dr_startTime)
+		// 		{
+		// 			if (int(publicLoad[i][0]) <= dr_startTime)
+		// 				start = dr_startTime;
+		// 			else
+		// 				start = int(publicLoad[i][0]);
+					
+		// 			if (int(publicLoad[i][1]) - 1 >= dr_endTime)
+		// 				end = dr_endTime;
+		// 			else
+		// 				end = int(publicLoad[i][1]) - 1;
+					
+		// 			decrease_ot = end - start;
+		// 		}
+		// 		public_ot[i] = int(publicLoad[i][2]) - decrease_ot;
+		// 		public_reot[i] = 0;
+		// 		public_p[i] = publicLoad[i][3];
+		// 	}
+		// }
+
+		float total_household_minDecrease_power = dr_minDecrease_power - 0;
+		// household_minDecrease_power = get_each_household_minDecrease_power(participate_array, dr_startTime, dr_endTime, household_id, total_household_minDecrease_power);
 	}
 
 	int rowTotal = (time_block - sample_time) * 200 + 1;
@@ -281,6 +318,41 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 	coef_row_num += (time_block - sample_time);
 	bnd_row_num += (time_block - sample_time);
 	display_coefAndBnds_rowNum(coef_row_num, (time_block - sample_time), bnd_row_num, (time_block - sample_time));
+
+	if (dr_mode != 0)
+	{
+		float dr_sumOfCBL = 0.0;
+		if (dr_startTime - sample_time >= 0)
+		{
+			for (i = (dr_startTime - sample_time); i < (dr_endTime - sample_time); i++)
+			{
+				coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, "Pgrid")] = -1.0 * delta_T;
+				dr_sumOfCBL += household_customer_baseLine * delta_T;
+			}
+		}
+		else
+		{
+			for (i = 0; i < (dr_endTime - sample_time); i++)
+			{
+				coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, "Pgrid")] = -1.0 * delta_T;
+			}
+			for (i = dr_startTime; i < sample_time; i++)
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM `LHEMS_control_status` WHERE equip_name = 'Pgrid' AND household_id = %d", i, household_id);
+				float previous_grid_power = turn_value_to_float(0);
+				dr_sumOfCBL += (household_customer_baseLine - previous_grid_power) * delta_T;
+			}
+			for (i = sample_time; i < dr_endTime; i++)
+			{
+				dr_sumOfCBL += household_customer_baseLine * delta_T;
+			}
+		}
+		glp_set_row_name(mip, bnd_row_num, "");
+		glp_set_row_bnds(mip, bnd_row_num, GLP_LO, household_minDecrease_power - dr_sumOfCBL, 0.0);
+		coef_row_num += 1;
+		bnd_row_num += 1;
+		display_coefAndBnds_rowNum(coef_row_num, 1, bnd_row_num, 1);
+	}
 
 	if (Pess_flag)
 	{
@@ -676,6 +748,7 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 		parm.tm_lim = 60000;
 
 	parm.presolve = GLP_ON;
+	parm.msg_lev = GLP_MSG_ERR;
 	//not cloudy
 	// parm.ps_heur = GLP_ON;
 	// parm.bt_tech = GLP_BT_BPH;
@@ -683,7 +756,7 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 
 	//cloud
 	parm.gmi_cuts = GLP_ON;
-	parm.ps_heur = GLP_ON;
+	// parm.ps_heur = GLP_ON;
 	parm.bt_tech = GLP_BT_BFS;
 	parm.br_tech = GLP_BR_PCH;
 
@@ -712,7 +785,6 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 			printf("%.2f\n", glp_mip_col_val(mip, find_variableName_position(variable_name, "Pgrid") + 1));
 			return;
 		}
-		
 	}
 	else
 	{
@@ -786,6 +858,8 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 			sent_query();
 		}
 	}
+
+	update_household_load_reduction(dr_mode, dr_startTime, dr_endTime, household_id, household_customer_baseLine);
 
 	glp_delete_prob(mip);
 	delete[] ia, ja, ar, s;
@@ -1377,4 +1451,54 @@ void update_distributed_group(string target, int target_value, string condition_
 {
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `distributed_group` SET `%s` = '%d' WHERE `%s` = %d;", target.c_str(), target_value, condition_col.c_str(), condition_num);
 	sent_query();
+}
+
+void update_household_load_reduction(int dr_mode, int dr_startTime, int dr_endTime, int household_id, float household_customer_baseLine)
+{
+	functionPrint(__func__);
+	messagePrint(__LINE__, "household_id = ", 'I', household_id, 'Y');
+
+	if (dr_mode != 0)
+	{
+		float load_reduction_power = 0.0;
+		for (int i = dr_startTime; i < dr_endTime; i++)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM `LHEMS_control_status` WHERE equip_name = 'Pgrid' AND household_id = %d", i, household_id);
+			float grid_tmp = turn_value_to_float(0);
+			load_reduction_power += household_customer_baseLine - grid_tmp;
+		}
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_demand_response_participation` SET `real_load_reduction` = %.4f WHERE `household_id` = %d;", load_reduction_power * delta_T, household_id);
+		sent_query();
+		messagePrint(__LINE__, "household_customer_baseLine = ", 'F', household_customer_baseLine, 'Y');
+		messagePrint(__LINE__, "load_reduction_power = ", 'F', load_reduction_power, 'Y');
+		messagePrint(__LINE__, "load_reduction = ", 'F', load_reduction_power * delta_T, 'Y');
+	}
+	else
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_demand_response_participation` SET `real_load_reduction` = NULL, `expected_load_reduction` = NULL WHERE `household_id` = %d;", household_id);
+		sent_query();
+		messagePrint(__LINE__, "dr mode = 0, set load reduction = NULL where household_id = ", 'I', household_id, 'Y');
+	}
+}
+
+float get_each_household_minDecrease_power(int *participate_array, int dr_startTime, int dr_endTime, int household_id, float total_household_minDecrease_power)
+{
+	functionPrint(__func__);
+
+	int household_participate_amount = 0, total_participate_amount = 0;
+	for (int i = dr_startTime; i < dr_endTime; i++)
+	{
+		household_participate_amount += participate_array[i - dr_startTime];
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_demand_response_participation`", i);
+		total_participate_amount += turn_value_to_int(0);
+	}
+	float result = total_household_minDecrease_power * (household_participate_amount / total_participate_amount);
+	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_demand_response_participation` SET `expected_load_reduction` = %.4f WHERE `household_id` = %d;", result, household_id);
+	sent_query();
+
+	messagePrint(__LINE__, "household_participate_amount = ", 'I', household_participate_amount, 'Y');
+	messagePrint(__LINE__, "total_participate_amount = ", 'I', total_participate_amount, 'Y');
+	messagePrint(__LINE__, "household_id = ", 'I', household_id, 'Y');
+	messagePrint(__LINE__, "minDecrease_power = ", 'F', result, 'Y');
+	return result;
 }
