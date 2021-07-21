@@ -14,8 +14,7 @@
 #include <algorithm>
 #include <iomanip>
 using namespace std;
-int h, i, j, k, m, n = 0;
-double z = 0;
+
 vector<string> variable_name;
 #define distributed_group_num 8
 // base parameter
@@ -34,10 +33,10 @@ int main(void)
 
 	// =-=-=-=-=-=-=- get BaseParameter values -=-=-=-=-=-=-= //
 	float *base_par = new float[3 + 7];
-	for (i = 1; i <= 3; i++)
+	for (int i = 1; i <= 3; i++)
 		base_par[i - 1] = value_receive("BaseParameter", "parameter_id", i);
 
-	for (i = 9; i <= 15; i++)
+	for (int i = 9; i <= 15; i++)
 		base_par[i - 6] = value_receive("BaseParameter", "parameter_id", i, 'F');
 
 	time_block = base_par[0];
@@ -150,7 +149,7 @@ int main(void)
 	if (fetch_row_value() != -1)
 		simulate_price = mysql_row[0];
 	float *price = new float[time_block];
-	for (i = 0; i < time_block; i++)
+	for (int i = 0; i < time_block; i++)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM price WHERE price_period = %d", simulate_price.c_str(), i);
 		price[i] = turn_value_to_float(0);
