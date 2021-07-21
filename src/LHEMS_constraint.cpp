@@ -546,8 +546,10 @@ void varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(int *varying_st
 	}
 }
 
-void objectiveFunction(float* price, int *participate_array, float **coefficient, glp_prob *mip)
+void setting_LHEMS_objectiveFunction(float* price, int *participate_array, glp_prob *mip)
 {
+	functionPrint(__func__);
+	
 	for (int j = 0; j < (time_block - sample_time); j++)
 	{
 		glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), price[j + sample_time] * delta_T);

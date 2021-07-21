@@ -110,7 +110,7 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 		varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(varying_start, varying_end, varying_reot, varying_flag, varying_t_d, varying_p_d, buff, coefficient, mip, time_block - sample_time);
 	}
 
-	objectiveFunction(price, participate_array, coefficient, mip);
+	setting_LHEMS_objectiveFunction(price, participate_array, mip);
 
 	int *ia = new int[rowTotal * colTotal + 1];
 	int *ja = new int[rowTotal * colTotal + 1];
