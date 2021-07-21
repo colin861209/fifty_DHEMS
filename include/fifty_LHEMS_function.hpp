@@ -5,7 +5,6 @@
 #include <string>
 using namespace std;
 
-extern int h, i, j, k, m, n;
 extern int time_block, sample_time, divide, interrupt_num, uninterrupt_num, varying_num, variable, app_count;
 extern float Cbat, Vsys, SOC_ini, SOC_min, SOC_max, SOC_thres, Pbat_min, Pbat_max, Pgrid_max, Psell_max, delta_T;
 extern int distributed_household_id, household_id, distributed_householdTotal, householdTotal;
@@ -27,5 +26,6 @@ int truncate_table_flag();
 int get_distributed_group(string target, string condition_col = "", int condition_num = -1);
 void update_distributed_group(string target, int target_value, string condition_col, int condition_num);
 void init_totalLoad_flag_and_table(int distributed_group_num);
+void setting_LHEMS_columnBoundary(vector<string> variable_name, glp_prob *mip, float* varying_p_max);
 
 #endif
