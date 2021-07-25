@@ -28,6 +28,8 @@ int value_receive(string table_name, string condition_col_name, string condition
 int value_receive(string table_name, string condition_col_name, int condition_col_number);
 float value_receive(string table_name, string condition_col_name, string condition_col_target, char target_dataType);
 float value_receive(string table_name, string condition_col_name, int condition_col_number, char target_dataType);
+void insert_status_into_MySQLTable(string table_name, char *status_name, float *status_value, string col_name1 = "", string col_value1 = "");
+void update_status_to_MySQLTable(string table_name, float *status_value, string condition_col_name1, string condition_col_target1, string conjunction = "", string condition_col_name2 = "", string condition_col_target2 = "");
 void *new2d(int, int, int);
 #define NEW2D(H, W, TYPE) (TYPE **)new2d(H, W, sizeof(TYPE))
 #endif 
