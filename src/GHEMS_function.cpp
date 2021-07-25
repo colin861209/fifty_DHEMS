@@ -61,10 +61,10 @@ void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, f
 					else
 						start = public_start[i]	;
 					
-					if (public_end[i] >= dr_endTime)
+					if (public_end[i] + 1 >= dr_endTime)
 						end = dr_endTime;
 					else
-						end = public_end[i];
+						end = public_end[i] + 1;
 					
 					decrease_ot = end - start;
 				}
