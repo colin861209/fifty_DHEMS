@@ -34,7 +34,27 @@ void summation_publicLoadRa_biggerThan_QaMinusD(int *public_start, int *public_e
                     coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, "publicLoad" + to_string(i + 1))] = 1.0;
                 }
             }
-        }
+            if (dr_mode != 0)
+            {
+                if (dr_endTime - sample_time >= 0)
+                {
+                    if ((dr_startTime - sample_time) >= 0)
+                    {
+                        for (int j = (dr_startTime - sample_time); j < (dr_endTime - sample_time); j++)
+                        {
+                            coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, "publicLoad" + to_string(i + 1))] = 0.0;
+                        }
+                    }
+                    else if ((dr_startTime - sample_time) < 0)
+                    {
+                        for (int j = 0; j < (dr_endTime - sample_time); j++)
+                        {
+                            coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, "publicLoad" + to_string(i + 1))] = 0.0;
+                        }
+                    }
+                }
+            }
+        }        
         glp_set_row_name(mip, bnd_row_num + i, "");
         glp_set_row_bnds(mip, bnd_row_num + i, GLP_LO, ((float)public_reot[i]), 0.0);
     }
@@ -514,7 +534,7 @@ void summation_SOCNegative_biggerThan_targetDischargeSOC(float target_dischargeS
     display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
-void setting_GHEMS_ObjectiveFunction(float* price, glp_prob *mip)
+void setting_GHEMS_ObjectiveFunction(float *price, glp_prob *mip)
 {
     functionPrint(__func__);
 
