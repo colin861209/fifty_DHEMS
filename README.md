@@ -32,3 +32,8 @@
 + Demand Response **increase** `household participation`, household determine their time to participate.
 
 ---
+### 2021/07/21
+
++ Commit Link [2cd9b4b](https://github.com/colin861209/fifty_DHEMS/commit/2cd9b4b2c37d3b0a5cbc1b0d2a744aa954a119e3)
++ GLPK `constraint` functionlization in GHEMS & LHEMS
+---
