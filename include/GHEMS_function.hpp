@@ -23,7 +23,6 @@ void insert_GHEMS_variable();
 float getPrevious_battery_dischargeSOC(int sample_time, string target_equip_name);
 float *get_allDay_price(string col_name);
 float *get_totalLoad_power(bool uncontrollable_load_flag);
-float **getPublicLoad(int, int);
 int *countPublicLoads_AlreadyOpenedTimes(int publicLoad_num);
 int *count_publicLoads_RemainOperateTime(int public_num, int *public_ot, int *buff);
 
