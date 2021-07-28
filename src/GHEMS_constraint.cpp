@@ -12,6 +12,7 @@
 #include "GHEMS_function.hpp"
 #include "GHEMS_constraint.hpp"
 
+// =-=-=-=-=-=-=- public load -=-=-=-=-=-=-= //
 void summation_publicLoadRa_biggerThan_QaMinusD(int *public_start, int *public_end, int *public_reot, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
@@ -63,6 +64,7 @@ void summation_publicLoadRa_biggerThan_QaMinusD(int *public_start, int *public_e
     display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
+// =-=-=-=-=-=-=- grid with demand response or sell -=-=-=-=-=-=-= //
 void pgrid_smallerThan_muGridMultiplyByPgridMaxArray(int dr_mode, vector<float> Pgrid_max_array, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
@@ -83,6 +85,7 @@ void pgrid_smallerThan_muGridMultiplyByPgridMaxArray(int dr_mode, vector<float> 
     display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
+// =-=-=-=-=-=-=- sell -=-=-=-=-=-=-= //
 void psell_smallerThan_oneMinusMuGridMultiplyByPsellMax(float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
@@ -118,6 +121,7 @@ void psell_smallerThan_PfuelCellPlusPsolar(bool Pfc_flag, float *solar2, float *
     display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
+// =-=-=-=-=-=-=- battery -=-=-=-=-=-=-= //
 void previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
@@ -211,6 +215,7 @@ void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *m
     display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
+// =-=-=-=-=-=-=- balanced equation -=-=-=-=-=-=-= //
 void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoad(int *public_start, int *public_end, float *public_p, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
@@ -261,6 +266,7 @@ void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusP
     display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
+// =-=-=-=-=-=-=- demand response -=-=-=-=-=-=-= //
 void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs(float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
@@ -298,6 +304,7 @@ void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultipl
     display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
+// =-=-=-=-=-=-=- fuel cell -=-=-=-=-=-=-= //
 void pfcOnPlusPfcOff_equalTo_pfuelCell(float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
@@ -449,6 +456,7 @@ void lambdaPfc_smallerThan_zpfc(float **coefficient, glp_prob *mip, int row_num_
     display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
+// =-=-=-=-=-=-=- battery discharge specific percentage a day -=-=-=-=-=-=-= //
 void SOCPositiveMinusSOCNegative_equalTo_SOCchange(float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
@@ -534,6 +542,7 @@ void summation_SOCNegative_biggerThan_targetDischargeSOC(float target_dischargeS
     display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
+// =-=-=-=-=-=-=- objective function -=-=-=-=-=-=-= //
 void setting_GHEMS_ObjectiveFunction(float *price, glp_prob *mip)
 {
     functionPrint(__func__);
