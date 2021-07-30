@@ -13,6 +13,8 @@ extern char sql_buffer[2000];
 extern vector<string> variable_name;
 extern int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 extern bool Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag;
+
+int connect_mysql(string DB_name);
 int fetch_row_value();
 void sent_query();
 int turn_int(int col_num);
@@ -30,6 +32,7 @@ float value_receive(string table_name, string condition_col_name, string conditi
 float value_receive(string table_name, string condition_col_name, int condition_col_number, char target_dataType);
 void insert_status_into_MySQLTable(string table_name, char *status_name, float *status_value, string col_name1 = "", string col_value1 = "", string col_name2 = "", int col_value2 = -1);
 void update_status_to_MySQLTable(string table_name, float *status_value, string condition_col_name1, string condition_col_target1, string conjunction = "", string condition_col_name2 = "", int condition_col_target2 = -1);
+float **getPublicLoad(bool publicLoad_flag, int publicLoad_num);
 void *new2d(int, int, int);
 #define NEW2D(H, W, TYPE) (TYPE **)new2d(H, W, sizeof(TYPE))
 #endif 

@@ -11,6 +11,7 @@
 #include "scheduling_parameter.hpp"
 #include "LHEMS_constraint.hpp"
 
+// =-=-=-=-=-=-=- interrupt load -=-=-=-=-=-=-= //
 void summation_interruptLoadRa_biggerThan_Qa(int *interrupt_start, int *interrupt_end, int *interrupt_reot, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
 	functionPrint(__func__);
@@ -42,6 +43,7 @@ void summation_interruptLoadRa_biggerThan_Qa(int *interrupt_start, int *interrup
 	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
+// =-=-=-=-=-=-=- demand response -=-=-=-=-=-=-= //
 void pgrid_smallerThan_alphaPgridMax(float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
 	functionPrint(__func__);
@@ -87,6 +89,7 @@ void alpha_between_oneminusDu_and_one(int *participate_array, float **coefficien
 	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
+// =-=-=-=-=-=-=- balanced equation -=-=-=-=-=-=-= //
 void pgridMinusPess_equalTo_ploadPlusPuncontrollLoad(int *interrupt_start, int *interrupt_end, float *interrupt_p, int *uninterrupt_start, int *uninterrupt_end, float *uninterrupt_p, int *varying_start, int *varying_end, float *uncontrollable_load, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
 	functionPrint(__func__);
@@ -175,6 +178,7 @@ void pgridMinusPess_equalTo_ploadPlusPuncontrollLoad(int *interrupt_start, int *
 	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
+// =-=-=-=-=-=-=- battery -=-=-=-=-=-=-= //
 void previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
 	functionPrint(__func__);
@@ -268,6 +272,7 @@ void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *m
 	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
+// =-=-=-=-=-=-=- uninterrupt load -=-=-=-=-=-=-= //
 void summation_uninterruptDelta_equalTo_one(int *uninterrupt_start, int *uninterrupt_end, int *uninterrupt_reot, bool *uninterrupt_flag, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
 	functionPrint(__func__);
@@ -290,41 +295,6 @@ void summation_uninterruptDelta_equalTo_one(int *uninterrupt_start, int *uninter
 					for (int i = 0; i <= ((uninterrupt_end[h] - uninterrupt_reot[h] + 1) - sample_time); i++)
 					{
 						coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, "uninterDelta" + to_string(h + 1))] = 1.0;
-					}
-				}
-			}
-			glp_set_row_name(mip, bnd_row_num, "");
-			glp_set_row_bnds(mip, bnd_row_num, GLP_FX, 1.0, 1.0);
-
-			coef_row_num += row_num_maxAddition;
-			bnd_row_num += row_num_maxAddition;
-			display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
-		}
-	}
-}
-
-void summation_varyingDelta_equalTo_one(int *varying_start, int *varying_end, int *varying_reot, bool *varying_flag, float **coefficient, glp_prob *mip, int row_num_maxAddition)
-{
-	functionPrint(__func__);
-
-	for (int h = 0; h < varying_num; h++)
-	{
-		if (varying_flag[h] == 0)
-		{
-			if ((varying_end[h] - sample_time) >= 0)
-			{
-				if ((varying_start[h] - sample_time) >= 0)
-				{
-					for (int i = (varying_start[h] - sample_time); i <= ((varying_end[h] - varying_reot[h] + 1) - sample_time); i++)
-					{
-						coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, "varyingDelta" + to_string(h + 1))] = 1.0;
-					}
-				}
-				else if ((varying_start[h] - sample_time) < 0)
-				{
-					for (int i = 0; i <= ((varying_end[h] - varying_reot[h] + 1) - sample_time); i++)
-					{
-						coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, "varyingDelta" + to_string(h + 1))] = 1.0;
 					}
 				}
 			}
@@ -402,6 +372,42 @@ void uninterruptRajToN_biggerThan_uninterruptDelta(int *uninterrupt_start, int *
 				bnd_row_num += row_num_maxAddition;
 				display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 			}
+		}
+	}
+}
+
+// =-=-=-=-=-=-=- varying load -=-=-=-=-=-=-= //
+void summation_varyingDelta_equalTo_one(int *varying_start, int *varying_end, int *varying_reot, bool *varying_flag, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+{
+	functionPrint(__func__);
+
+	for (int h = 0; h < varying_num; h++)
+	{
+		if (varying_flag[h] == 0)
+		{
+			if ((varying_end[h] - sample_time) >= 0)
+			{
+				if ((varying_start[h] - sample_time) >= 0)
+				{
+					for (int i = (varying_start[h] - sample_time); i <= ((varying_end[h] - varying_reot[h] + 1) - sample_time); i++)
+					{
+						coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, "varyingDelta" + to_string(h + 1))] = 1.0;
+					}
+				}
+				else if ((varying_start[h] - sample_time) < 0)
+				{
+					for (int i = 0; i <= ((varying_end[h] - varying_reot[h] + 1) - sample_time); i++)
+					{
+						coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, "varyingDelta" + to_string(h + 1))] = 1.0;
+					}
+				}
+			}
+			glp_set_row_name(mip, bnd_row_num, "");
+			glp_set_row_bnds(mip, bnd_row_num, GLP_FX, 1.0, 1.0);
+
+			coef_row_num += row_num_maxAddition;
+			bnd_row_num += row_num_maxAddition;
+			display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 		}
 	}
 }
@@ -546,6 +552,7 @@ void varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(int *varying_st
 	}
 }
 
+// =-=-=-=-=-=-=- objective function -=-=-=-=-=-=-= //
 void setting_LHEMS_objectiveFunction(float* price, int *participate_array, glp_prob *mip)
 {
 	functionPrint(__func__);

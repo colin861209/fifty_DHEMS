@@ -17,6 +17,20 @@ MYSQL_ROW mysql_row;
 char sql_buffer[2000] = {'\0'};
 int row_totalNum, col_totalNum, error;
 
+
+int connect_mysql(string DB_name) {
+	
+	if ((mysql_real_connect(mysql_con, "140.124.42.65", "root", "fuzzy314", DB_name.c_str(), 3306, NULL, 0)) == NULL)
+	{
+		return -1;
+	}
+	else
+	{
+		mysql_set_character_set(mysql_con, "utf8");
+		return 1;
+	}
+}
+
 int fetch_row_value() {
 
 	sent_query();
@@ -194,4 +208,42 @@ void update_status_to_MySQLTable(string table_name, float *status_value, string 
 	}
 	
 	sent_query();
+}
+
+float **getPublicLoad(bool publicLoad_flag, int publicLoad_num)
+{
+	float **info = new float *[publicLoad_num];
+	for (int i = 0; i < publicLoad_num; i++)
+		info[i] = new float[4];
+
+	if (publicLoad_flag)
+	{
+		for (int i = 0; i < publicLoad_num; i++)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT public_loads FROM load_list WHERE group_id = 5 LIMIT %d, %d", i, i + 1);
+			fetch_row_value();
+			char *seo_time = mysql_row[0];
+			char *token = strtok(seo_time, "~");
+			int j = 0;
+			while (token != NULL)
+			{
+				info[i][j] = atof(token);
+				j++;
+				token = strtok(NULL, "~");
+			}
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = 5 LIMIT %d, %d", i, i + 1);
+			info[i][j] = turn_value_to_float(0);
+		}
+	}
+	else
+	{
+		for (int i = 0; i < publicLoad_num; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				info[i][j] = 0.0;
+			}
+		}
+	}
+	return info;
 }
