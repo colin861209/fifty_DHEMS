@@ -17,6 +17,20 @@ MYSQL_ROW mysql_row;
 char sql_buffer[2000] = {'\0'};
 int row_totalNum, col_totalNum, error;
 
+
+int connect_mysql(string DB_name) {
+	
+	if ((mysql_real_connect(mysql_con, "140.124.42.65", "root", "fuzzy314", DB_name.c_str(), 3306, NULL, 0)) == NULL)
+	{
+		return -1;
+	}
+	else
+	{
+		mysql_set_character_set(mysql_con, "utf8");
+		return 1;
+	}
+}
+
 int fetch_row_value() {
 
 	sent_query();

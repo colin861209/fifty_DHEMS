@@ -13,6 +13,8 @@ extern char sql_buffer[2000];
 extern vector<string> variable_name;
 extern int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 extern bool Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag;
+
+int connect_mysql(string DB_name);
 int fetch_row_value();
 void sent_query();
 int turn_int(int col_num);

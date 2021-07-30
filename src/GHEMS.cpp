@@ -38,17 +38,10 @@ int main(int argc, const char **argv)
 	struct tm now_time = *localtime(&t);
 	int real_time = 0;
 
-	if ((mysql_real_connect(mysql_con, "140.124.42.65", "root", "fuzzy314", "DHEMS_fiftyHousehold", 3306, NULL, 0)) == NULL)
-	{
-		printf("Failed to connect to Mysql!\n");
-		system("pause");
-		return 0;
-	}
+	if (!connect_mysql("DHEMS_fiftyHousehold"))
+		messagePrint(__LINE__, "Failed to Connect MySQL");
 	else
-	{
-		messagePrint(__LINE__, "Connect to Mysql sucess!!");
-		mysql_set_character_set(mysql_con, "utf8");
-	}
+		messagePrint(__LINE__, "Success to Connect MySQL");
 
 	// =-=-=-=-=-=-=- get parameter values from BaseParameter in need -=-=-=-=-=-=-= //
 	vector<float> parameter_tmp;

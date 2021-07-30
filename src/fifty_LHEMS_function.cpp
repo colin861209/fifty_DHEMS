@@ -877,19 +877,6 @@ int truncate_table_flag()
 		return 0;
 }
 
-int connect_mysql(string DB_name)
-{
-	if ((mysql_real_connect(mysql_con, "140.124.42.65", "root", "fuzzy314", DB_name.c_str(), 3306, NULL, 0)) == NULL)
-	{
-		return -1;
-	}
-	else
-	{
-		mysql_set_character_set(mysql_con, "utf8");
-		return 1;
-	}
-}
-
 int get_distributed_group(string target, string condition_col, int condition_num)
 {
 	if (condition_col.empty() && condition_num == -1)
