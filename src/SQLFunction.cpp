@@ -89,6 +89,20 @@ int turn_value_to_int(int col_num) {
 		return -404;
 }
 
+char* turn_value_to_string(int col_num) {
+
+	if (fetch_row_value() != -1) {
+
+		if (mysql_row[col_num] != NULL)
+			return mysql_row[col_num];
+		else
+			return "-999";
+	}
+	else
+		return "-404";
+	
+}
+
 void messagePrint(int lineNum, const char *message, char contentSize, float content, char tabInHeader) {
 
 	// tap 'Y' or 'N' means yes or no
@@ -221,8 +235,7 @@ float **getPublicLoad(bool publicLoad_flag, int publicLoad_num)
 		for (int i = 0; i < publicLoad_num; i++)
 		{
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT public_loads FROM load_list WHERE group_id = 5 LIMIT %d, %d", i, i + 1);
-			fetch_row_value();
-			char *seo_time = mysql_row[0];
+			char *seo_time = turn_value_to_string(0);
 			char *token = strtok(seo_time, "~");
 			int j = 0;
 			while (token != NULL)

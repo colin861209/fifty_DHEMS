@@ -19,7 +19,7 @@ vector<string> variable_name;
 #define distributed_group_num 9
 // base parameter
 int time_block = 0, variable = 0, divide = 0, sample_time = 0, distributed_householdTotal = 0, interrupt_num, uninterrupt_num, varying_num, app_count, distributed_household_id, household_id, householdTotal;
-bool Pgrid_flag, Pess_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag;
+bool Pgrid_flag, Pess_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag, comfortLevel_flag;
 int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 float delta_T = 0.0;
 float Cbat = 0.0, Vsys = 0.0, SOC_ini = 0.0, SOC_min = 0.0, SOC_max = 0.0, SOC_thres = 0.0, Pbat_min = 0.0, Pbat_max = 0.0, Pgrid_max = 0.0, Psell_max;
@@ -39,6 +39,7 @@ int main(void)
 	for (int i = 9; i <= 15; i++)
 		base_par[i - 6] = value_receive("BaseParameter", "parameter_id", i, 'F');
 
+	comfortLevel_flag = value_receive("BaseParameter", "parameter_name", "comfortLevel_flag");
 	time_block = base_par[0];
 	// householdTotal / distributed_householdTotal	總用戶數 / 各組總用戶
 	// household_id	/ distributed_household_id		當前實際用戶 / 各組當前用戶
@@ -144,10 +145,8 @@ int main(void)
 	sent_query();
 
 	// =-=-=-=-=-=-=- get electric price data -=-=-=-=-=-=-= //
-	string simulate_price;
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM BaseParameter WHERE parameter_name = 'simulate_price' ");
-	if (fetch_row_value() != -1)
-		simulate_price = mysql_row[0];
+	string simulate_price = turn_value_to_string(0);
 	float *price = new float[time_block];
 	for (int i = 0; i < time_block; i++)
 	{
@@ -186,8 +185,7 @@ int main(void)
 	for (int i = 0; i < interrupt_num; i++)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d_startEndOperationTime FROM load_list WHERE group_id = 1 and number = %d", household_id, i + 1);
-		fetch_row_value();
-		char *seo_time = mysql_row[0];
+		char *seo_time = turn_value_to_string(0);
 		token = strtok(seo_time, "~");
 		while (token != NULL)
 		{
@@ -205,8 +203,7 @@ int main(void)
 	for (int i = 0; i < uninterrupt_num; i++)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d_startEndOperationTime FROM load_list WHERE group_id = 2 and number = %d", household_id, i + 1 + interrupt_num);
-		fetch_row_value();
-		char *seo_time = mysql_row[0];
+		char *seo_time = turn_value_to_string(0);
 		token = strtok(seo_time, "~");
 		while (token != NULL)
 		{
@@ -225,8 +222,7 @@ int main(void)
 	for (int i = 0; i < varying_num; i++)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d_startEndOperationTime FROM load_list WHERE group_id = 3 and number = %d", household_id, i + 1 + interrupt_num + uninterrupt_num);
-		fetch_row_value();
-		char *seo_time = mysql_row[0];
+		char *seo_time = turn_value_to_string(0);
 		token = strtok(seo_time, "~");
 		while (token != NULL)
 		{

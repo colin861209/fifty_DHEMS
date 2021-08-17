@@ -33,10 +33,8 @@ void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, f
 	functionPrint(__func__);
 
 	// =-=-=-=-=-=-=- choose column 'big_sunny' 'sunny' 'cloudy' in table solar_data -=-=-=-=-=-=-= //
-	string weather;
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM BaseParameter WHERE parameter_name = 'simulate_weather' ");
-	if (fetch_row_value() != -1)
-		weather = mysql_row[0];
+	string weather = turn_value_to_string(0);
 	float *solar2 = getOrUpdate_SolarInfo_ThroughSampleTime(weather.c_str());
 
 	int *public_start = new int[publicLoad_num];
