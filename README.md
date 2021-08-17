@@ -36,4 +36,10 @@
 
 + Commit Link [2cd9b4b](https://github.com/colin861209/fifty_DHEMS/commit/2cd9b4b2c37d3b0a5cbc1b0d2a744aa954a119e3)
 + GLPK `constraint` functionlization in GHEMS & LHEMS
+
 ---
+### 2021/07/21
+
++ Commit Link [5f2bcb1](https://github.com/colin861209/fifty_DHEMS/commit/5f2bcb143db9db5ecb8709134763334e4165d7c9)
++ Community Public Load `force close` when demand response mode
++ Function SQL to insert & update status to DB
