@@ -137,10 +137,8 @@ int main(int argc, const char **argv)
 	sample_time = value_receive("BaseParameter", "parameter_name", "Global_next_simulate_timeblock");
 
 	// =-=-=-=-=-=-=- get electric price data -=-=-=-=-=-=-= //
-	string simulate_price;
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM BaseParameter WHERE parameter_name = 'simulate_price' ");
-	if (fetch_row_value() != -1)
-		simulate_price = mysql_row[0];
+	string simulate_price = turn_value_to_string(0);
 	float *price = get_allDay_price(simulate_price);
 
 	// =-=-=-=-=-=-=- get households' loads consumption from table 'totalLoad_model' & uncontrollable load from table 'LHEMS_uncontrollable_load' -=-=-=-=-=-=-= //
