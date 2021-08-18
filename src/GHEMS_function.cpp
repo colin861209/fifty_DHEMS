@@ -408,14 +408,6 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 		snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE GHEMS_real_status"); //clean GHEMS_real_status;
 		sent_query();
 
-		// get previous SOC value
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE control_id = %d ", sample_time - 1, find_variableName_position(variable_name, "SOC") + 1);
-		SOC_ini = turn_value_to_float(0);
-		messagePrint(__LINE__, "SOC = ", 'F', SOC_ini, 'Y');
-
-		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET `value` = '%f' WHERE parameter_name = 'now_SOC' ", SOC_ini);
-		sent_query();
-
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM BaseParameter WHERE parameter_name = 'now_SOC' "); //get now_SOC
 		SOC_ini = turn_value_to_float(0);
 		if (SOC_ini > 100)
@@ -433,20 +425,9 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 		snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE cost");
 		sent_query();
 
-		if (real_time == 0)
-		{
-			// don't consider the day before yesterday SOC
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM BaseParameter WHERE parameter_name = 'ini_SOC' "); //get ini_SOC
-			SOC_ini = turn_value_to_float(0);
-			messagePrint(__LINE__, "ini_SOC : ", 'F', SOC_ini, 'Y');
-		}
-		else
-		{
-			// consider the day before yesterday SOC
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM BaseParameter WHERE parameter_name = 'now_SOC' "); //get now_SOC
-			SOC_ini = turn_value_to_float(0);
-			messagePrint(__LINE__, "now_SOC : ", 'F', SOC_ini, 'Y');
-		}
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM BaseParameter WHERE parameter_name = 'ini_SOC' "); //get ini_SOC
+		SOC_ini = turn_value_to_float(0);
+		messagePrint(__LINE__, "ini_SOC : ", 'F', SOC_ini, 'Y');
 
 		sample_time = 0;
 		real_time = 1; //if you don't want do real_time,please commend it.
