@@ -92,3 +92,15 @@ GHEMS_lib
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
+
+add_executable(cems_test src/cems_test.cpp src/SQL.cpp src/import.cpp)
+target_link_libraries(cems_test 
+${LIBMYSQLCLIENT_LIBRARIES} 
+/usr/local/lib/libglpk.a
+)
+
+add_executable(hems_test src/hems_test.cpp src/SQL.cpp src/import.cpp)
+target_link_libraries(hems_test 
+${LIBMYSQLCLIENT_LIBRARIES} 
+/usr/local/lib/libglpk.a
+)
