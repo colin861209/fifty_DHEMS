@@ -239,7 +239,7 @@ int main(void)
 		for (int z = 0; z < 3; z++)
 			varying_p_pow[i][z] = turn_float(z);
 		for (int z = 0; z < 3; z++)
-			varying_t_pow[i][z] = int(turn_float(z + 3) * divide);
+			varying_t_pow[i][z] = turn_int(z + 3);
 		time_tmp.clear();
 	}
 
