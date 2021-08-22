@@ -4,7 +4,7 @@
 #include <sstream>
 #include<numeric>
 
-class import
+class IMPORT
 {
 private:
     SQL sql;
@@ -137,7 +137,7 @@ private:
 
 public:
     
-    import(std::string iP, std::string name, std::string passwd, std::string database);
+    IMPORT(std::string iP, std::string name, std::string passwd, std::string database);
     // ENERGYMANAGESYSTEM sys;
     DRINFO dr;
     void get_dr_mode();

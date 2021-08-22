@@ -1,14 +1,14 @@
 #include "SQL.hpp"
 #include "import.hpp"
 
-import::import(std::string iP, std::string name, std::string passwd, std::string database)
+IMPORT::IMPORT(std::string iP, std::string name, std::string passwd, std::string database)
 {	
 	sql.connect(iP, name, passwd, database);
-	// import::ENERGYMANAGESYSTEM::cems = "CEMS";
-	// import::ENERGYMANAGESYSTEM::hems = "HEMS";
+	// IMPORT::ENERGYMANAGESYSTEM::cems = "CEMS";
+	// IMPORT::ENERGYMANAGESYSTEM::hems = "HEMS";
 }
 
-// int import::find_variableName_position(vector<string> variableNameArray, string target)
+// int IMPORT::find_variableName_position(vector<string> variableNameArray, string target)
 // {
 // 	auto it = find(variableNameArray.begin(), variableNameArray.end(), target);
 
@@ -19,7 +19,7 @@ import::import(std::string iP, std::string name, std::string passwd, std::string
 // 		return -1;
 // }
 
-// void import::messagePrint(int lineNum, const char *message, char contentSize, float content, char tabInHeader) {
+// void IMPORT::messagePrint(int lineNum, const char *message, char contentSize, float content, char tabInHeader) {
 	
 // 	// tap 'Y' or 'N' means yes or no
 // 	if (tabInHeader == 'Y')
@@ -38,13 +38,13 @@ import::import(std::string iP, std::string name, std::string passwd, std::string
 // 	}
 // }
 
-bool import::determine_distributedGroup_status(string condition)
+bool IMPORT::determine_distributedGroup_status(string condition)
 {
 	sql.operate("SELECT "+ condition +" FROM `distributed_group`");
 	return sql.turnValueToInt();
 }
 
-vector<int> import::split_array(string timearray)
+vector<int> IMPORT::split_array(string timearray)
 {
 	string split_result;
 	istringstream in(timearray);
@@ -56,7 +56,7 @@ vector<int> import::split_array(string timearray)
 	return result;
 }
 
-bool import::get_continuityLoad_flag(string load_type, int offset_num)
+bool IMPORT::get_continuityLoad_flag(string load_type, int offset_num)
 {
 	sql.operate("SELECT "+ sql.column +" FROM LHEMS_control_status WHERE equip_name LIKE '"+ load_type +"%' AND household_id = "+ to_string(bp.real_household_id) +" LIMIT 1 OFFSET "+ to_string(offset_num));
 	vector<int> flag_status = sql.turnArrayToInt();
@@ -64,7 +64,7 @@ bool import::get_continuityLoad_flag(string load_type, int offset_num)
 	return accumulate(flag_status.begin(), flag_status.end(), 0);
 }
 
-int import::get_already_operate_time(string load_type, int offset_num)
+int IMPORT::get_already_operate_time(string load_type, int offset_num)
 {
 	if (bp.next_simulate_timeblock == 0)
 	{
@@ -79,7 +79,7 @@ int import::get_already_operate_time(string load_type, int offset_num)
 	}
 }
 
-int import::get_remain_ot_time(int ot, int already)
+int IMPORT::get_remain_ot_time(int ot, int already)
 {
 	int remain_time;
 	if (ot - already == ot)
@@ -97,7 +97,7 @@ int import::get_remain_ot_time(int ot, int already)
 	return remain_time;
 }
 
-int import::get_remain_ot_time(int ot, int already, int flag)
+int IMPORT::get_remain_ot_time(int ot, int already, int flag)
 {
 	int remain_time;
 	if (flag)
@@ -118,7 +118,7 @@ int import::get_remain_ot_time(int ot, int already, int flag)
 	return remain_time;
 }
 
-int import::determine_change_end_time(int ot, int already, int remain_time, int flag)
+int IMPORT::determine_change_end_time(int ot, int already, int remain_time, int flag)
 {
 	
 	if (flag && (ot - already < ot) && (ot - already > 0) && remain_time != 0)
@@ -129,13 +129,13 @@ int import::determine_change_end_time(int ot, int already, int remain_time, int 
 }
 
 // =-=-=- demand response -=-=-= //
-void import::get_dr_mode()
+void IMPORT::get_dr_mode()
 {
 	sql.operate("SELECT value FROM BaseParameter WHERE parameter_name = 'dr_mode'");
 	fg.dr_mode = sql.turnValueToInt();
 }
 
-void import::get_demand_response()
+void IMPORT::get_demand_response()
 {
 	if (fg.dr_mode != 0)
 	{
@@ -153,7 +153,7 @@ void import::get_demand_response()
 	}
 }
 
-void import::get_Pgrid_max_array()
+void IMPORT::get_Pgrid_max_array()
 {
 	if (fg.dr_mode != 0)
 	{
@@ -171,7 +171,7 @@ void import::get_Pgrid_max_array()
 }
 
 // =-=-=- common parameter -=-=-= //
-void import::get_experimental_parameters(string ems_name)
+void IMPORT::get_experimental_parameters(string ems_name)
 {
 	sql.operate("SELECT value FROM BaseParameter WHERE parameter_name = 'time_block'");
 	bp.time_block = sql.turnValueToInt();
@@ -246,7 +246,7 @@ void import::get_experimental_parameters(string ems_name)
 	}
 }
 
-void import::get_allDay_price()
+void IMPORT::get_allDay_price()
 {
 	for (int i = 0; i < bp.time_block; i++)
 	{
@@ -255,7 +255,7 @@ void import::get_allDay_price()
 	}	
 }
 
-void import::getOrUpdate_SolarInfo_ThroughSampleTime()
+void IMPORT::getOrUpdate_SolarInfo_ThroughSampleTime()
 {
 	if (bp.Global_next_simulate_timeblock == 0)
 	{
@@ -277,7 +277,7 @@ void import::getOrUpdate_SolarInfo_ThroughSampleTime()
 	}
 }
 
-void import::determine_GHEMS_realTimeOrOneDayMode_andGetSOC()
+void IMPORT::determine_GHEMS_realTimeOrOneDayMode_andGetSOC()
 {
 	if (fg.Global_real_time)
 	{
@@ -312,7 +312,7 @@ void import::determine_GHEMS_realTimeOrOneDayMode_andGetSOC()
 	}
 }
 
-void import::get_totalLoad_power()
+void IMPORT::get_totalLoad_power()
 {
 	for (int i = 0; i < bp.time_block; i++)
 	{
@@ -326,7 +326,7 @@ void import::get_totalLoad_power()
 	}
 }
 
-void import::get_distributedGroup_householdAndSampleTime(int group_num)
+void IMPORT::get_distributedGroup_householdAndSampleTime(int group_num)
 {
 	sql.operate("SELECT `household_id` FROM `distributed_group` WHERE `group_id` = "+ to_string(group_num));
 	
@@ -337,7 +337,7 @@ void import::get_distributedGroup_householdAndSampleTime(int group_num)
 	bp.next_simulate_timeblock = sql.turnValueToInt();
 }
 
-void import::determine_LHEMS_realTimeOrOneDayMode_andGetSOC(int group_num)
+void IMPORT::determine_LHEMS_realTimeOrOneDayMode_andGetSOC(int group_num)
 {
 	if (fg.real_time)
 	{
@@ -383,7 +383,7 @@ void import::determine_LHEMS_realTimeOrOneDayMode_andGetSOC(int group_num)
 	}
 }
 
-void import::init_totalLoad_tableAndFlag(int group_num)
+void IMPORT::init_totalLoad_tableAndFlag(int group_num)
 {
 	if (bp.distributed_household_id == 1)
 	{
@@ -400,7 +400,7 @@ void import::init_totalLoad_tableAndFlag(int group_num)
 }
 
 // =-=-=- flag -=-=-= //
-void import::get_flag(string ems_name)
+void IMPORT::get_flag(string ems_name)
 {
 	if (ems_name == "CEMS")
 	{
@@ -445,7 +445,7 @@ void import::get_flag(string ems_name)
 	}
 }
 
-void import::create_variable_name(string ems_name)
+void IMPORT::create_variable_name(string ems_name)
 {
 	if (ems_name == "CEMS")
 	{
@@ -535,7 +535,7 @@ void import::create_variable_name(string ems_name)
 }
 
 // =-=-=- public load -=-=-= //
-int import::get_publicLoad_num()
+int IMPORT::get_publicLoad_num()
 {
 	if (fg.publicLoad)
 	{
@@ -549,7 +549,7 @@ int import::get_publicLoad_num()
 	}
 }
 
-void import::get_publicLoad_info()
+void IMPORT::get_publicLoad_info()
 {
 	if (fg.publicLoad)
 	{
@@ -562,7 +562,7 @@ void import::get_publicLoad_info()
 }
 
 // =-=-=- interrupt load -=-=-= //
-int import::get_interrupt_num()
+int IMPORT::get_interrupt_num()
 {
 	if (fg.interrupt)
 	{
@@ -576,7 +576,7 @@ int import::get_interrupt_num()
 	}
 }
 
-void import::get_interrupt_info()
+void IMPORT::get_interrupt_info()
 {
 	if (fg.interrupt)
 	{
@@ -610,7 +610,7 @@ void import::get_interrupt_info()
 }
 
 // =-=-=- uninterrupt load -=-=-= //
-int import::get_uninterrupt_num()
+int IMPORT::get_uninterrupt_num()
 {
 	if (fg.uninterrupt)
 	{
@@ -624,7 +624,7 @@ int import::get_uninterrupt_num()
 	}	
 }
 
-void import::get_uninterrupt_info()
+void IMPORT::get_uninterrupt_info()
 {
 	if (fg.uninterrupt)
 	{
@@ -667,7 +667,7 @@ void import::get_uninterrupt_info()
 }
 
 // =-=-=- varying load -=-=-= //
-int import::get_varying_num()
+int IMPORT::get_varying_num()
 {
 	if (fg.varying)
 	{
@@ -681,7 +681,7 @@ int import::get_varying_num()
 	}
 }
 
-void import::get_varying_info()
+void IMPORT::get_varying_info()
 {
 	if (fg.varying)
 	{

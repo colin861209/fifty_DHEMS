@@ -11,7 +11,7 @@
 
 int main(int argc, const char** argv) {
     
-	import ipt("140.124.42.65","root", "fuzzy314", "DHEMS_fiftyHousehold");
+	IMPORT ipt("140.124.42.65","root", "fuzzy314", "DHEMS_fiftyHousehold");
 	int group_id = 1;
 	string ems_name = "HEMS";
 	// flag
