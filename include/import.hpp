@@ -2,6 +2,7 @@
 #define IMPORT_H
 #include "SQL.hpp"
 #include <sstream>
+#include<numeric>
 
 class import
 {
@@ -11,8 +12,12 @@ private:
     // int find_variableName_position(vector<string> variableNameArray, string target);
     // void messagePrint(int lineNum, const char *message, char contentSize = 'S', float content = 0,  char tabInHeader = 'N');
     bool determine_distributedGroup_status(string condition);
-    vector<string> split_array(string timearray);
-
+    vector<int> split_array(string timearray);
+    bool get_continuityLoad_flag(string load_type, int offset_num);
+    int get_already_operate_time(string load_type, int offset_num);
+    int get_remain_ot_time(int ot_time, int already_ot_time);
+    int get_remain_ot_time(int ot_time, int already_ot_time, int flag);
+    int determine_change_end_time(int ot, int already, int remain_time, int flag);
     // typedef struct
     // {
     //     string cems = "cems";

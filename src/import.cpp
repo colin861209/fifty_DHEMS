@@ -44,16 +44,88 @@ bool import::determine_distributedGroup_status(string condition)
 	return sql.turnValueToInt();
 }
 
-vector<string> import::split_array(string timearray)
+vector<int> import::split_array(string timearray)
 {
 	string split_result;
 	istringstream in(timearray);
-	vector<string> result;
+	vector<int> result;
 	while (getline(in, split_result, '~'))
 	{
-		result.push_back(split_result);
+		result.push_back(stoi(split_result));
 	}
 	return result;
+}
+
+bool import::get_continuityLoad_flag(string load_type, int offset_num)
+{
+	sql.operate("SELECT "+ sql.column +" FROM LHEMS_control_status WHERE equip_name LIKE '"+ load_type +"%' AND household_id = "+ to_string(bp.real_household_id) +" LIMIT 1 OFFSET "+ to_string(offset_num));
+	vector<int> flag_status = sql.turnArrayToInt();
+	flag_status.erase(flag_status.begin()+bp.next_simulate_timeblock, flag_status.end());
+	return accumulate(flag_status.begin(), flag_status.end(), 0);
+}
+
+int import::get_already_operate_time(string load_type, int offset_num)
+{
+	if (bp.next_simulate_timeblock == 0)
+	{
+		return 0;
+	}
+	else
+	{
+		sql.operate("SELECT "+ sql.column +" FROM LHEMS_control_status WHERE household_id = "+ to_string(bp.real_household_id) +" AND equip_name LIKE '"+ load_type +"%' LIMIT 1 OFFSET "+ to_string(offset_num));
+		vector<int> already_ot_time = sql.turnArrayToInt();
+		already_ot_time.erase(already_ot_time.begin()+bp.next_simulate_timeblock, already_ot_time.end());
+		return accumulate(already_ot_time.begin(), already_ot_time.end(), 0);
+	}
+}
+
+int import::get_remain_ot_time(int ot, int already)
+{
+	int remain_time;
+	if (ot - already == ot)
+	{
+		remain_time = ot;
+	}
+	else if ((ot - already < ot) && (ot - already) > 0)
+	{
+		remain_time = ot - already;
+	}
+	else if (ot - already <= 0)
+	{
+		remain_time = 0;
+	}
+	return remain_time;
+}
+
+int import::get_remain_ot_time(int ot, int already, int flag)
+{
+	int remain_time;
+	if (flag)
+	{
+		if ((ot - already < ot) && (ot - already > 0))
+		{
+			remain_time = ot - already;
+		}
+		else if (ot - already <= 0)
+		{
+			remain_time = 0;
+		}
+	}
+	else
+	{
+		remain_time = ot;
+	}
+	return remain_time;
+}
+
+int import::determine_change_end_time(int ot, int already, int remain_time, int flag)
+{
+	
+	if (flag && (ot - already < ot) && (ot - already > 0) && remain_time != 0)
+	{
+		return bp.next_simulate_timeblock + remain_time;
+	}
+	return -1;
 }
 
 // =-=-=- demand response -=-=-= //
@@ -516,15 +588,20 @@ void import::get_interrupt_info()
 
 			sql.operate("SELECT household"+ to_string(bp.real_household_id) +"_startEndOperationTime FROM load_list WHERE group_id = 1 LIMIT "+ to_string(i) +", "+ to_string(i+1));
 			string timearray = sql.turnValueToString();
+			vector<int> result = split_array(timearray);
 
-			vector<string> result = split_array(timearray);
-			start.push_back(stoi(result[0]));
-			end.push_back(stoi(result[1]) - 1);
-			ot.push_back(stoi(result[2]));
+			int count = get_already_operate_time("interrupt", i);
+			int reot_time = get_remain_ot_time(result[2], count);
+
+			start.push_back(result[0]);
+			end.push_back(result[1] - 1);
+			ot.push_back(result[2]);
+			reot.push_back(reot_time);
 		}
 		irl.time_info.push_back(start);
 		irl.time_info.push_back(end);
 		irl.time_info.push_back(ot);
+		irl.time_info.push_back(reot);
 	}
 	else
 	{
@@ -559,15 +636,29 @@ void import::get_uninterrupt_info()
 
 			sql.operate("SELECT household"+ to_string(bp.real_household_id) +"_startEndOperationTime FROM load_list WHERE group_id = 2 LIMIT "+ to_string(i) +", "+ to_string(i+1));
 			string timearray = sql.turnValueToString();
+			vector<int> result = split_array(timearray);
 			
-			vector<string> result = split_array(timearray);
-			start.push_back(stoi(result[0]));
-			end.push_back(stoi(result[1]) - 1);
-			ot.push_back(stoi(result[2]));
+			int count = get_already_operate_time("uninterrupt", i);
+			bool flag = get_continuityLoad_flag("uninterDelta", i);
+			int reot_time = get_remain_ot_time(result[2], count, flag);
+			int modify_end_time = determine_change_end_time(result[2], count, reot_time, flag);
+
+			start.push_back(result[0]);
+			if (modify_end_time != -1)
+			{
+				end.push_back(modify_end_time - 1);
+			}
+			else
+			{
+				end.push_back(result[1] - 1);
+			}
+			ot.push_back(result[2]);
+			reot.push_back(reot_time);
 		}
 		uirl.time_info.push_back(start);
 		uirl.time_info.push_back(end);
 		uirl.time_info.push_back(ot);
+		uirl.time_info.push_back(reot);
 	}
 	else
 	{
@@ -605,15 +696,29 @@ void import::get_varying_info()
 
 			sql.operate("SELECT household"+ to_string(bp.real_household_id) +"_startEndOperationTime FROM load_list WHERE group_id = 3 LIMIT "+ to_string(i) +", "+ to_string(i+1));
 			string timearray = sql.turnValueToString();
+			vector<int> result = split_array(timearray);
 			
-			vector<string> result = split_array(timearray);
-			start.push_back(stoi(result[0]));
-			end.push_back(stoi(result[1]) - 1);
-			ot.push_back(stoi(result[2]));
+			int count = get_already_operate_time("varying", i);
+			bool flag = get_continuityLoad_flag("varyingDelta", i);
+			int reot_time = get_remain_ot_time(result[2], count, flag);
+			int modify_end_time = determine_change_end_time(result[2], count, reot_time, flag);
+
+			start.push_back(result[0]);
+			if (modify_end_time != -1)
+			{
+				end.push_back(modify_end_time - 1);
+			}
+			else
+			{
+				end.push_back(result[1] - 1);
+			}
+			ot.push_back(result[2]);
+			reot.push_back(reot_time);
 		}
 		varl.time_info.push_back(start);
 		varl.time_info.push_back(end);
 		varl.time_info.push_back(ot);
+		varl.time_info.push_back(reot);
 	}
 	else
 	{
