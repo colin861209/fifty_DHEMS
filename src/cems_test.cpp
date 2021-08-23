@@ -8,8 +8,9 @@
 #include <iostream>
 // #include "SQLFunction.hpp"
 // use function 'find_variableName_position' needs
-#include "SQL.hpp"
-#include "import.hpp"
+
+#include "sqlAction.hpp"
+#include "optimize.hpp"
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -17,25 +18,34 @@
 using namespace std;
 
 int main(int argc, const char** argv) {
+	// IMPORT ipt;
+	SQLACTION act("140.124.42.65","root", "fuzzy314", "DHEMS_fiftyHousehold");
+	ENERGYMANAGESYSTEM ems_name = ENERGYMANAGESYSTEM::CEMS;
 	
-	IMPORT ipt("140.124.42.65","root", "fuzzy314", "DHEMS_fiftyHousehold");
-	string ems_name = "CEMS";
+	act.get_flag(ems_name);
+	act.get_experimental_parameters(ems_name);
 	
-	ipt.get_flag(ems_name);
-	ipt.get_experimental_parameters(ems_name);
+	act.determine_GHEMS_realTimeOrOneDayMode_andGetSOC();
 	
-	ipt.determine_GHEMS_realTimeOrOneDayMode_andGetSOC();
-	
-	ipt.create_variable_name(ems_name);
-	ipt.get_allDay_price();
-	ipt.getOrUpdate_SolarInfo_ThroughSampleTime();
-	ipt.get_totalLoad_power();
+	act.create_variable_name(ems_name);
+	act.get_allDay_price();
+	act.getOrUpdate_SolarInfo_ThroughSampleTime();
+	act.get_totalLoad_power();
 	
 	// dr info
-	ipt.get_dr_mode();
-	ipt.get_demand_response();
-	ipt.get_Pgrid_max_array();
+	act.get_dr_mode();
+	act.get_demand_response();
+	act.get_Pgrid_max_array();
 	
 	// public load
-	ipt.get_publicLoad_info();
+	act.get_publicLoad_info();
+
+	// op.ipt = act.ipt;
+	optimize op(act.ipt);
+	// act.result = op.result;
+	op.print();
+
+	
+	act.update_new_load_model();
+
 }

@@ -1,29 +1,19 @@
-#ifndef IMPORT_H
-#define IMPORT_H
-#include "SQL.hpp"
-#include <sstream>
-#include<numeric>
+#ifndef VARIABLE_H
+#define VARIABLE_H
 
-class IMPORT
-{
+#include <vector>
+using namespace std;
+
+enum ENERGYMANAGESYSTEM
+{   
+    CEMS,
+    HEMS
+};
+
+class IMPORT {
+
 private:
-    SQL sql;
-    
-    // int find_variableName_position(vector<string> variableNameArray, string target);
-    // void messagePrint(int lineNum, const char *message, char contentSize = 'S', float content = 0,  char tabInHeader = 'N');
-    bool determine_distributedGroup_status(string condition);
-    vector<int> split_array(string timearray);
-    bool get_continuityLoad_flag(string load_type, int offset_num);
-    int get_already_operate_time(string load_type, int offset_num);
-    int get_remain_ot_time(int ot_time, int already_ot_time);
-    int get_remain_ot_time(int ot_time, int already_ot_time, int flag);
-    int determine_change_end_time(int ot, int already, int remain_time, int flag);
-    // typedef struct
-    // {
-    //     string cems = "cems";
-    //     string hems = "hems";
-    // }ENERGYMANAGESYSTEM;
-    
+
     typedef struct
     {
         int startTime;
@@ -136,44 +126,53 @@ private:
     }VARYING;
 
 public:
-    
-    IMPORT(std::string iP, std::string name, std::string passwd, std::string database);
-    // ENERGYMANAGESYSTEM sys;
-    DRINFO dr;
-    void get_dr_mode();
-    void get_demand_response();
-    void get_Pgrid_max_array();
 
-    BASEPARAMETER bp;
-    // common
-    void get_experimental_parameters(string ems_name);
-    void get_allDay_price();
-    // cems
-    void determine_GHEMS_realTimeOrOneDayMode_andGetSOC();
-    void getOrUpdate_SolarInfo_ThroughSampleTime();
-    void get_totalLoad_power();
-    // hems
-    void get_distributedGroup_householdAndSampleTime(int group_num);
-    void determine_LHEMS_realTimeOrOneDayMode_andGetSOC(int group_num);
-    void init_totalLoad_tableAndFlag(int group_num);
-
-    FLAG fg;
     vector<string> variable_name;
-    void get_flag(string ems_name);
-    void create_variable_name(string ems_name);
-
+    DRINFO dr;
+    BASEPARAMETER bp;
+    FLAG fg;
+    COMFORTLEVEL comf;
     PUBLICLOAD pl;
-    int get_publicLoad_num();
-    void get_publicLoad_info();
     INTERRUPT irl;
-    int get_interrupt_num();
-    void get_interrupt_info();
     UNINTERRUPT uirl;
-    int get_uninterrupt_num();
-    void get_uninterrupt_info();
     VARYING varl;
-    int get_varying_num();
-    void get_varying_info();
+};
+
+class EXPORT {
+
+private:
+    // IMPORT ipt;
+    typedef struct
+    {
+        vector<float> new_load_model;
+    }LOADMODEL;
+
+    typedef struct
+    {
+        // all load comsuption & cost price
+        vector<float> totalLoad;
+        vector<float> cost_of_totalLoad;
+        float summation_totalLoad;
+        float summation_cost_of_totalLoad;
+        // real use grid power & cost price
+        vector<float> cost_of_gridOnly;
+        float summation_cost_of_gridOnly;
+        float summation_taipowercost_of_totalLoad;
+        // fuel cell comsume grams of H2 & cost price
+        vector<float> cost_of_fuelCell;
+        vector<float> hydrogen_comsuption;
+        float summation_cost_of_fuelCell;
+        float summation_hydrogen_comsuption;
+        // feedback price
+        vector<float> feedback_of_sellGrid;
+        vector<float> feedback_of_dr;
+        float summation_feedback_of_realSell;
+        float summation_feedback_of_dr;
+    }COSTINFORMATION;
+
+public:
+    LOADMODEL lm;
+    COSTINFORMATION ci;
 };
 
 #endif

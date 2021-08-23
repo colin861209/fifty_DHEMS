@@ -23,6 +23,8 @@ add_library(LHEMS_lib src/fifty_LHEMS_function.cpp src/LHEMS_constraint.cpp)
 link_libraries(LHEMS_lib common_lib)
 add_library(GHEMS_lib src/GHEMS_function.cpp src/GHEMS_constraint.cpp)
 link_libraries(GHEMS_lib common_lib)
+
+add_library(class_lib src/sqlAction.cpp src/SQL.cpp)
 # add the executable
 # executable by 50 household CEMS
 add_executable(LHEMS src/LHEMS.cpp )
@@ -93,14 +95,16 @@ ${LIBMYSQLCLIENT_LIBRARIES}
 /usr/local/lib/libglpk.a
 )
 
-add_executable(cems_test src/cems_test.cpp src/SQL.cpp src/import.cpp)
+add_executable(cems_test src/cems_test.cpp)
 target_link_libraries(cems_test 
+class_lib 
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
 
-add_executable(hems_test src/hems_test.cpp src/SQL.cpp src/import.cpp)
+add_executable(hems_test src/hems_test.cpp)
 target_link_libraries(hems_test 
+class_lib 
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
