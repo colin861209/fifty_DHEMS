@@ -20,6 +20,11 @@ void SQL::connect(const std::string ip,const std::string name,const std::string 
     }
 }
 
+void SQL::disconnect()
+{
+    mysql_close(mysql_conn);
+}
+
 bool SQL::operate(const std::string &operation)
 {
 	if(mysql_query(mysql_conn,operation.c_str()))

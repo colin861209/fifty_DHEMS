@@ -55,6 +55,8 @@ private:
         float Pfc_max;
         float point_num = 6;
         float piecewise_num = point_num - 1;
+        float hydro_price;
+        float hydro_cons = 0.04;
         // weather
         string simulate_weather;
         vector<float> weather;
@@ -168,6 +170,14 @@ private:
         vector<float> feedback_of_dr;
         float summation_feedback_of_realSell;
         float summation_feedback_of_dr;
+        // table cost column cost_name
+        string name_totalLoad = "total_load_power";
+        string name_cost_of_totalLoad = "total_load_price";
+        string name_cost_of_gridOnly = "real_buy_grid_price";
+        string name_cost_of_fuelCell = "FC_price";
+        string name_hydrogen_comsuption = "hydrogen_comsuption";
+        string name_feedback_of_sellGrid = "real_sell_grid_price";
+        string name_feedback_of_dr = "demand_response_feedback";
     }COSTINFORMATION;
 
 public:
