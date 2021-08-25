@@ -6,7 +6,7 @@
 #include <mysql.h>
 #include <iostream>
 
-// #include "SQL.hpp"
+#include "optimize.hpp"
 #include "sqlAction.hpp"
 
 int main(int argc, const char** argv) {
@@ -32,4 +32,13 @@ int main(int argc, const char** argv) {
 	act.get_dr_mode();
 	act.get_demand_response();
 	act.get_Pgrid_max_array();
+
+	// op.ipt = act.ipt;
+	optimize op(act.ipt);
+	// act.result = op.result;
+	op.print();
+
+	act.update_new_load_model(group_id);
+	act.update_household_id(group_id);
+	act.update_next_simulate_timeblock(group_id);
 }

@@ -45,7 +45,10 @@ int main(int argc, const char** argv) {
 	// act.result = op.result;
 	op.print();
 
-	
-	act.update_new_load_model();
-
+	act.calculate_table_cost_info();
+	act.update_table_cost_info();
+	act.calculate_table_BaseParameter_total_cost_info();
+	act.update_table_BaseParameter_total_cost_info();
+	act.update_new_SOC();
+	act.update_Global_next_simulate_timeblock();
 }
