@@ -118,6 +118,53 @@ int SQLACTION::determine_change_end_time(int ot, int already, int remain_time, i
 	return -1;
 }
 
+vector<float> SQLACTION::convert_real_power_array(vector<float> power, vector<int> block)
+{
+	vector<float> real_power;
+	for (int j = 0; j < block[0]; j++)
+		real_power.push_back(power[0]);
+
+	for (int j = 0; j < block[1]; j++)
+		real_power.push_back(power[1]);
+	
+	for (int j = 0; j < block[2]; j++)
+		real_power.push_back(power[2]);
+	
+	return real_power;
+}
+
+vector<int> SQLACTION::convert_real_block_array(int start, int end)
+{
+	vector<int> real_block;
+	real_block.assign(ipt.bp.time_block-ipt.bp.next_simulate_timeblock, 0);
+	if ((end - ipt.bp.next_simulate_timeblock) >= 0)
+	{
+		if ((start - ipt.bp.next_simulate_timeblock) >= 0)
+		{
+			for (int i = (start - ipt.bp.next_simulate_timeblock); i <= (end - ipt.bp.next_simulate_timeblock); i++)
+			{
+				real_block[i] = 1;
+			}
+		}
+		else if ((start - ipt.bp.next_simulate_timeblock) < 0)
+		{
+			for (int i = 0; i <= (end - ipt.bp.next_simulate_timeblock); i++)
+			{
+				real_block[i] = 1;
+			}
+		}
+	}
+	return real_block;
+}
+
+float SQLACTION::find_varyingLoad_max_power(vector<float> power)
+{
+	vector<float>::iterator result;
+	result = max_element(power.begin(), power.end());
+	float index = distance(power.begin(), result);
+	return power[index];
+}
+
 void SQLACTION::insert_table_cost(string cost_name, vector<float> cost)
 {
 	sql.operate("INSERT INTO cost (cost_name, "+ sql.column +") VALUES('"+ cost_name +"','"
@@ -634,7 +681,6 @@ void SQLACTION::get_interrupt_info()
 {
 	if (ipt.fg.interrupt)
 	{
-		vector<int> start, end, ot, reot;
 		for (int i = 0; i < ipt.irl.load_num; i++)
 		{
 			sql.operate("SELECT power1 FROM load_list WHERE group_id = 1 LIMIT "+ to_string(i) +", "+ to_string(i+1));
@@ -647,15 +693,11 @@ void SQLACTION::get_interrupt_info()
 			int count = get_already_operate_time("interrupt", i);
 			int reot_time = get_remain_ot_time(result[2], count);
 
-			start.push_back(result[0]);
-			end.push_back(result[1] - 1);
-			ot.push_back(result[2]);
-			reot.push_back(reot_time);
+			ipt.irl.start.push_back(result[0]);
+			ipt.irl.end.push_back(result[1] - 1);
+			ipt.irl.ot.push_back(result[2]);
+			ipt.irl.reot.push_back(reot_time);
 		}
-		ipt.irl.time_info.push_back(start);
-		ipt.irl.time_info.push_back(end);
-		ipt.irl.time_info.push_back(ot);
-		ipt.irl.time_info.push_back(reot);
 	}
 	else
 	{
@@ -681,7 +723,6 @@ void SQLACTION::get_uninterrupt_info()
 {
 	if (ipt.fg.uninterrupt)
 	{
-		vector<int> start, end, ot, reot;
 		for (int i = 0; i < ipt.uirl.load_num; i++)
 		{
 			sql.operate("SELECT power1 FROM load_list WHERE group_id = 2 LIMIT "+ to_string(i) +", "+ to_string(i+1));
@@ -696,22 +737,18 @@ void SQLACTION::get_uninterrupt_info()
 			int reot_time = get_remain_ot_time(result[2], count, flag);
 			int modify_end_time = determine_change_end_time(result[2], count, reot_time, flag);
 
-			start.push_back(result[0]);
+			ipt.uirl.start.push_back(result[0]);
 			if (modify_end_time != -1)
 			{
-				end.push_back(modify_end_time - 1);
+				ipt.uirl.end.push_back(modify_end_time - 1);
 			}
 			else
 			{
-				end.push_back(result[1] - 1);
+				ipt.uirl.end.push_back(result[1] - 1);
 			}
-			ot.push_back(result[2]);
-			reot.push_back(reot_time);
+			ipt.uirl.ot.push_back(result[2]);
+			ipt.uirl.reot.push_back(reot_time);
 		}
-		ipt.uirl.time_info.push_back(start);
-		ipt.uirl.time_info.push_back(end);
-		ipt.uirl.time_info.push_back(ot);
-		ipt.uirl.time_info.push_back(reot);
 	}
 	else
 	{
@@ -737,14 +774,15 @@ void SQLACTION::get_varying_info()
 {
 	if (ipt.fg.varying)
 	{
-		vector<int> start, end, ot, reot;
 		for (int i = 0; i < ipt.varl.load_num; i++)
 		{
+			vector<float> power_tmp;
+			vector<int> block_tmp;
 			sql.operate("SELECT power1, power2, power3 FROM load_list WHERE group_id = 3 LIMIT "+ to_string(i) +", "+ to_string(i+1));
-			ipt.varl.power.push_back(sql.turnArrayToFloat());
+			power_tmp = sql.turnArrayToFloat();
 			
 			sql.operate("SELECT block1, block2, block3 FROM load_list WHERE group_id = 3 LIMIT "+ to_string(i) +", "+ to_string(i+1));
-			ipt.varl.block.push_back(sql.turnArrayToInt());
+			block_tmp = sql.turnArrayToInt();
 
 			sql.operate("SELECT household"+ to_string(ipt.bp.real_household_id) +"_startEndOperationTime FROM load_list WHERE group_id = 3 LIMIT "+ to_string(i) +", "+ to_string(i+1));
 			string timearray = sql.turnValueToString();
@@ -755,22 +793,21 @@ void SQLACTION::get_varying_info()
 			int reot_time = get_remain_ot_time(result[2], count, flag);
 			int modify_end_time = determine_change_end_time(result[2], count, reot_time, flag);
 
-			start.push_back(result[0]);
+			ipt.varl.start.push_back(result[0]);
 			if (modify_end_time != -1)
 			{
-				end.push_back(modify_end_time - 1);
+				ipt.varl.end.push_back(modify_end_time - 1);
 			}
 			else
 			{
-				end.push_back(result[1] - 1);
+				ipt.varl.end.push_back(result[1] - 1);
 			}
-			ot.push_back(result[2]);
-			reot.push_back(reot_time);
+			ipt.varl.ot.push_back(result[2]);
+			ipt.varl.reot.push_back(reot_time);
+			ipt.varl.power.push_back(convert_real_power_array(power_tmp, block_tmp));
+			ipt.varl.block.push_back(convert_real_block_array(ipt.varl.start[i], ipt.varl.end[i]));
+			ipt.varl.max_power.push_back(find_varyingLoad_max_power(power_tmp));
 		}
-		ipt.varl.time_info.push_back(start);
-		ipt.varl.time_info.push_back(end);
-		ipt.varl.time_info.push_back(ot);
-		ipt.varl.time_info.push_back(reot);
 	}
 	else
 	{

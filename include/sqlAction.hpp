@@ -66,6 +66,9 @@ private:
     bool get_continuityLoad_flag(string load_type, int offset_num);
     int get_remain_ot_time(int ot_time, int already_ot_time, int flag);
     int determine_change_end_time(int ot, int already, int remain_time, int flag);
+    vector<float> convert_real_power_array(vector<float> power_tmp, vector<int> block_tmp);
+    vector<int> convert_real_block_array(int start, int end);
+    float find_varyingLoad_max_power(vector<float> power);
     // cems
     void insert_table_cost(string cost_name, vector<float> costinfo);
     void update_table_cost(string cost_name, vector<float> costinfo);

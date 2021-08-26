@@ -108,23 +108,24 @@ private:
     typedef struct
     {
         int load_num;
-        vector<vector<int>> time_info;
+        vector<int> start, end, ot, reot;
         vector<float> power;
     }INTERRUPT;
 
     typedef struct
     {
         int load_num;
-        vector<vector<int>> time_info;
+        vector<int> start, end, ot, reot;
         vector<float> power;
     }UNINTERRUPT;
 
     typedef struct
     {
         int load_num;
-        vector<vector<int>> time_info;
+        vector<int> start, end, ot, reot;
         vector<vector<float>> power;
         vector<vector<int>> block;
+        vector<float> max_power;
     }VARYING;
 
 public:
