@@ -37,7 +37,7 @@ bool SQLACTION::get_continuityLoad_flag(string load_type, int offset_num)
 	return accumulate(flag_status.begin(), flag_status.end(), 0);
 }
 
-int SQLACTION::get_already_operate_time(string load_type, int offset_num, ENERGYMANAGESYSTEM ems_name)
+int SQLACTION::get_already_operate_time(string load_type, int offset_num, ENERGYMANAGESYSTEM ems_type)
 {
 	switch (ems_type)
 	{
@@ -198,7 +198,7 @@ void SQLACTION::get_Pgrid_max_array()
 	}
 }
 
-void SQLACTION::get_experimental_parameters(ENERGYMANAGESYSTEM ems_name)
+void SQLACTION::get_experimental_parameters(ENERGYMANAGESYSTEM ems_type)
 {
 	sql.operate("SELECT value FROM BaseParameter WHERE parameter_name = 'time_block'");
 	ipt.bp.time_block = sql.turnValueToInt();
@@ -254,8 +254,16 @@ void SQLACTION::get_experimental_parameters(ENERGYMANAGESYSTEM ems_name)
 	sql.operate("SELECT value FROM BaseParameter WHERE parameter_name = 'simulate_price'");
 	ipt.bp.simulate_price = sql.turnValueToString();
 
-	if (ems_name == ENERGYMANAGESYSTEM::CEMS)
+	switch (ems_type)
 	{
+	case HEMS:
+		ipt.irl.load_num = get_interrupt_num();
+		ipt.uirl.load_num = get_uninterrupt_num();
+		ipt.varl.load_num = get_varying_num();
+		ipt.bp.app_count = ipt.irl.load_num + ipt.uirl.load_num + ipt.varl.load_num;
+		break;
+	
+	default:
 		ipt.pl.load_num = get_publicLoad_num();
 		ipt.bp.Vsys *= ipt.bp.householdAmount;
 		ipt.bp.Pbat_min *= ipt.bp.householdAmount;
@@ -266,13 +274,8 @@ void SQLACTION::get_experimental_parameters(ENERGYMANAGESYSTEM ems_name)
 		
 		sql.operate("SELECT value FROM BaseParameter WHERE parameter_name = 'Global_next_simulate_timeblock'");
 		ipt.bp.Global_next_simulate_timeblock = sql.turnValueToInt();
-	}
-	else
-	{
-		ipt.irl.load_num = get_interrupt_num();
-		ipt.uirl.load_num = get_uninterrupt_num();
-		ipt.varl.load_num = get_varying_num();
-		ipt.bp.app_count = ipt.irl.load_num + ipt.uirl.load_num + ipt.varl.load_num;
+	
+		break;
 	}
 }
 
@@ -429,10 +432,31 @@ void SQLACTION::init_totalLoad_tableAndFlag(int group_num)
 	}
 }
 
-void SQLACTION::get_flag(ENERGYMANAGESYSTEM ems_name)
+void SQLACTION::get_flag(ENERGYMANAGESYSTEM ems_type)
 {
-	if (ems_name == ENERGYMANAGESYSTEM::CEMS)
+	switch (ems_type)
 	{
+	case HEMS:
+		sql.operate("SELECT value FROM `BaseParameter` WHERE `parameter_name` = 'comfortLevel_flag'");
+		ipt.fg.comfortLevel = sql.turnValueToInt();
+		sql.operate("SELECT value FROM BaseParameter WHERE parameter_name = 'real_time'");
+		ipt.fg.real_time = sql.turnValueToInt();
+		sql.operate("SELECT value FROM BaseParameter WHERE parameter_name = 'uncontrollable_load_flag'");
+		ipt.fg.uncontrollable_load = sql.turnValueToInt();
+
+		sql.operate("SELECT flag FROM `LHEMS_flag` WHERE `variable_name` = 'interrupt'");
+		ipt.fg.interrupt = sql.turnValueToInt();
+		sql.operate("SELECT flag FROM `LHEMS_flag` WHERE `variable_name` = 'uninterrupt'");
+		ipt.fg.uninterrupt = sql.turnValueToInt();
+		sql.operate("SELECT flag FROM `LHEMS_flag` WHERE `variable_name` = 'varying'");
+		ipt.fg.varying = sql.turnValueToInt();
+		sql.operate("SELECT flag FROM `LHEMS_flag` WHERE `variable_name` = 'Pgrid'");
+		ipt.fg.Pgrid = sql.turnValueToInt();
+		sql.operate("SELECT flag FROM `LHEMS_flag` WHERE `variable_name` = 'Pess'");
+		ipt.fg.Pess = sql.turnValueToInt();
+		break;
+	
+	default:
 		sql.operate("SELECT value FROM BaseParameter WHERE parameter_name = 'Global_real_time'");
 		ipt.fg.Global_real_time = sql.turnValueToInt();
 
@@ -450,75 +474,15 @@ void SQLACTION::get_flag(ENERGYMANAGESYSTEM ems_name)
 		ipt.fg.SOCchange = sql.turnValueToInt();
 		sql.operate("SELECT flag FROM `GHEMS_flag` WHERE `variable_name` = 'Pfc'");
 		ipt.fg.Pfc = sql.turnValueToInt();
-	}
-	else
-	{
-		sql.operate("SELECT value FROM `BaseParameter` WHERE `parameter_name` = 'comfortLevel_flag'");
-		ipt.fg.comfortLevel = sql.turnValueToInt();
-		sql.operate("SELECT value FROM BaseParameter WHERE parameter_name = 'real_time'");
-		ipt.fg.real_time = sql.turnValueToInt();
-
-		sql.operate("SELECT value FROM BaseParameter WHERE parameter_name = 'uncontrollable_load_flag'");
-		ipt.fg.uncontrollable_load = sql.turnValueToInt();
-
-		sql.operate("SELECT flag FROM `LHEMS_flag` WHERE `variable_name` = 'interrupt'");
-		ipt.fg.interrupt = sql.turnValueToInt();
-		sql.operate("SELECT flag FROM `LHEMS_flag` WHERE `variable_name` = 'uninterrupt'");
-		ipt.fg.uninterrupt = sql.turnValueToInt();
-		sql.operate("SELECT flag FROM `LHEMS_flag` WHERE `variable_name` = 'varying'");
-		ipt.fg.varying = sql.turnValueToInt();
-		sql.operate("SELECT flag FROM `LHEMS_flag` WHERE `variable_name` = 'Pgrid'");
-		ipt.fg.Pgrid = sql.turnValueToInt();
-		sql.operate("SELECT flag FROM `LHEMS_flag` WHERE `variable_name` = 'Pess'");
-		ipt.fg.Pess = sql.turnValueToInt();
+		break;
 	}
 }
 
-void SQLACTION::create_variable_name(ENERGYMANAGESYSTEM ems_name)
+void SQLACTION::create_variable_name(ENERGYMANAGESYSTEM ems_type)
 {
-	if (ems_name == ENERGYMANAGESYSTEM::CEMS)
+	switch (ems_type)
 	{
-		if (ipt.fg.publicLoad)
-		{
-			for (int i = 0; i < ipt.pl.load_num; i++)
-				ipt.variable_name.push_back("publicLoad" + to_string(i + 1));
-		}
-		if (ipt.fg.Pgrid)
-			ipt.variable_name.push_back("Pgrid");
-		if (ipt.fg.mu_grid)
-			ipt.variable_name.push_back("mu_grid");
-		if (ipt.fg.Psell)
-			ipt.variable_name.push_back("Psell");
-		if (ipt.fg.Pess)
-		{
-			ipt.variable_name.push_back("Pess");
-			ipt.variable_name.push_back("Pcharge");
-			ipt.variable_name.push_back("Pdischarge");
-			ipt.variable_name.push_back("SOC");
-			ipt.variable_name.push_back("Z");
-			if (ipt.fg.SOCchange)
-			{
-				ipt.variable_name.push_back("SOC_change");
-				ipt.variable_name.push_back("SOC_increase");
-				ipt.variable_name.push_back("SOC_decrease");
-				ipt.variable_name.push_back("SOC_Z");
-			}
-		}
-		if (ipt.fg.Pfc)
-		{
-			ipt.variable_name.push_back("Pfc");
-			ipt.variable_name.push_back("Pfct");
-			ipt.variable_name.push_back("PfcON");
-			ipt.variable_name.push_back("PfcOFF");
-			ipt.variable_name.push_back("muFC");
-			for (int i = 0; i < ipt.bp.piecewise_num; i++)
-				ipt.variable_name.push_back("zPfc" + to_string(i + 1));
-			for (int i = 0; i < ipt.bp.piecewise_num; i++)
-				ipt.variable_name.push_back("lambda_Pfc" + to_string(i + 1));
-		}
-	}
-	else
-	{
+	case HEMS:
 		if (ipt.fg.interrupt)
 		{
 			for (int i = 0; i < ipt.irl.load_num; i++)
@@ -558,6 +522,48 @@ void SQLACTION::create_variable_name(ENERGYMANAGESYSTEM ems_name)
 			for (int i = 0; i < ipt.varl.load_num; i++)
 				ipt.variable_name.push_back("varyingPsi" + to_string(i + 1));
 		}
+		break;
+	
+	default:
+		if (ipt.fg.publicLoad)
+		{
+			for (int i = 0; i < ipt.pl.load_num; i++)
+				ipt.variable_name.push_back("publicLoad" + to_string(i + 1));
+		}
+		if (ipt.fg.Pgrid)
+			ipt.variable_name.push_back("Pgrid");
+		if (ipt.fg.mu_grid)
+			ipt.variable_name.push_back("mu_grid");
+		if (ipt.fg.Psell)
+			ipt.variable_name.push_back("Psell");
+		if (ipt.fg.Pess)
+		{
+			ipt.variable_name.push_back("Pess");
+			ipt.variable_name.push_back("Pcharge");
+			ipt.variable_name.push_back("Pdischarge");
+			ipt.variable_name.push_back("SOC");
+			ipt.variable_name.push_back("Z");
+			if (ipt.fg.SOCchange)
+			{
+				ipt.variable_name.push_back("SOC_change");
+				ipt.variable_name.push_back("SOC_increase");
+				ipt.variable_name.push_back("SOC_decrease");
+				ipt.variable_name.push_back("SOC_Z");
+			}
+		}
+		if (ipt.fg.Pfc)
+		{
+			ipt.variable_name.push_back("Pfc");
+			ipt.variable_name.push_back("Pfct");
+			ipt.variable_name.push_back("PfcON");
+			ipt.variable_name.push_back("PfcOFF");
+			ipt.variable_name.push_back("muFC");
+			for (int i = 0; i < ipt.bp.piecewise_num; i++)
+				ipt.variable_name.push_back("zPfc" + to_string(i + 1));
+			for (int i = 0; i < ipt.bp.piecewise_num; i++)
+				ipt.variable_name.push_back("lambda_Pfc" + to_string(i + 1));
+		}
+		break;
 	}
 	
 	ipt.bp.variable_num = ipt.variable_name.size();

@@ -8,22 +8,8 @@
 class SQLACTION
 {
 private:
+    
     SQL sql;
-    ENERGYMANAGESYSTEM ems_type;
-    // common
-    vector<int> split_array(string timearray);
-    int get_already_operate_time(string load_type, int offset_num, ENERGYMANAGESYSTEM ems_name = ENERGYMANAGESYSTEM::HEMS);
-    int get_remain_ot_time(int ot_time, int already_ot_time);
-    // hems
-    bool determine_distributedGroup_status(string condition);
-    bool get_continuityLoad_flag(string load_type, int offset_num);
-    int get_remain_ot_time(int ot_time, int already_ot_time, int flag);
-    int determine_change_end_time(int ot, int already, int remain_time, int flag);
-    // cems
-    void insert_table_cost(string cost_name, vector<float> costinfo);
-    void update_table_cost(string cost_name, vector<float> costinfo);
-    int calculate_publicLoad_decrease_operate_time(int start, int end);
-
 public:
     
     SQLACTION(std::string iP, std::string name, std::string passwd, std::string database);
@@ -70,6 +56,20 @@ public:
     void update_new_load_model(int group_num);
     void update_next_simulate_timeblock(int group_num);
     void update_household_id(int group_num);
+private:
+    // common
+    vector<int> split_array(string timearray);
+    int get_already_operate_time(string load_type, int offset_num, ENERGYMANAGESYSTEM ems_name = ENERGYMANAGESYSTEM::HEMS);
+    int get_remain_ot_time(int ot_time, int already_ot_time);
+    // hems
+    bool determine_distributedGroup_status(string condition);
+    bool get_continuityLoad_flag(string load_type, int offset_num);
+    int get_remain_ot_time(int ot_time, int already_ot_time, int flag);
+    int determine_change_end_time(int ot, int already, int remain_time, int flag);
+    // cems
+    void insert_table_cost(string cost_name, vector<float> costinfo);
+    void update_table_cost(string cost_name, vector<float> costinfo);
+    int calculate_publicLoad_decrease_operate_time(int start, int end);
 };
 
 #endif
