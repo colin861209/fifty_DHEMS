@@ -23,6 +23,7 @@ private:
         int customer_baseLine;
         vector<int> demand_info;
         vector<float> Pgrid_max_array;
+        vector<bool> participate_status;
     }DRINFO;
 
     typedef struct

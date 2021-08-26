@@ -43,6 +43,7 @@ public:
     void get_uninterrupt_info();
     int get_varying_num();
     void get_varying_info();
+    void get_household_participation();
 
     // HEMS & CEMS export
     // cems

@@ -32,7 +32,7 @@ int main(int argc, const char** argv) {
 	act.get_dr_mode();
 	act.get_demand_response();
 	act.get_Pgrid_max_array();
-
+	act.get_household_participation();
 	// op.ipt = act.ipt;
 	optimize op(act.ipt);
 	// act.result = op.result;

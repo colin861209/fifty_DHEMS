@@ -11,12 +11,6 @@ SQLACTION::~SQLACTION()
 }
 
 // =-=-=- private function -=-=-= //
-bool SQLACTION::determine_distributedGroup_status(string condition)
-{
-	sql.operate("SELECT "+ condition +" FROM `distributed_group`");
-	return sql.turnValueToInt();
-}
-
 vector<int> SQLACTION::split_array(string timearray)
 {
 	string split_result;
@@ -27,14 +21,6 @@ vector<int> SQLACTION::split_array(string timearray)
 		result.push_back(stoi(split_result));
 	}
 	return result;
-}
-
-bool SQLACTION::get_continuityLoad_flag(string load_type, int offset_num)
-{
-	sql.operate("SELECT "+ sql.column +" FROM LHEMS_control_status WHERE equip_name LIKE '"+ load_type +"%' AND household_id = "+ to_string(ipt.bp.real_household_id) +" LIMIT 1 OFFSET "+ to_string(offset_num));
-	vector<int> flag_status = sql.turnArrayToInt();
-	flag_status.erase(flag_status.begin()+ipt.bp.next_simulate_timeblock, flag_status.end());
-	return accumulate(flag_status.begin(), flag_status.end(), 0);
 }
 
 int SQLACTION::get_already_operate_time(string load_type, int offset_num, ENERGYMANAGESYSTEM ems_type)
@@ -85,6 +71,21 @@ int SQLACTION::get_remain_ot_time(int ot, int already)
 		remain_time = 0;
 	}
 	return remain_time;
+}
+
+// hems
+bool SQLACTION::determine_distributedGroup_status(string condition)
+{
+	sql.operate("SELECT "+ condition +" FROM `distributed_group`");
+	return sql.turnValueToInt();
+}
+
+bool SQLACTION::get_continuityLoad_flag(string load_type, int offset_num)
+{
+	sql.operate("SELECT "+ sql.column +" FROM LHEMS_control_status WHERE equip_name LIKE '"+ load_type +"%' AND household_id = "+ to_string(ipt.bp.real_household_id) +" LIMIT 1 OFFSET "+ to_string(offset_num));
+	vector<int> flag_status = sql.turnArrayToInt();
+	flag_status.erase(flag_status.begin()+ipt.bp.next_simulate_timeblock, flag_status.end());
+	return accumulate(flag_status.begin(), flag_status.end(), 0);
 }
 
 int SQLACTION::get_remain_ot_time(int ot, int already, int flag)
@@ -357,6 +358,7 @@ void SQLACTION::getOrUpdate_SolarInfo_ThroughSampleTime()
 	}
 }
 
+// cems
 void SQLACTION::determine_GHEMS_realTimeOrOneDayMode_andGetSOC()
 {
 	if (ipt.fg.Global_real_time)
@@ -406,6 +408,7 @@ void SQLACTION::get_totalLoad_power()
 	}
 }
 
+// hems
 void SQLACTION::get_distributedGroup_householdAndSampleTime(int group_num)
 {
 	sql.operate("SELECT `household_id` FROM `distributed_group` WHERE `group_id` = "+ to_string(group_num));
@@ -812,6 +815,19 @@ void SQLACTION::get_varying_info()
 	else
 	{
 		std::cout << "Function "<< __func__ <<" don't work, due to varying load flag = 0" << std::endl;	
+	}
+}
+
+
+void SQLACTION::get_household_participation()
+{
+	if (ipt.fg.dr_mode != 0)
+	{
+		for (int i = 0; i < ipt.dr.endTime-ipt.dr.startTime; i++)
+		{
+			sql.operate("SELECT A"+ to_string(i) +" FROM `LHEMS_demand_response_participation` WHERE `household_id` = "+to_string(ipt.bp.real_household_id));
+			ipt.dr.participate_status.push_back(sql.turnValueToInt());
+		}
 	}
 }
 
