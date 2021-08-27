@@ -40,7 +40,7 @@ int main(int argc, const char** argv) {
 	act.get_publicLoad_info();
 
 	// op.ipt = act.ipt;
-	optimize op(act.ipt);
+	optimize op(act.ipt, OBJECTIVETARGET::MINIMUM);
 	// act.result = op.result;
 	op.print();
 

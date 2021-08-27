@@ -648,7 +648,7 @@ void SQLACTION::get_publicLoad_info()
 			vector<int> result = split_array(timearray);
 			
 			int decrease_ot = calculate_publicLoad_decrease_operate_time(result[0], result[1]);
-			int count = get_already_operate_time("publicLoad", i, ENERGYMANAGESYSTEM::CEMS);
+			int count = get_already_operate_time("publicLoad", i);
 			int reot_time = get_remain_ot_time(result[2]-decrease_ot, count);
 			start.push_back(result[0]);
 			end.push_back(result[1]-1);
@@ -693,7 +693,7 @@ void SQLACTION::get_interrupt_info()
 			string timearray = sql.turnValueToString();
 			vector<int> result = split_array(timearray);
 
-			int count = get_already_operate_time("interrupt", i);
+			int count = get_already_operate_time("interrupt", i, ENERGYMANAGESYSTEM::HEMS);
 			int reot_time = get_remain_ot_time(result[2], count);
 
 			ipt.irl.start.push_back(result[0]);
@@ -735,7 +735,7 @@ void SQLACTION::get_uninterrupt_info()
 			string timearray = sql.turnValueToString();
 			vector<int> result = split_array(timearray);
 			
-			int count = get_already_operate_time("uninterrupt", i);
+			int count = get_already_operate_time("uninterrupt", i, ENERGYMANAGESYSTEM::HEMS);
 			bool flag = get_continuityLoad_flag("uninterDelta", i);
 			int reot_time = get_remain_ot_time(result[2], count, flag);
 			int modify_end_time = determine_change_end_time(result[2], count, reot_time, flag);
@@ -791,7 +791,7 @@ void SQLACTION::get_varying_info()
 			string timearray = sql.turnValueToString();
 			vector<int> result = split_array(timearray);
 			
-			int count = get_already_operate_time("varying", i);
+			int count = get_already_operate_time("varying", i, ENERGYMANAGESYSTEM::HEMS);
 			bool flag = get_continuityLoad_flag("varyingDelta", i);
 			int reot_time = get_remain_ot_time(result[2], count, flag);
 			int modify_end_time = determine_change_end_time(result[2], count, reot_time, flag);

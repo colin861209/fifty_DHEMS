@@ -35,7 +35,7 @@ int main(int argc, const char** argv) {
 	act.get_Pgrid_max_array();
 	act.get_household_participation();
 	// op.ipt = act.ipt;
-	optimize op(act.ipt);
+	optimize op(act.ipt, OBJECTIVETARGET::MINIMUM, ems_type, group_id);
 	// act.result = op.result;
 	op.print();
 

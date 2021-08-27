@@ -2,6 +2,8 @@
 #define VARIABLE_H
 
 #include <vector>
+#include <string.h>
+#include <string>
 using namespace std;
 
 enum ENERGYMANAGESYSTEM
@@ -9,6 +11,8 @@ enum ENERGYMANAGESYSTEM
     CEMS,
     HEMS
 };
+
+enum OBJECTIVETARGET{ MAXIMUM, MINIMUM };
 
 class IMPORT {
 
