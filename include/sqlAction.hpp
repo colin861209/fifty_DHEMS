@@ -20,10 +20,10 @@ public:
 
     // HEMS & CEMS import
     // common
-    void get_experimental_parameters(ENERGYMANAGESYSTEM ems_name = ENERGYMANAGESYSTEM::HEMS);
+    void get_experimental_parameters(ENERGYMANAGESYSTEM ems_name=ENERGYMANAGESYSTEM::CEMS);
     void get_allDay_price();
-    void get_flag(ENERGYMANAGESYSTEM ems_name = ENERGYMANAGESYSTEM::HEMS);
-    void create_variable_name(ENERGYMANAGESYSTEM ems_name = ENERGYMANAGESYSTEM::HEMS);
+    void get_flag(ENERGYMANAGESYSTEM ems_name=ENERGYMANAGESYSTEM::CEMS);
+    void create_variable_name(ENERGYMANAGESYSTEM ems_name=ENERGYMANAGESYSTEM::CEMS);
     void get_dr_mode();
     void get_demand_response();
     // cems
@@ -60,7 +60,7 @@ public:
 private:
     // common
     vector<int> split_array(string timearray);
-    int get_already_operate_time(string load_type, int offset_num, ENERGYMANAGESYSTEM ems_name = ENERGYMANAGESYSTEM::HEMS);
+    int get_already_operate_time(string load_type, int offset_num, ENERGYMANAGESYSTEM ems_name=ENERGYMANAGESYSTEM::CEMS);
     int get_remain_ot_time(int ot_time, int already_ot_time);
     // hems
     bool determine_distributedGroup_status(string condition);

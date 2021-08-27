@@ -13,14 +13,15 @@ int main(int argc, const char** argv) {
     
 	SQLACTION act("140.124.42.65","root", "fuzzy314", "DHEMS_fiftyHousehold");
 	int group_id = 1;
+	ENERGYMANAGESYSTEM ems_type = ENERGYMANAGESYSTEM::HEMS;
 	// flag
-	act.get_flag();
-	act.get_experimental_parameters();
+	act.get_flag(ems_type);
+	act.get_experimental_parameters(ems_type);
 	act.get_distributedGroup_householdAndSampleTime(group_id);
 	
 	act.determine_LHEMS_realTimeOrOneDayMode_andGetSOC(group_id);
 	// base parm
-	act.create_variable_name();
+	act.create_variable_name(ems_type);
 	act.get_allDay_price();
 	act.init_totalLoad_tableAndFlag(group_id);
 	

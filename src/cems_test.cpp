@@ -20,14 +20,13 @@ using namespace std;
 int main(int argc, const char** argv) {
 	// IMPORT ipt;
 	SQLACTION act("140.124.42.65","root", "fuzzy314", "DHEMS_fiftyHousehold");
-	ENERGYMANAGESYSTEM ems_name = ENERGYMANAGESYSTEM::CEMS;
 	
-	act.get_flag(ems_name);
-	act.get_experimental_parameters(ems_name);
+	act.get_flag();
+	act.get_experimental_parameters();
 	
 	act.determine_GHEMS_realTimeOrOneDayMode_andGetSOC();
 	
-	act.create_variable_name(ems_name);
+	act.create_variable_name();
 	act.get_allDay_price();
 	act.getOrUpdate_SolarInfo_ThroughSampleTime();
 	act.get_totalLoad_power();
