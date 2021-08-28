@@ -121,6 +121,7 @@ private:
     {
         int load_num;
         vector<int> start, end, ot, reot;
+        vector<bool> continue_flag;
         vector<float> power;
     }UNINTERRUPT;
 
@@ -128,6 +129,7 @@ private:
     {
         int load_num;
         vector<int> start, end, ot, reot;
+        vector<bool> continue_flag;
         vector<vector<float>> power;
         vector<vector<int>> block;
         vector<float> max_power;

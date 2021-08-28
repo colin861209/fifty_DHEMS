@@ -736,9 +736,9 @@ void SQLACTION::get_uninterrupt_info()
 			vector<int> result = split_array(timearray);
 			
 			int count = get_already_operate_time("uninterrupt", i, ENERGYMANAGESYSTEM::HEMS);
-			bool flag = get_continuityLoad_flag("uninterDelta", i);
-			int reot_time = get_remain_ot_time(result[2], count, flag);
-			int modify_end_time = determine_change_end_time(result[2], count, reot_time, flag);
+			ipt.uirl.continue_flag.push_back(get_continuityLoad_flag("uninterDelta", i));
+			int reot_time = get_remain_ot_time(result[2], count, ipt.uirl.continue_flag[i]);
+			int modify_end_time = determine_change_end_time(result[2], count, reot_time, ipt.uirl.continue_flag[i]);
 
 			ipt.uirl.start.push_back(result[0]);
 			if (modify_end_time != -1)
@@ -792,9 +792,9 @@ void SQLACTION::get_varying_info()
 			vector<int> result = split_array(timearray);
 			
 			int count = get_already_operate_time("varying", i, ENERGYMANAGESYSTEM::HEMS);
-			bool flag = get_continuityLoad_flag("varyingDelta", i);
-			int reot_time = get_remain_ot_time(result[2], count, flag);
-			int modify_end_time = determine_change_end_time(result[2], count, reot_time, flag);
+			ipt.varl.continue_flag.push_back(get_continuityLoad_flag("varyingDelta", i));
+			int reot_time = get_remain_ot_time(result[2], count, ipt.varl.continue_flag[i]);
+			int modify_end_time = determine_change_end_time(result[2], count, reot_time, ipt.varl.continue_flag[i]);
 
 			ipt.varl.start.push_back(result[0]);
 			if (modify_end_time != -1)
