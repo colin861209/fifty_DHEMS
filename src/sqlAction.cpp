@@ -637,7 +637,6 @@ void SQLACTION::get_publicLoad_info()
 {
 	if (ipt.fg.publicLoad)
 	{
-		vector<int> start, end, ot, reot;
 		for (int i = 0; i < ipt.pl.load_num; i++)
 		{
 			sql.operate("SELECT power1 FROM load_list WHERE group_id = 5 LIMIT 1 OFFSET "+ to_string(i));
@@ -650,15 +649,13 @@ void SQLACTION::get_publicLoad_info()
 			int decrease_ot = calculate_publicLoad_decrease_operate_time(result[0], result[1]);
 			int count = get_already_operate_time("publicLoad", i);
 			int reot_time = get_remain_ot_time(result[2]-decrease_ot, count);
-			start.push_back(result[0]);
-			end.push_back(result[1]-1);
-			ot.push_back(result[2]-decrease_ot);
-			reot.push_back(reot_time);
+			
+			ipt.pl.start.push_back(result[0]);
+			ipt.pl.end.push_back(result[1]-1);
+			ipt.pl.ot.push_back(result[2]-decrease_ot);
+			ipt.pl.reot.push_back(reot_time);
+			ipt.pl.alreadyot.push_back(count);
 		}
-		ipt.pl.time_info.push_back(start);
-		ipt.pl.time_info.push_back(end);
-		ipt.pl.time_info.push_back(ot);
-		ipt.pl.time_info.push_back(reot);
 	}
 	else
 	{
@@ -700,6 +697,7 @@ void SQLACTION::get_interrupt_info()
 			ipt.irl.end.push_back(result[1] - 1);
 			ipt.irl.ot.push_back(result[2]);
 			ipt.irl.reot.push_back(reot_time);
+			ipt.irl.alreadyot.push_back(count);
 		}
 	}
 	else
@@ -736,7 +734,7 @@ void SQLACTION::get_uninterrupt_info()
 			vector<int> result = split_array(timearray);
 			
 			int count = get_already_operate_time("uninterrupt", i, ENERGYMANAGESYSTEM::HEMS);
-			ipt.uirl.continue_flag.push_back(get_continuityLoad_flag("uninterDelta", i));
+			bool flag = get_continuityLoad_flag("uninterDelta", i);
 			int reot_time = get_remain_ot_time(result[2], count, ipt.uirl.continue_flag[i]);
 			int modify_end_time = determine_change_end_time(result[2], count, reot_time, ipt.uirl.continue_flag[i]);
 
@@ -751,6 +749,8 @@ void SQLACTION::get_uninterrupt_info()
 			}
 			ipt.uirl.ot.push_back(result[2]);
 			ipt.uirl.reot.push_back(reot_time);
+			ipt.uirl.alreadyot.push_back(count);
+			ipt.uirl.continue_flag.push_back(flag);
 		}
 	}
 	else
@@ -792,7 +792,7 @@ void SQLACTION::get_varying_info()
 			vector<int> result = split_array(timearray);
 			
 			int count = get_already_operate_time("varying", i, ENERGYMANAGESYSTEM::HEMS);
-			ipt.varl.continue_flag.push_back(get_continuityLoad_flag("varyingDelta", i));
+			bool flag = get_continuityLoad_flag("varyingDelta", i);
 			int reot_time = get_remain_ot_time(result[2], count, ipt.varl.continue_flag[i]);
 			int modify_end_time = determine_change_end_time(result[2], count, reot_time, ipt.varl.continue_flag[i]);
 
@@ -807,6 +807,8 @@ void SQLACTION::get_varying_info()
 			}
 			ipt.varl.ot.push_back(result[2]);
 			ipt.varl.reot.push_back(reot_time);
+			ipt.varl.alreadyot.push_back(count);
+			ipt.varl.continue_flag.push_back(flag);
 			ipt.varl.power.push_back(convert_real_power_array(power_tmp, block_tmp));
 			ipt.varl.block.push_back(convert_real_block_array(ipt.varl.start[i], ipt.varl.end[i]));
 			ipt.varl.max_power.push_back(find_varyingLoad_max_power(power_tmp));

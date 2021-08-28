@@ -106,7 +106,8 @@ private:
     typedef struct
     {
         int load_num;
-        vector<vector<int>> time_info;
+        vector<int> start, end, ot, reot;
+        vector<int> alreadyot;
         vector<float> power;
     }PUBLICLOAD;
 
@@ -114,6 +115,7 @@ private:
     {
         int load_num;
         vector<int> start, end, ot, reot;
+        vector<int> alreadyot;
         vector<float> power;
     }INTERRUPT;
 
@@ -121,6 +123,7 @@ private:
     {
         int load_num;
         vector<int> start, end, ot, reot;
+        vector<int> alreadyot;
         vector<bool> continue_flag;
         vector<float> power;
     }UNINTERRUPT;
@@ -129,6 +132,7 @@ private:
     {
         int load_num;
         vector<int> start, end, ot, reot;
+        vector<int> alreadyot;
         vector<bool> continue_flag;
         vector<vector<float>> power;
         vector<vector<int>> block;
