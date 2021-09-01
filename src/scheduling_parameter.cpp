@@ -1,9 +1,15 @@
 #include <iostream>
+#include "scheduling_parameter.hpp"
+std::string row_num_string;
 
-void display_coefAndBnds_rowNum(int coef_row_num, int coef_diff, int bnd_row_num, int bnd_diff) {
+void saving_coefAndBnds_rowNum(int coef_row_num, int coef_diff, int bnd_row_num, int bnd_diff) {
 
-    std::cout << "\t";
-    std::cout << "@:    ";
-    std::cout << coef_row_num - coef_diff << " ~ " << coef_row_num - 1 << "\t ";
-    std::cout << bnd_row_num - bnd_diff << " ~ " << bnd_row_num - 1 << std::endl;
+    row_num_string += "\t@:    "+ std::to_string(coef_row_num-coef_diff)+ " ~ " +std::to_string( coef_row_num - 1)
+    +"\t "+ std::to_string(bnd_row_num-bnd_diff) + " ~ " + std::to_string(bnd_row_num - 1) +"\n";
+
+}
+
+void display_coefAndBnds_rowNum() {
+
+    std::cout << row_num_string << std::endl;
 }
