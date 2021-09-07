@@ -1,5 +1,5 @@
 
-
+import os
 from socket import socket
 from time import time, sleep
 from time import time
@@ -74,6 +74,23 @@ class Xpath:
         self.GHEMS_loadModel = '//*[@id="loadModel"]'
         self.GHEMS_table = '/html/body/table'
         self.LHEMS_loadSum = '//*[@id="households_loadsSum"]'
+        self.LHEMS_household_status = '//*[@id="each_household_status"]'
+        self.LHEMS_load1 = '//*[@id="con_0"]'
+        self.LHEMS_load2 = '//*[@id="con_1"]'
+        self.LHEMS_load3 = '//*[@id="con_2"]'
+        self.LHEMS_load4 = '//*[@id="con_3"]'
+        self.LHEMS_load5 = '//*[@id="con_4"]'
+        self.LHEMS_load5 = '//*[@id="con_5"]'
+        self.LHEMS_load6 = '//*[@id="con_5"]'
+        self.LHEMS_load7 = '//*[@id="con_6"]'
+        self.LHEMS_load8 = '//*[@id="con_7"]'
+        self.LHEMS_load9 = '//*[@id="con_8"]'
+        self.LHEMS_load10 = '//*[@id="con_9"]'
+        self.LHEMS_load11 = '//*[@id="con_10"]'
+        self.LHEMS_load12 = '//*[@id="con_11"]'
+        self.LHEMS_load13 = '//*[@id="con_12"]'
+        self.LHEMS_load14 = '//*[@id="con_13"]'
+        self.LHEMS_load15 = '//*[@id="con_14"]'
 
         self.baseParameter_table = '//*[@id="flag_table"]'
         self.baseParameter_table_SOCthresh = '//*[@id="SOCthres"]'
@@ -211,7 +228,6 @@ def choose_DB_by_btn(DB_name):
         sleep(1)
 
 def setting_screenshot_path(target_folder, fix_path = "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\"):
-    # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\not_summer_price\\sunny\\SOCinit0.7_dr1\\sunny\\"
     screenshot_path = fix_path + target_folder
     chrome.execute_script("document.documentElement.scrollTop=10000")
     chrome.find_element_by_xpath(xpath.baseParameter_table).click()
@@ -223,14 +239,29 @@ def setting_screenshot_path(target_folder, fix_path = "C:\\Users\\sonu\\Desktop\
     weather = chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_weather).get_attribute("value")
     price += "\\"
     weather += "\\"
+    # 2021/09/07 don't consider history weather
+    # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\9.comfortLevel\\summer_price\\sunny\\SOCinit0.3_dr1\\"
+    # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\9.comfortLevel\\summer_price\\sunny\\SOCinit0.3\\"
     if int(dr_mode) != 0:
-        history_weather = chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_history_weather).get_attribute("value")
-        history_weather += "\\"
-        SOC_threshold = "SOCinit" + SOC_threshold + "_dr" + dr_mode + "\\"
-        screenshot_path = screenshot_path + price + history_weather + SOC_threshold + weather
+        SOC_threshold = "SOCinit" + SOC_threshold + "_dr" + dr_mode + "\\"    
     else:
         SOC_threshold = "SOCinit" + SOC_threshold + "\\"
-        screenshot_path = screenshot_path + price + weather + SOC_threshold
+    screenshot_path = screenshot_path + price + weather + SOC_threshold
+
+    # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\not_summer_price\\sunny\\SOCinit0.7_dr1\\sunny\\"
+    # if int(dr_mode) != 0:
+    #     history_weather = chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_history_weather).get_attribute("value")
+    #     history_weather += "\\"
+    #     SOC_threshold = "SOCinit" + SOC_threshold + "_dr" + dr_mode + "\\"
+    #     screenshot_path = screenshot_path + price + history_weather + SOC_threshold + weather
+    # else:
+    #     SOC_threshold = "SOCinit" + SOC_threshold + "\\"
+    #     screenshot_path = screenshot_path + price + weather + SOC_threshold
+
+    try:
+        os.makedirs(screenshot_path)
+    except FileExistsError:
+        pass
     return screenshot_path, dr_mode
 
 if __name__ == "__main__":
@@ -251,7 +282,7 @@ if __name__ == "__main__":
     chrome = webdriver_init(url.DHEMS_web_loadFix)
     wait = WebDriverWait(chrome, timeout=30)
     choose_DB_by_btn("DHEMS_fiftyHousehold")
-    screenshot_path, dr_mode = setting_screenshot_path("8.publicLoad\\")
+    screenshot_path, dr_mode = setting_screenshot_path("9.comfortLevel\\")
     print("\n=-=-=-=-=-=-=-=-=-=")
     print("file import to ===> ", screenshot_path)
     print("=-=-=-=-=-=-=-=-=-=\n")
