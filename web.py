@@ -3,7 +3,7 @@ import os
 from socket import socket
 from time import time, sleep
 from time import time
-from typing import Container
+from typing import Container, Sequence
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -74,13 +74,16 @@ class Xpath:
         self.GHEMS_loadModel = '//*[@id="loadModel"]'
         self.GHEMS_table = '/html/body/table'
         self.LHEMS_loadSum = '//*[@id="households_loadsSum"]'
+        self.auto_run = '//*[@id="auto"]'
+        self.range_bar = '//*[@id="button_household_range"]/button'
+        self.range_bar_go = '/html/body/div[9]/div/div[6]/button[1]'
+        self.LHEMS_household_text = '//*[@id="household_id"]'
         self.LHEMS_household_status = '//*[@id="each_household_status"]'
         self.LHEMS_load1 = '//*[@id="con_0"]'
         self.LHEMS_load2 = '//*[@id="con_1"]'
         self.LHEMS_load3 = '//*[@id="con_2"]'
         self.LHEMS_load4 = '//*[@id="con_3"]'
         self.LHEMS_load5 = '//*[@id="con_4"]'
-        self.LHEMS_load5 = '//*[@id="con_5"]'
         self.LHEMS_load6 = '//*[@id="con_5"]'
         self.LHEMS_load7 = '//*[@id="con_6"]'
         self.LHEMS_load8 = '//*[@id="con_7"]'
@@ -91,7 +94,8 @@ class Xpath:
         self.LHEMS_load13 = '//*[@id="con_12"]'
         self.LHEMS_load14 = '//*[@id="con_13"]'
         self.LHEMS_load15 = '//*[@id="con_14"]'
-
+        self.LHEMS_nextHousehold_btn = '//*[@id="button_household_next"]/button[2]'
+        
         self.baseParameter_table = '//*[@id="flag_table"]'
         self.baseParameter_table_SOCthresh = '//*[@id="SOCthres"]'
         self.baseParameter_table_dr_mode = '//*[@id="dr_mode"]'
@@ -264,6 +268,43 @@ def setting_screenshot_path(target_folder, fix_path = "C:\\Users\\sonu\\Desktop\
         pass
     return screenshot_path, dr_mode
 
+def screenshot_everyHousehold_eachLoad_file(screenshot_path, householdTotal = 50):
+    if chrome.current_url != url.DHEMS_web_index:
+        chrome.get(url.DHEMS_web_index)
+    bar = chrome.find_element_by_xpath(xpath.range_bar)
+    wait.until(expected_conditions.visibility_of(bar))
+    bar.click()
+    chrome.find_element_by_xpath(xpath.range_bar_go).click()
+
+    chart_sequence = {
+        'file_name' : ["status.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg"],
+        'file_xpath' : [xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15]
+    }
+    chart_sequence['file_xpath'].reverse()
+    chart_sequence['file_name'].reverse()
+    for i in range (householdTotal):
+        sleep(1)
+        id = chrome.find_element_by_xpath(xpath.LHEMS_household_text).get_attribute("value")
+        if int(id) == i+1:
+            print(f"Doing household id {id}")
+            id += "\\"
+
+            try:
+                os.makedirs(screenshot_path + id)
+            except FileExistsError:
+                pass
+            for file_xpath, file_name in zip(chart_sequence['file_xpath'], chart_sequence['file_name']):
+                element = chrome.find_element_by_xpath(file_xpath)
+                chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-79))
+                element.screenshot(screenshot_path + id + file_name)
+            # go to page bottom
+            chrome.execute_script("document.documentElement.scrollTop=10000")
+            chrome.find_element_by_xpath(xpath.LHEMS_nextHousehold_btn).click()
+            
+        else:
+            print(f"Choosing Household {id} is not same as the target Household {i+1}, go out function")
+            return
+
 if __name__ == "__main__":
     
     xpath = Xpath()
@@ -291,6 +332,7 @@ if __name__ == "__main__":
     screenshot_file(screenshot_path, "GHEMS_SOC.jpg")
     screenshot_file(screenshot_path, "GHEMS_loadModel.jpg")
     screenshot_file(screenshot_path, "GHEMS_table.jpg")
+    screenshot_everyHousehold_eachLoad_file(screenshot_path)
     chrome.close()
     
     # '''
@@ -307,8 +349,8 @@ if __name__ == "__main__":
     export_tables = []
     export_tables.append(xpath.text_BaseParameter)
     export_tables.append(xpath.text_cost)
-    if int(dr_mode) != 0:
-        export_tables.append(xpath.text_dr_alpha)
+    # if int(dr_mode) != 0:
+    #     export_tables.append(xpath.text_dr_alpha)
     export_tables.append(xpath.text_GHEMS_control_status)
     export_tables.append(xpath.text_GHEMS_flag)
     export_tables.append(xpath.text_LHEMS_control_status)
@@ -322,4 +364,3 @@ if __name__ == "__main__":
     sleep(1)
     chrome.close()
     # '''
-
