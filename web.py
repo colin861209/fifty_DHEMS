@@ -103,207 +103,209 @@ class Xpath:
         self.baseParameter_table_simulate_price = '//*[@id="simulate_price"]'
         self.baseParameter_table_simulate_history_weather = '//*[@id="simulate_history_weather"]'
 
-def webdriver_init(url, db_download_path = ""):
-    options = Options()
-    options.add_argument("--disable-notifications")  #不啟用通知
-    options.add_experimental_option("excludeSwitches", ['enable-automation', 'ignore-certificate-errors']) # 關閉 "chrome目前受到自動測試軟體控制”信息"
-    if "html" in url:
-        options.add_argument("--start-fullscreen")
-    else:
-        prefs = {"download.default_directory" : db_download_path}
-        options.add_experimental_option("prefs", prefs)
-
-    chrome = webdriver.Chrome('./chromedriver', chrome_options=options)
-    chrome.get(url)
-    return chrome
-
-def login(user_value, password_value):
-    
-    username = chrome.find_element_by_xpath(xpath.input_username)
-    password = chrome.find_element_by_xpath(xpath.input_passowrd)
-    username.send_keys(user_value)
-    password.send_keys(password_value)
-    login = chrome.find_element_by_xpath(xpath.btn_login)
-    login.click()
-    try:
-        wait.until(expected_conditions.url_changes(url.phpmyadmin))
-        status = True
-    except TimeoutException:
-        print("Element not visible after {0} seconds".format(timeout))
-        status = False
-    except Exception as e:
-        print("An Exception Ocurred: {0}".format(e))
-        status = "ERROR"
-    return status
-
-def choose_DHEMS_DB(DHEMS_group_btn_Xpath, fiftyHousehold_Xpath):
-    
-    DHEMS_group_btn = chrome.find_element_by_xpath(DHEMS_group_btn_Xpath)
-    DHEMS_group_btn.click()
-    try:
-        DHEMS_fiftyHousehold = chrome.find_element_by_xpath(fiftyHousehold_Xpath)
-        wait.until(expected_conditions.visibility_of(DHEMS_fiftyHousehold))
-        DHEMS_fiftyHousehold.click()
-        wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.text_create_newTable)))
-        status = True
-    except TimeoutException:
-        print("Element not visible after {0} seconds".format(timeout))
-        status = False
-    except Exception as e:
-        print("An Exception Ocurred: {0}".format(e))
-        status = "ERROR"
-    return status
-
-def gotoTable(target):
-    
-    try:
-        wait.until(expected_conditions.element_to_be_clickable((By.XPATH, target)))
-        target = chrome.find_element_by_xpath(target)
-        target.click()
-        wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.serverinfo_table)))
-        menubar_table = chrome.find_element_by_xpath(xpath.serverinfo_table)
-        assert target.text in menubar_table.text
-        status = True 
-    except TimeoutException:
-        print("Element not visible after {0} seconds".format(timeout))
-        status = False
-    except Exception as e:
-        print("An Exception Ocurred: {0}".format(e))
-        status = "ERROR"
-    return status
-
-def gotoExport(table_name, default_type = 'CSV'):
-    
-    wait.until(expected_conditions.invisibility_of_element(chrome.find_element_by_xpath(xpath.alert_loading)))
-    wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.btn_export)))
-    chrome.find_element_by_xpath(xpath.btn_export).click()
-    try:
-        wait.until(expected_conditions.presence_of_element_located((By.XPATH, xpath.title_text_export)))
-        title = chrome.find_element_by_xpath(xpath.title_text_export)
-        table_name = chrome.find_element_by_xpath(table_name)
-        assert table_name.text in title.text
-
-        chrome.find_element_by_xpath(xpath.select_type_export).click()
-        wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.type_csv_export)))
-        type = chrome.find_element_by_xpath(xpath.type_csv_export)
-        assert type.text == default_type
-        type.click()
-        chrome.find_element_by_xpath(xpath.submit_export).click()
-        status = True
-    except TimeoutException:
-        print("Element not visible after {0} seconds".format(timeout))
-        status = False
-    except Exception as e:
-        print("An Exception Ocurred: {0}".format(e))
-        status = "ERROR"
-    return status
-
-def screenshot_file(screenshot_path, file):
-    offset = 79
-    sleep(1)
-    if "GHEMS" in file:
-        if chrome.current_url != url.DHEMS_web_loadFix:
-            chrome.get(url.DHEMS_web_loadFix)        
-        if "_Price" in file:
-            element = chrome.find_element_by_xpath(xpath.GHEMS_Price)
-        elif "_SOC" in file:
-            element = chrome.find_element_by_xpath(xpath.GHEMS_SOC)
-        elif "_loadModel" in file:
-            element = chrome.find_element_by_xpath(xpath.GHEMS_loadModel)
-        elif "_table" in file:
-            element = chrome.find_element_by_xpath(xpath.GHEMS_table)
-        chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-offset))
-    elif "LHEMS" in file:
-        chrome.get(url.DHEMS_web_index)
-        element = chrome.find_element_by_xpath(xpath.LHEMS_loadSum)
-        chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-offset))
-    sleep(1)
-    element.screenshot(screenshot_path + file)
-    sleep(0.5)     
-
-def choose_DB_by_btn(DB_name):
-    sleep(1)
-    webinfo = chrome.find_element_by_xpath(xpath.breadcrumb).text
-    if DB_name not in webinfo:
-        chrome.get(url.DHEMS_web_baseParameter)
-        chrome.find_element_by_xpath(xpath.btn_fiftyHousehold).click()
-        wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.btn_sweetalert)))
-        chrome.find_element_by_xpath(xpath.btn_sweetalert).click()
-        sleep(1)
-
-def setting_screenshot_path(target_folder, fix_path = "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\"):
-    screenshot_path = fix_path + target_folder
-    chrome.execute_script("document.documentElement.scrollTop=10000")
-    chrome.find_element_by_xpath(xpath.baseParameter_table).click()
-    chrome.execute_script("document.documentElement.scrollTop=10000")
-    
-    SOC_threshold = chrome.find_element_by_xpath(xpath.baseParameter_table_SOCthresh).get_attribute("value")
-    dr_mode = chrome.find_element_by_xpath(xpath.baseParameter_table_dr_mode).get_attribute("value")
-    price = chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_price).get_attribute("value")
-    weather = chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_weather).get_attribute("value")
-    price += "\\"
-    weather += "\\"
-    # 2021/09/07 don't consider history weather
-    # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\9.comfortLevel\\summer_price\\sunny\\SOCinit0.3_dr1\\"
-    # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\9.comfortLevel\\summer_price\\sunny\\SOCinit0.3\\"
-    if int(dr_mode) != 0:
-        SOC_threshold = "SOCinit" + SOC_threshold + "_dr" + dr_mode + "\\"    
-    else:
-        SOC_threshold = "SOCinit" + SOC_threshold + "\\"
-    screenshot_path = screenshot_path + price + weather + SOC_threshold
-
-    # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\not_summer_price\\sunny\\SOCinit0.7_dr1\\sunny\\"
-    # if int(dr_mode) != 0:
-    #     history_weather = chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_history_weather).get_attribute("value")
-    #     history_weather += "\\"
-    #     SOC_threshold = "SOCinit" + SOC_threshold + "_dr" + dr_mode + "\\"
-    #     screenshot_path = screenshot_path + price + history_weather + SOC_threshold + weather
-    # else:
-    #     SOC_threshold = "SOCinit" + SOC_threshold + "\\"
-    #     screenshot_path = screenshot_path + price + weather + SOC_threshold
-
-    try:
-        os.makedirs(screenshot_path)
-    except FileExistsError:
-        pass
-    return screenshot_path, dr_mode
-
-def screenshot_everyHousehold_eachLoad_file(screenshot_path, householdTotal = 50):
-    if chrome.current_url != url.DHEMS_web_index:
-        chrome.get(url.DHEMS_web_index)
-    bar = chrome.find_element_by_xpath(xpath.range_bar)
-    wait.until(expected_conditions.visibility_of(bar))
-    bar.click()
-    chrome.find_element_by_xpath(xpath.range_bar_go).click()
-
-    chart_sequence = {
-        'file_name' : ["status.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg"],
-        'file_xpath' : [xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15]
-    }
-    chart_sequence['file_xpath'].reverse()
-    chart_sequence['file_name'].reverse()
-    for i in range (householdTotal):
-        sleep(1)
-        id = chrome.find_element_by_xpath(xpath.LHEMS_household_text).get_attribute("value")
-        if int(id) == i+1:
-            print(f"Doing household id {id}")
-            id += "\\"
-
-            try:
-                os.makedirs(screenshot_path + id)
-            except FileExistsError:
-                pass
-            for file_xpath, file_name in zip(chart_sequence['file_xpath'], chart_sequence['file_name']):
-                element = chrome.find_element_by_xpath(file_xpath)
-                chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-79))
-                element.screenshot(screenshot_path + id + file_name)
-            # go to page bottom
-            chrome.execute_script("document.documentElement.scrollTop=10000")
-            chrome.find_element_by_xpath(xpath.LHEMS_nextHousehold_btn).click()
-            
+class WEBDRIVER:
+    def __init__(self, url, savingFolder="", screenshot_path = "") -> None:
+        self.offset=79
+        self.timeout=30
+        self.screenshot_path=""
+        self.DHEMS="DHEMS"
+        self.DHEMS_dr1="DHEMS_dr1"
+        self.DHEMS_dr2="DHEMS_dr2"
+        self.DHEMSFifty="DHEMS_fiftyHousehold"
+        self.user_value="root"
+        self.password_value="fuzzy314"
+        # setting driver then open browser
+        options = Options()
+        options.add_argument("--disable-notifications")  #不啟用通知
+        options.add_experimental_option("excludeSwitches", ['enable-automation', 'ignore-certificate-errors']) # 關閉 "chrome目前受到自動測試軟體控制”信息"
+        if "html" in url:
+            options.add_argument("--start-fullscreen")
         else:
-            print(f"Choosing Household {id} is not same as the target Household {i+1}, go out function")
-            return
+            self.screenshot_path=screenshot_path
+            prefs = {"download.default_directory" : self.screenshot_path}
+            options.add_experimental_option("prefs", prefs)
+        self.chrome = webdriver.Chrome('./chromedriver', chrome_options=options)
+        self.chrome.get(url)
+        self.wait = WebDriverWait(self.chrome, timeout=self.timeout)
+        # get screenshot path
+        if "html" in url:
+            self.choose_DB_by_btn(self.DHEMSFifty)
+            self.setting_screenshot_path(savingFolder)
+
+    def __del__(self):
+        self.chrome.close()
+
+    def loginPHPMyAdmin(self):
+        username = self.chrome.find_element_by_xpath(xpath.input_username)
+        password = self.chrome.find_element_by_xpath(xpath.input_passowrd)
+        username.send_keys(self.user_value)
+        password.send_keys(self.password_value)
+        login = self.chrome.find_element_by_xpath(xpath.btn_login)
+        login.click()
+        try:
+            self.wait.until(expected_conditions.url_changes(url.phpmyadmin))
+            print(f"=-=-=-=-=-=-=-=-=-= Success login DB =-=-=-=-=-=-=-=-=-=")
+        except TimeoutException:
+            print(f"Element not visible after {self.timeout} seconds")
+        except Exception as e:
+            print(f"An Exception Ocurred: {format(e)}")
+
+    def choose_DHEMS_DB(self, DHEMS_group_btn_Xpath, fiftyHousehold_Xpath):
+        # expand and collapse DHEMS group
+        DHEMS_group_btn = self.chrome.find_element_by_xpath(DHEMS_group_btn_Xpath)
+        DHEMS_group_btn.click()
+        try:
+            DHEMS_fiftyHousehold = self.chrome.find_element_by_xpath(fiftyHousehold_Xpath)
+            self.wait.until(expected_conditions.visibility_of(DHEMS_fiftyHousehold))
+            DHEMS_fiftyHousehold.click()
+            self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.text_create_newTable)))
+            print(f"=-=-=-=-=-=-=-=-=-= Success expand DB table =-=-=-=-=-=-=-=-=-=")
+            print(f"=-=-=-=-=-=-=-=-=-= DB table import to ===> {self.screenshot_path} =-=-=-=-=-=-=-=-=-=")
+        except TimeoutException:
+            print(f"Element not visible after {format(self.timeout)} seconds")
+        except Exception as e:
+            print(f"An Exception Ocurred: {format(e)}")
+
+    def gotoTable(self, target):
+        try:
+            self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, target)))
+            target = self.chrome.find_element_by_xpath(target)
+            target.click()
+            self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.serverinfo_table)))
+            menubar_table = self.chrome.find_element_by_xpath(xpath.serverinfo_table)
+            assert target.text in menubar_table.text
+        except TimeoutException:
+            print(f"Element not visible after {format(self.timeout)} seconds")
+        except Exception as e:
+            print(f"An Exception Ocurred: {format(e)}")
+
+    def gotoExport(self, table_name, default_type = 'CSV'):
+        self.wait.until(expected_conditions.invisibility_of_element(self.chrome.find_element_by_xpath(xpath.alert_loading)))
+        self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.btn_export)))
+        self.chrome.find_element_by_xpath(xpath.btn_export).click()
+        try:
+            self.wait.until(expected_conditions.presence_of_element_located((By.XPATH, xpath.title_text_export)))
+            title = self.chrome.find_element_by_xpath(xpath.title_text_export)
+            table_name = self.chrome.find_element_by_xpath(table_name)
+            assert table_name.text in title.text
+
+            self.chrome.find_element_by_xpath(xpath.select_type_export).click()
+            self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.type_csv_export)))
+            type = self.chrome.find_element_by_xpath(xpath.type_csv_export)
+            assert type.text == default_type
+            type.click()
+            self.chrome.find_element_by_xpath(xpath.submit_export).click()
+        except TimeoutException:
+            print(f"Element not visible after {format(self.timeout)} seconds")
+        except Exception as e:
+            print(f"An Exception Ocurred: {format(e)}")
+
+    def exportTable(self, export_table):
+        self.gotoTable(export_table)
+        sleep(0.5)
+        self.gotoExport(export_table)
+
+    def screenshot_file(self, file):
+        sleep(1)
+        if "GHEMS" in file:
+            if self.chrome.current_url != url.DHEMS_web_loadFix:
+                self.chrome.get(url.DHEMS_web_loadFix)        
+            if "_Price" in file:
+                element = self.chrome.find_element_by_xpath(xpath.GHEMS_Price)
+            elif "_SOC" in file:
+                element = self.chrome.find_element_by_xpath(xpath.GHEMS_SOC)
+            elif "_loadModel" in file:
+                element = self.chrome.find_element_by_xpath(xpath.GHEMS_loadModel)
+            elif "_table" in file:
+                element = self.chrome.find_element_by_xpath(xpath.GHEMS_table)
+            self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
+        elif "LHEMS" in file:
+            self.chrome.get(url.DHEMS_web_index)
+            element = self.chrome.find_element_by_xpath(xpath.LHEMS_loadSum)
+            self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
+        sleep(1)
+        element.screenshot(self.screenshot_path + file)
+        sleep(0.5)
+
+    def choose_DB_by_btn(self, DB_name):
+        sleep(1)
+        webinfo = self.chrome.find_element_by_xpath(xpath.breadcrumb).text
+        if DB_name not in webinfo:
+            self.chrome.get(url.DHEMS_web_baseParameter)
+            self.chrome.find_element_by_xpath(xpath.btn_fiftyHousehold).click()
+            self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.btn_sweetalert)))
+            self.chrome.find_element_by_xpath(xpath.btn_sweetalert).click()
+            sleep(1)
+
+    def setting_screenshot_path(self, target_folder, fix_path = "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\"):
+        self.screenshot_path = fix_path + target_folder
+        self.chrome.execute_script("document.documentElement.scrollTop=10000")
+        self.chrome.find_element_by_xpath(xpath.baseParameter_table).click()
+        self.chrome.execute_script("document.documentElement.scrollTop=10000")
+        
+        SOC_threshold = self.chrome.find_element_by_xpath(xpath.baseParameter_table_SOCthresh).get_attribute("value")
+        dr_mode = self.chrome.find_element_by_xpath(xpath.baseParameter_table_dr_mode).get_attribute("value")
+        price = self.chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_price).get_attribute("value")
+        weather = self.chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_weather).get_attribute("value")
+        price += "\\"
+        weather += "\\"
+        # 2021/09/07 don't consider history weather
+        # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\9.comfortLevel\\summer_price\\sunny\\{SOCinit0.3} or {SOCinit0.3_dr1}\\"
+        if int(dr_mode) != 0:
+            SOC_threshold = "SOCinit" + SOC_threshold + "_dr" + dr_mode + "\\"    
+        else:
+            SOC_threshold = "SOCinit" + SOC_threshold + "\\"
+        self.screenshot_path = self.screenshot_path + price + weather + SOC_threshold
+        print(f"=-=-=-=-=-=-=-=-=-= File import to ===>  {self.screenshot_path} =-=-=-=-=-=-=-=-=-=")
+        # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\not_summer_price\\sunny\\SOCinit0.7_dr1\\sunny\\"
+        # if int(dr_mode) != 0:
+        #     history_weather = self.chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_history_weather).get_attribute("value")
+        #     history_weather += "\\"
+        #     SOC_threshold = "SOCinit" + SOC_threshold + "_dr" + dr_mode + "\\"
+        #     screenshot_path = screenshot_path + price + history_weather + SOC_threshold + weather
+        # else:
+        #     SOC_threshold = "SOCinit" + SOC_threshold + "\\"
+        #     screenshot_path = screenshot_path + price + weather + SOC_threshold
+        try:
+            os.makedirs(self.screenshot_path)
+        except FileExistsError:
+            pass
+
+    def screenshot_everyHousehold_eachLoad_file(self, householdTotal = 50):
+        if self.chrome.current_url != url.DHEMS_web_index:
+            self.chrome.get(url.DHEMS_web_index)
+        bar = self.chrome.find_element_by_xpath(xpath.range_bar)
+        self.wait.until(expected_conditions.visibility_of(bar))
+        bar.click()
+        self.chrome.find_element_by_xpath(xpath.range_bar_go).click()
+
+        chart_sequence = {
+            'file_name' : ["status.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg"],
+            'file_xpath' : [xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15]
+        }
+        chart_sequence['file_xpath'].reverse()
+        chart_sequence['file_name'].reverse()
+        for i in range (householdTotal):
+            sleep(1)
+            id = self.chrome.find_element_by_xpath(xpath.LHEMS_household_text).get_attribute("value")
+            if int(id) == i+1:
+                print(f"Doing household id {id}")
+                id += "\\"
+                # create household num folder
+                try:
+                    os.makedirs(self.screenshot_path + id)
+                except FileExistsError:
+                    pass
+                for file_xpath, file_name in zip(chart_sequence['file_xpath'], chart_sequence['file_name']):
+                    element = self.chrome.find_element_by_xpath(file_xpath)
+                    self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
+                    element.screenshot(self.screenshot_path + id + file_name)
+                # go to page bottom to click next household button
+                self.chrome.execute_script("document.documentElement.scrollTop=10000")
+                self.chrome.find_element_by_xpath(xpath.LHEMS_nextHousehold_btn).click()
+            else:
+                print(f"Choosing Household {id} is not same as the target Household {i+1}, go out function")
+                return
 
 if __name__ == "__main__":
     
@@ -317,50 +319,21 @@ if __name__ == "__main__":
     ## screenshot_file: name of the file                         ##
     ## choose_DHEMS_DB: 'DHEMS group' Process                    ##
     ###############################################################
-    
-    # '''
-    # =-=-=-=-=-=- Get GHEMS and LHEMS screen shot -=-=-=-=-=-=
-    chrome = webdriver_init(url.DHEMS_web_loadFix)
-    wait = WebDriverWait(chrome, timeout=30)
-    choose_DB_by_btn("DHEMS_fiftyHousehold")
-    screenshot_path, dr_mode = setting_screenshot_path("9.comfortLevel\\")
-    print("\n=-=-=-=-=-=-=-=-=-=")
-    print("file import to ===> ", screenshot_path)
-    print("=-=-=-=-=-=-=-=-=-=\n")
-    screenshot_file(screenshot_path, "LHEMS.jpg")
-    screenshot_file(screenshot_path, "GHEMS_Price.jpg")
-    screenshot_file(screenshot_path, "GHEMS_SOC.jpg")
-    screenshot_file(screenshot_path, "GHEMS_loadModel.jpg")
-    screenshot_file(screenshot_path, "GHEMS_table.jpg")
-    screenshot_everyHousehold_eachLoad_file(screenshot_path)
-    chrome.close()
-    
-    # '''
-    # =-=-=-=-=-=- Export csv file from DB DHEMS_fiftyHousehold -=-=-=-=-=-=
-    chrome = webdriver_init(url.phpmyadmin, screenshot_path)
-    wait = WebDriverWait(chrome, timeout=30)
-    db_user = "root"
-    db_password = "fuzzy314"
-    print("\n=-=-=-=-=-=-=-=-=-= login pass =-=-=-=-=-=-=-=-=-=") if login(db_user, db_password) else exit()
-    print("=-=-=-=-=-=-=-=-=-= Go to DB pass =-=-=-=-=-=-=-=-=-=") if choose_DHEMS_DB(xpath.btn_DHEMS_group, xpath.text_DB_DHMES_fiftyHousehold) else exit()
-    print("=-=-=-=-=-=-=-=-=-=")
-    print("DB table import to ===> ", screenshot_path)
-    print("=-=-=-=-=-=-=-=-=-=\n")
-    export_tables = []
-    export_tables.append(xpath.text_BaseParameter)
-    export_tables.append(xpath.text_cost)
-    # if int(dr_mode) != 0:
-    #     export_tables.append(xpath.text_dr_alpha)
-    export_tables.append(xpath.text_GHEMS_control_status)
-    export_tables.append(xpath.text_GHEMS_flag)
-    export_tables.append(xpath.text_LHEMS_control_status)
-    export_tables.append(xpath.text_LHEMS_flag)
-    export_tables.append(xpath.text_totalLoad_model)
+    webpage = WEBDRIVER(url.DHEMS_web_loadFix, savingFolder="9.comfortLevel\\")
+    webpage.screenshot_file("LHEMS.jpg")
+    webpage.screenshot_file("GHEMS_Price.jpg")
+    webpage.screenshot_file("GHEMS_SOC.jpg")
+    webpage.screenshot_file("GHEMS_loadModel.jpg")
+    webpage.screenshot_file("GHEMS_table.jpg")
+    webpage.screenshot_everyHousehold_eachLoad_file()
 
-    for export_table in export_tables:
-        gotoTable(export_table)
-        sleep(0.5)
-        gotoExport(export_table)
-    sleep(1)
-    chrome.close()
-    # '''
+    db = WEBDRIVER(url=url.phpmyadmin, screenshot_path=webpage.screenshot_path)
+    db.loginPHPMyAdmin()
+    db.choose_DHEMS_DB(xpath.btn_DHEMS_group, xpath.text_DB_DHMES_fiftyHousehold)
+    db.exportTable(xpath.text_BaseParameter)
+    db.exportTable(xpath.text_cost)
+    db.exportTable(xpath.text_GHEMS_control_status)
+    db.exportTable(xpath.text_GHEMS_flag)
+    db.exportTable(xpath.text_LHEMS_control_status)
+    db.exportTable(xpath.text_LHEMS_flag)
+    db.exportTable(xpath.text_totalLoad_model)
