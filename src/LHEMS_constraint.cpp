@@ -40,7 +40,7 @@ void summation_interruptLoadRa_biggerThan_Qa(int *interrupt_start, int *interrup
 	}
 	coef_row_num += row_num_maxAddition;
 	bnd_row_num += row_num_maxAddition;
-	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+	saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- demand response -=-=-=-=-=-=-= //
@@ -58,7 +58,7 @@ void pgrid_smallerThan_alphaPgridMax(float **coefficient, glp_prob *mip, int row
 	}
 	coef_row_num += row_num_maxAddition;
 	bnd_row_num += row_num_maxAddition;
-	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+	saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void alpha_between_oneminusDu_and_one(int *participate_array, float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -86,7 +86,7 @@ void alpha_between_oneminusDu_and_one(int *participate_array, float **coefficien
 	}
 	coef_row_num += row_num_maxAddition;
 	bnd_row_num += row_num_maxAddition;
-	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+	saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- balanced equation -=-=-=-=-=-=-= //
@@ -175,7 +175,7 @@ void pgridMinusPess_equalTo_ploadPlusPuncontrollLoad(int *interrupt_start, int *
 	}
 	coef_row_num += row_num_maxAddition;
 	bnd_row_num += row_num_maxAddition;
-	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+	saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- battery -=-=-=-=-=-=-= //
@@ -197,7 +197,7 @@ void previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(float **coef
 
 	coef_row_num += row_num_maxAddition;
 	bnd_row_num += row_num_maxAddition;
-	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+	saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void previousSOCPlusPessTransToSOC_equalTo_currentSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -217,7 +217,7 @@ void previousSOCPlusPessTransToSOC_equalTo_currentSOC(float **coefficient, glp_p
 	}
 	coef_row_num += row_num_maxAddition;
 	bnd_row_num += row_num_maxAddition;
-	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+	saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void pessPositive_smallerThan_zMultiplyByPchargeMax(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -234,7 +234,7 @@ void pessPositive_smallerThan_zMultiplyByPchargeMax(float **coefficient, glp_pro
 	}
 	coef_row_num += row_num_maxAddition;
 	bnd_row_num += row_num_maxAddition;
-	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+	saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -251,7 +251,7 @@ void pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(float **coefficie
 	}
 	coef_row_num += row_num_maxAddition;
 	bnd_row_num += row_num_maxAddition;
-	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+	saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -269,7 +269,7 @@ void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *m
 	}
 	coef_row_num += row_num_maxAddition;
 	bnd_row_num += row_num_maxAddition;
-	display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+	saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- uninterrupt load -=-=-=-=-=-=-= //
@@ -303,7 +303,7 @@ void summation_uninterruptDelta_equalTo_one(int *uninterrupt_start, int *uninter
 
 			coef_row_num += row_num_maxAddition;
 			bnd_row_num += row_num_maxAddition;
-			display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+			saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 		}
 	}
 }
@@ -345,7 +345,7 @@ void uninterruptRajToN_biggerThan_uninterruptDelta(int *uninterrupt_start, int *
 			}
 			coef_row_num += row_num_maxAddition * uninterrupt_reot[h];
 			bnd_row_num += row_num_maxAddition * uninterrupt_reot[h];
-			display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition * uninterrupt_reot[h], bnd_row_num, row_num_maxAddition * uninterrupt_reot[h]);
+			saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition * uninterrupt_reot[h], bnd_row_num, row_num_maxAddition * uninterrupt_reot[h]);
 		}
 		if (uninterrupt_flag[h] == 1)
 		{
@@ -370,7 +370,7 @@ void uninterruptRajToN_biggerThan_uninterruptDelta(int *uninterrupt_start, int *
 				}
 				coef_row_num += row_num_maxAddition;
 				bnd_row_num += row_num_maxAddition;
-				display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+				saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 			}
 		}
 	}
@@ -407,7 +407,7 @@ void summation_varyingDelta_equalTo_one(int *varying_start, int *varying_end, in
 
 			coef_row_num += row_num_maxAddition;
 			bnd_row_num += row_num_maxAddition;
-			display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+			saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 		}
 	}
 }
@@ -449,7 +449,7 @@ void varyingRajToN_biggerThan_varyingDelta(int *varying_start, int *varying_end,
 			}
 			coef_row_num += row_num_maxAddition * varying_reot[h];
 			bnd_row_num += row_num_maxAddition * varying_reot[h];
-			display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition * varying_reot[h], bnd_row_num, row_num_maxAddition * varying_reot[h]);
+			saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition * varying_reot[h], bnd_row_num, row_num_maxAddition * varying_reot[h]);
 		}
 		if (varying_flag[h] == 1)
 		{
@@ -474,7 +474,7 @@ void varyingRajToN_biggerThan_varyingDelta(int *varying_start, int *varying_end,
 				}
 				coef_row_num += row_num_maxAddition;
 				bnd_row_num += row_num_maxAddition;
-				display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+				saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 			}
 		}
 	}
@@ -517,7 +517,7 @@ void varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(int *varying_st
 			}
 			coef_row_num += row_num_maxAddition * varying_reot[h];
 			bnd_row_num += row_num_maxAddition * varying_reot[h];
-			display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition * varying_reot[h], bnd_row_num, row_num_maxAddition * varying_reot[h]);
+			saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition * varying_reot[h], bnd_row_num, row_num_maxAddition * varying_reot[h]);
 		}
 		if (varying_flag[h] == 1)
 		{
@@ -547,7 +547,7 @@ void varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(int *varying_st
 			}
 			coef_row_num += row_num_maxAddition;
 			bnd_row_num += row_num_maxAddition;
-			display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+			saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 		}
 	}
 }

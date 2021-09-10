@@ -61,7 +61,7 @@ void summation_publicLoadRa_biggerThan_QaMinusD(int *public_start, int *public_e
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- grid with demand response or sell -=-=-=-=-=-=-= //
@@ -82,7 +82,7 @@ void pgrid_smallerThan_muGridMultiplyByPgridMaxArray(int dr_mode, vector<float> 
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- sell -=-=-=-=-=-=-= //
@@ -100,7 +100,7 @@ void psell_smallerThan_oneMinusMuGridMultiplyByPsellMax(float **coefficient, glp
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void psell_smallerThan_PfuelCellPlusPsolar(bool Pfc_flag, float *solar2, float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -118,7 +118,7 @@ void psell_smallerThan_PfuelCellPlusPsolar(bool Pfc_flag, float *solar2, float *
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- battery -=-=-=-=-=-=-= //
@@ -140,7 +140,7 @@ void previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(float **coef
 
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void previousSOCPlusPessTransToSOC_equalTo_currentSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -160,7 +160,7 @@ void previousSOCPlusPessTransToSOC_equalTo_currentSOC(float **coefficient, glp_p
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void pessPositive_smallerThan_zMultiplyByPchargeMax(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -177,7 +177,7 @@ void pessPositive_smallerThan_zMultiplyByPchargeMax(float **coefficient, glp_pro
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -194,7 +194,7 @@ void pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(float **coefficie
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -212,7 +212,7 @@ void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *m
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- balanced equation -=-=-=-=-=-=-= //
@@ -263,7 +263,7 @@ void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusP
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- demand response -=-=-=-=-=-=-= //
@@ -301,7 +301,7 @@ void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultipl
     glp_set_row_bnds(mip, bnd_row_num, GLP_LO, dr_minDecrease_power - dr_sumOfCBL, 0.0);
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- fuel cell -=-=-=-=-=-=-= //
@@ -320,7 +320,7 @@ void pfcOnPlusPfcOff_equalTo_pfuelCell(float **coefficient, glp_prob *mip, int r
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void pfcOn_smallerThan_mufcMultiplyByPfcMax(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -337,7 +337,7 @@ void pfcOn_smallerThan_mufcMultiplyByPfcMax(float **coefficient, glp_prob *mip, 
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void pfcOn_biggerThan_mufcMultiplyByPfcMin(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -354,7 +354,7 @@ void pfcOn_biggerThan_mufcMultiplyByPfcMin(float **coefficient, glp_prob *mip, i
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void pfcOff_smallerThan_oneMinusMufcMultiplyByPfcShutDown(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -371,7 +371,7 @@ void pfcOff_smallerThan_oneMinusMufcMultiplyByPfcShutDown(float **coefficient, g
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void pfuelCell_equalTo_xoneMultiplyByZonePlusXtwoMinusXoneMultiplyByLambdaOne_etc(float *P_power, float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -393,7 +393,7 @@ void pfuelCell_equalTo_xoneMultiplyByZonePlusXtwoMinusXoneMultiplyByLambdaOne_et
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void pfuelCell_equalTo_yoneMultiplyByZonePlusYtwoMinusYoneMultiplyByLambdaOne_etc(float *P_power_all, float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -414,7 +414,7 @@ void pfuelCell_equalTo_yoneMultiplyByZonePlusYtwoMinusYoneMultiplyByLambdaOne_et
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void zPfcOnePlusZPfcTwo_etc_equalTo_one(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -433,7 +433,7 @@ void zPfcOnePlusZPfcTwo_etc_equalTo_one(float **coefficient, glp_prob *mip, int 
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void lambdaPfc_smallerThan_zpfc(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -453,7 +453,7 @@ void lambdaPfc_smallerThan_zpfc(float **coefficient, glp_prob *mip, int row_num_
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- battery discharge specific percentage a day -=-=-=-=-=-=-= //
@@ -472,7 +472,7 @@ void SOCPositiveMinusSOCNegative_equalTo_SOCchange(float **coefficient, glp_prob
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void SOCPositive_smallerThan_SOCZMultiplyByPchargeMaxTransToSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -489,7 +489,7 @@ void SOCPositive_smallerThan_SOCZMultiplyByPchargeMaxTransToSOC(float **coeffici
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void SOCNegative_smallerThan_oneMinusSOCZMultiplyByPdischargeMaxTransToSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -506,7 +506,7 @@ void SOCNegative_smallerThan_oneMinusSOCZMultiplyByPdischargeMaxTransToSOC(float
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void SOCchange_equalTo_PessTransToSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -523,7 +523,7 @@ void SOCchange_equalTo_PessTransToSOC(float **coefficient, glp_prob *mip, int ro
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 void summation_SOCNegative_biggerThan_targetDischargeSOC(float target_dischargeSOC, float already_dischargeSOC, float **coefficient, glp_prob *mip, int row_num_maxAddition)
@@ -539,7 +539,7 @@ void summation_SOCNegative_biggerThan_targetDischargeSOC(float target_dischargeS
 
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
-    display_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- objective function -=-=-=-=-=-=-= //
