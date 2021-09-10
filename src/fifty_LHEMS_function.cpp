@@ -18,6 +18,20 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 {
 	functionPrint(__func__);
 
+	float **comfortLevelWeighting;
+	if (comfortLevel_flag)
+	{
+		int comfortLevel = 4;
+		int total_timeInterval = 3;
+		vector<vector<vector<int>>> comfortLevel_startEnd;
+		// [0~3] = level, [][0~1] = start or end, [][][0~44] = 3 times * 15 appliances
+		for (int i = 0; i < comfortLevel; i++)
+		{
+			comfortLevel_startEnd.push_back(get_comfortLevel_timeInterval(household_id, app_count, total_timeInterval, i + 1));
+		}
+		comfortLevelWeighting = calculate_comfortLevel_weighting(comfortLevel_startEnd, comfortLevel, total_timeInterval, app_count);
+	}
+
 	countUninterruptAndVaryingLoads_Flag(uninterrupt_flag, varying_flag, household_id);
 
 	int *buff = new int[app_count];
@@ -111,7 +125,7 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 		varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(varying_start, varying_end, varying_reot, varying_flag, varying_t_d, varying_p_d, buff, coefficient, mip, time_block - sample_time);
 	}
 
-	setting_LHEMS_objectiveFunction(price, participate_array, mip);
+	setting_LHEMS_objectiveFunction(price, participate_array, comfortLevelWeighting, mip);
 
 	int *ia = new int[rowTotal * colTotal + 1];
 	int *ja = new int[rowTotal * colTotal + 1];
@@ -894,4 +908,97 @@ void update_distributed_group(string target, int target_value, string condition_
 {
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `distributed_group` SET `%s` = '%d' WHERE `%s` = %d;", target.c_str(), target_value, condition_col.c_str(), condition_num);
 	sent_query();
+}
+
+vector<vector<int>> get_comfortLevel_timeInterval(int household_id, int app_count, int total_timeInterval, int comfort_level)
+{
+	functionPrint(__func__);
+
+	vector<vector<int>> comfortLevel_startEnd;
+	comfortLevel_startEnd.push_back(vector<int>());
+	comfortLevel_startEnd.push_back(vector<int>());
+	for (int j = 0; j < app_count; j++)
+	{
+		for (int i = 0; i < total_timeInterval; i++)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT level%d_startEndTime%d FROM LHEMS_comfort_level where household_id = %d AND appliances_num = %d", comfort_level, i + 1, household_id, j + 1);
+			char *timeString = turn_value_to_string(0);
+			if (atoi(timeString) != -999)
+			{
+				char *token;
+				int i = 0;
+				token = strtok(timeString, "~");
+				while (token != NULL)
+				{
+					comfortLevel_startEnd[i].push_back(atoi(token));
+					token = strtok(NULL, "~");
+					i++;
+				}
+			}
+			else
+			{
+				comfortLevel_startEnd[0].push_back(0);
+				comfortLevel_startEnd[1].push_back(0);
+			}
+		}
+	}
+	return comfortLevel_startEnd;
+}
+
+float **calculate_comfortLevel_weighting(vector<vector<vector<int>>> comfortLevel_startEnd, int comfortLevel, int total_timeInterval, int app_count)
+{
+	functionPrint(__func__);
+
+	// float weighting[app_count][time_block] = {0.0};
+	float **weighting = new float *[app_count];
+	for (int i = 0; i < app_count; i++)
+		weighting[i] = new float[time_block];
+
+	for (int i = 0; i < app_count; i++)
+	{
+		for (int j = 0; j < time_block; j++)
+		{
+			weighting[i][j]	= 0.0;
+		}
+	}
+	
+		
+	for (int i = 0; i < app_count; i++)
+	{
+		for (int j = 0; j < time_block - sample_time; j++)
+		{
+			for (int k = 0; k < total_timeInterval; k++)
+			{
+				int level1_start_time = comfortLevel_startEnd[0][0][i * total_timeInterval + k];
+				int level2_start_time = comfortLevel_startEnd[1][0][i * total_timeInterval + k];
+				int level3_start_time = comfortLevel_startEnd[2][0][i * total_timeInterval + k];
+				int level4_start_time = comfortLevel_startEnd[3][0][i * total_timeInterval + k];
+				int level1_end_time = comfortLevel_startEnd[0][1][i * total_timeInterval + k];
+				int level2_end_time = comfortLevel_startEnd[1][1][i * total_timeInterval + k];
+				int level3_end_time = comfortLevel_startEnd[2][1][i * total_timeInterval + k];
+				int level4_end_time = comfortLevel_startEnd[3][1][i * total_timeInterval + k];
+				if (level1_start_time != level1_end_time && (j + sample_time) >= level1_start_time && (j + sample_time) < level1_end_time)
+				{
+					weighting[i][j + sample_time] += (j + sample_time - level1_start_time) / (level1_end_time - level1_start_time);
+				}
+				else if (level2_start_time != level2_end_time && (j + sample_time) >= level2_start_time && (j + sample_time) < level2_end_time)
+				{
+					weighting[i][j + sample_time] += (j + sample_time - level2_start_time) / (level2_end_time - level2_start_time) + 1;
+				}
+				else if (level3_start_time != level3_end_time && (j + sample_time) >= level3_start_time && (j + sample_time) < level3_end_time)
+				{
+					weighting[i][j + sample_time] += (j + sample_time - level3_start_time) / (level3_end_time - level3_start_time) + 2;
+				}
+				else if (level4_start_time != level4_end_time && (j + sample_time) >= level4_start_time && (j + sample_time) < level4_end_time)
+				{
+					weighting[i][j + sample_time] += (j + sample_time - level4_start_time) / (level4_end_time - level4_start_time) + 3;
+				}
+				else
+				{
+					weighting[i][j + sample_time] += 10;
+				}
+			}
+		}
+	}
+	return weighting;
 }
