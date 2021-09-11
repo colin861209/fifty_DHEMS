@@ -47,5 +47,5 @@
 ---
 ### 2021/09/11
 
-+ Commit Link [5f2bcb1](https://github.com/colin861209/fifty_DHEMS/commit/f30a6a73bfb23b6b177e3a9ca148b4376ed3f8d6)
++ Commit Link [f30a6a7](https://github.com/colin861209/fifty_DHEMS/commit/f30a6a73bfb23b6b177e3a9ca148b4376ed3f8d6)
 + Feature: Comfort level in LHEMS
