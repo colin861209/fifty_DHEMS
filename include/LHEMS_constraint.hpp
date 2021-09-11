@@ -22,6 +22,6 @@ void summation_varyingDelta_equalTo_one(int *varying_start, int *varying_end, in
 void uninterruptRajToN_biggerThan_uninterruptDelta(int *uninterrupt_start, int *uninterrupt_end, int *uninterrupt_reot, bool *uninterrupt_flag, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void varyingRajToN_biggerThan_varyingDelta(int *varying_start, int *varying_end, int *varying_reot, bool *varying_flag, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(int *varying_start, int *varying_end, int *varying_reot, bool *varying_flag, int **varying_t_d, float **varying_p_d, int *buff, float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void setting_LHEMS_objectiveFunction(float* price, int *participate_array, glp_prob *mip);
+void setting_LHEMS_objectiveFunction(float* price, int *participate_array, float **comfortLevelWeighting, glp_prob *mip);
 
 #endif
