@@ -338,7 +338,7 @@ void optimize::uninterruptRajToN_biggerThan_uninterruptDelta(int row_num_maxAddi
 				}
 				coef_row_num += row_num_maxAddition;
 				bnd_row_num += row_num_maxAddition;
-				saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition*rxipt.uirl.reot[h]);
+				saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 			}
 		}
 	}
@@ -437,7 +437,7 @@ void optimize::varyingRajToN_biggerThan_varyingDelta(int row_num_maxAddition)
 				}
 				coef_row_num += row_num_maxAddition;
 				bnd_row_num += row_num_maxAddition;
-				saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition*rxipt.varl.reot[h]);
+				saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 			}
 		}
 	}
@@ -508,7 +508,7 @@ void optimize::varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(int r
 			}
 			coef_row_num += row_num_maxAddition;
 			bnd_row_num += row_num_maxAddition;
-			saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition*rxipt.varl.reot[h]);
+			saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 		}
 	}
 }

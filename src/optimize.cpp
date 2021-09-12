@@ -317,17 +317,35 @@ int optimize::verify_solution_after_sovle_GLPK(ENERGYMANAGESYSTEM ems_type)
         break;
     }
     int err = glp_intopt(mip, &parm);
-
-	if (glp_mip_obj_val(mip) == 0.0 && glp_mip_col_val(mip, find_variableName_position(variable_name, "SOC") + 1) == 0.0)
-	{
-		cout << "Error > Objective value and SOC is 0, No Solution, give up the solution" << endl;
-		return -1;
-	}
-    else
+    switch (ems_type)
     {
-        printf("obj_val = %f; \n", glp_mip_obj_val(mip));
-        return 1;
+    case HEMS:
+        if (glp_mip_obj_val(mip) == 0.0)
+        {
+            cout << "Error > Objective value and SOC is 0, No Solution, give up the solution" << endl;
+            return -1;
+        }
+        else
+        {
+            printf("obj_val = %f; \n", glp_mip_obj_val(mip));
+            return 1;
+        }
+        break;
+    
+    default:
+        if (glp_mip_obj_val(mip) == 0.0 && glp_mip_col_val(mip, find_variableName_position(variable_name, "SOC") + 1) == 0.0)
+        {
+            cout << "Error > Objective value and SOC is 0, No Solution, give up the solution" << endl;
+            return -1;
+        }
+        else
+        {
+            printf("obj_val = %f; \n", glp_mip_obj_val(mip));
+            return 1;
+        }
+        break;
     }
+	
 }
 
 // hems
@@ -362,12 +380,10 @@ void optimize::setting_hems_coefficient()
         varyingRajToN_biggerThan_varyingDelta(remain_timeblock);
         varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(remain_timeblock);
     }
-    // display_coefAndBnds_rowNum();
 }
 
 void optimize::setting_hems_objectiveFunction()
 {
-    int sample_time=rxipt.bp.next_simulate_timeblock;
     vector<float> price = rxipt.bp.price;
     for (int j = 0; j < remain_timeblock; j++)
 	{
@@ -433,7 +449,6 @@ void optimize::setting_cems_coefficient()
     {
         // temporary won't use
     }
-    display_coefAndBnds_rowNum();
 }
 
 void optimize::setting_cems_objectiveFunction()
@@ -485,13 +500,9 @@ void optimize::saving_result(ENERGYMANAGESYSTEM ems_type)
                     if (ems_type == ENERGYMANAGESYSTEM::HEMS && i == find_variableName_position(variable_name, "varying"+to_string(i-(rxipt.irl.load_num+rxipt.uirl.load_num)+1)))
                     {
                         variable_result[j] = glp_mip_col_val(mip, varyPsi_num + find_variableName_position(variable_name, "varyingPsi"+to_string(i-(rxipt.irl.load_num+rxipt.uirl.load_num)+1)));
-                        for (int index = 0; index < rxipt.varl.power[i-(rxipt.irl.load_num+rxipt.uirl.load_num)].size(); index++)
+                        if (variable_result[j] > 0.0)
                         {
-                            if (variable_result[j] == rxipt.varl.power[i-(rxipt.irl.load_num+rxipt.uirl.load_num)][index])
-                            {
-                                variable_result[j]=1.0;
-                                break;
-                            }
+                            variable_result[j]=1.0;
                         }
                     }
                     z += variable_num;
@@ -506,13 +517,9 @@ void optimize::saving_result(ENERGYMANAGESYSTEM ems_type)
                     if (ems_type == ENERGYMANAGESYSTEM::HEMS && i == find_variableName_position(variable_name, "varying"+to_string(i-(rxipt.irl.load_num+rxipt.uirl.load_num)+1)))
                     {
                         variable_result[j] = glp_mip_col_val(mip, varyPsi_num + find_variableName_position(variable_name, "varyingPsi"+to_string(i-(rxipt.irl.load_num+rxipt.uirl.load_num)+1)));
-                        for (int index = 0; index < rxipt.varl.power[i-(rxipt.irl.load_num+rxipt.uirl.load_num)].size(); index++)
+                        if (variable_result[j] > 0.0)
                         {
-                            if (variable_result[j] == rxipt.varl.power[i-(rxipt.irl.load_num+rxipt.uirl.load_num)][index])
-                            {
-                                variable_result[j]=1.0;
-                                break;
-                            }
+                            variable_result[j]=1.0;
                         }
                     }
                     z += variable_num;

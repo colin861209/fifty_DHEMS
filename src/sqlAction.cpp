@@ -1090,7 +1090,7 @@ void SQLACTION::update_table_BaseParameter_total_cost_info()
 	sql.operate("UPDATE BaseParameter SET value = "+ to_string(ept.ci.summation_feedback_of_realSell) +" WHERE parameter_name = 'maximumSell' ");
 	sql.operate("UPDATE BaseParameter SET value = "+ to_string(ept.ci.summation_cost_of_fuelCell) +" WHERE parameter_name = 'fuelCellSpend' ");
 	sql.operate("UPDATE BaseParameter SET value = "+ to_string(ept.ci.summation_hydrogen_comsuption) +" WHERE parameter_name = 'hydrogenConsumption(g)' ");
-	sql.operate("UPDATE BaseParameter SET value = "+ to_string(ept.ci.summation_feedback_of_dr) +" WHERE parameter_name = 'demandResponse_feedbackPrice(g)' ");
+	sql.operate("UPDATE BaseParameter SET value = "+ to_string(ept.ci.summation_feedback_of_dr) +" WHERE parameter_name = 'demandResponse_feedbackPrice' ");
 }
 
 void SQLACTION::update_new_SOC()
