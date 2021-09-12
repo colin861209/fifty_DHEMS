@@ -10,6 +10,7 @@ class SQLACTION
 private:
     
     SQL sql;
+    vector<vector<float>> rx_result;
 public:
     
     SQLACTION(std::string iP, std::string name, std::string passwd, std::string database);
@@ -33,6 +34,7 @@ public:
     void get_Pgrid_max_array();
     int get_publicLoad_num();
     void get_publicLoad_info();
+    void get_dr_already_decrease_power();
     // hems
     void get_distributedGroup_householdAndSampleTime(int group_num);
     void determine_LHEMS_realTimeOrOneDayMode_andGetSOC(int group_num);
@@ -46,6 +48,9 @@ public:
     void get_household_participation();
 
     // HEMS & CEMS export
+    // common
+    void get_GLPK_solve_result(vector<vector<float>> GLPK_result);
+    void insertOrUpdate_control_status(ENERGYMANAGESYSTEM ems_type=ENERGYMANAGESYSTEM::CEMS);
     // cems
     void calculate_table_cost_info();
     void update_table_cost_info();

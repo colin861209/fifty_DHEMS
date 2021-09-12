@@ -12,7 +12,7 @@
 int main(int argc, const char** argv) {
     
 	SQLACTION act("140.124.42.65","root", "fuzzy314", "DHEMS_fiftyHousehold");
-	int group_id = 1;
+	int group_id = 7;
 	ENERGYMANAGESYSTEM ems_type = ENERGYMANAGESYSTEM::HEMS;
 	// flag
 	act.get_flag(ems_type);
@@ -39,7 +39,7 @@ int main(int argc, const char** argv) {
 	op.setting_hems_coefficient();
 	op.setting_hems_objectiveFunction();
 	
-	if (op.verify_solution_after_sovle_GLPK(ems_type) != -1)
+	if (op.verify_solution_after_sovle_GLPK(ENERGYMANAGESYSTEM::HEMS) != -1)
 	{
 		op.saving_result(ems_type);
 		act.get_GLPK_solve_result(op.solve_result);

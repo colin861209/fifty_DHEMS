@@ -168,8 +168,7 @@ float SQLACTION::find_varyingLoad_max_power(vector<float> power)
 
 void SQLACTION::insert_table_cost(string cost_name, vector<float> cost)
 {
-	sql.operate("INSERT INTO cost (cost_name, "+ sql.column +") VALUES('"+ cost_name +"','"
-	+ to_string(cost[0]) +"','"+ to_string(cost[1]) +"','"+ to_string(cost[2]) +"','"+ to_string(cost[3]) +"','"+ to_string(cost[4]) +"','"+ to_string(cost[5]) +"','"+ to_string(cost[6]) +"','"+ to_string(cost[7]) +"','"+ to_string(cost[8]) +"','"+ to_string(cost[9]) +"','"+ to_string(cost[10]) +"','"+ to_string(cost[11]) +"','"+ to_string(cost[12]) +"','"+ to_string(cost[13]) +"','"+ to_string(cost[14]) +"','"+ to_string(cost[15]) +"','"+ to_string(cost[16]) +"','"+ to_string(cost[17]) +"','"+ to_string(cost[18]) +"','"+ to_string(cost[19]) +"','"+ to_string(cost[20]) +"','"+ to_string(cost[21]) +"','"+ to_string(cost[22]) +"','"+ to_string(cost[23]) +"','"+ to_string(cost[24]) +"','"+ to_string(cost[25]) +"','"+ to_string(cost[26]) +"','"+ to_string(cost[27]) +"','"+ to_string(cost[28]) +"','"+ to_string(cost[29]) +"','"+ to_string(cost[30]) +"','"+ to_string(cost[31]) +"','"+ to_string(cost[32]) +"','"+ to_string(cost[33]) +"','"+ to_string(cost[34]) +"','"+ to_string(cost[35]) +"','"+ to_string(cost[36]) +"','"+ to_string(cost[37]) +"','"+ to_string(cost[38]) +"','"+ to_string(cost[39]) +"','"+ to_string(cost[40]) +"','"+ to_string(cost[41]) +"','"+ to_string(cost[42]) +"','"+ to_string(cost[43]) +"','"+ to_string(cost[44]) +"','"+ to_string(cost[45]) +"','"+ to_string(cost[46]) +"','"+ to_string(cost[47]) +"','"+ to_string(cost[48]) +"','"+ to_string(cost[49]) +"','"+ to_string(cost[50]) +"','"+ to_string(cost[51]) +"','"+ to_string(cost[52]) +"','"+ to_string(cost[53]) +"','"+ to_string(cost[54]) +"','"+ to_string(cost[55]) +"','"+ to_string(cost[56]) +"','"+ to_string(cost[57]) +"','"+ to_string(cost[58]) +"','"+ to_string(cost[59]) +"','"+ to_string(cost[60]) +"','"+ to_string(cost[61]) +"','"+ to_string(cost[62]) +"','"+ to_string(cost[63]) +"','"+ to_string(cost[64]) +"','"+ to_string(cost[65]) +"','"+ to_string(cost[66]) +"','"+ to_string(cost[67]) +"','"+ to_string(cost[68]) +"','"+ to_string(cost[69]) +"','"+ to_string(cost[70]) +"','"+ to_string(cost[71]) +"','"+ to_string(cost[72]) +"','"+ to_string(cost[73]) +"','"+ to_string(cost[74]) +"','"+ to_string(cost[75]) +"','"+ to_string(cost[76]) +"','"+ to_string(cost[77]) +"','"+ to_string(cost[78]) +"','"+ to_string(cost[79]) +"','"+ to_string(cost[80]) +"','"+ to_string(cost[81]) +"','"+ to_string(cost[82]) +"','"+ to_string(cost[83]) +"','"+ to_string(cost[84]) +"','"+ to_string(cost[85]) +"','"+ to_string(cost[86]) +"','"+ to_string(cost[87]) +"','"+ to_string(cost[88]) +"','"+ to_string(cost[89]) +"','"+ to_string(cost[90]) +"','"+ to_string(cost[91]) +"','"+ to_string(cost[92]) +"','"+ to_string(cost[93]) +"','"+ to_string(cost[94]) +"','"+ to_string(cost[95]) +"')");
+	sql.operate("INSERT INTO cost (cost_name, "+ sql.column +") VALUES('"+ cost_name +"','"+ to_string(cost[0]) +"','"+ to_string(cost[1]) +"','"+ to_string(cost[2]) +"','"+ to_string(cost[3]) +"','"+ to_string(cost[4]) +"','"+ to_string(cost[5]) +"','"+ to_string(cost[6]) +"','"+ to_string(cost[7]) +"','"+ to_string(cost[8]) +"','"+ to_string(cost[9]) +"','"+ to_string(cost[10]) +"','"+ to_string(cost[11]) +"','"+ to_string(cost[12]) +"','"+ to_string(cost[13]) +"','"+ to_string(cost[14]) +"','"+ to_string(cost[15]) +"','"+ to_string(cost[16]) +"','"+ to_string(cost[17]) +"','"+ to_string(cost[18]) +"','"+ to_string(cost[19]) +"','"+ to_string(cost[20]) +"','"+ to_string(cost[21]) +"','"+ to_string(cost[22]) +"','"+ to_string(cost[23]) +"','"+ to_string(cost[24]) +"','"+ to_string(cost[25]) +"','"+ to_string(cost[26]) +"','"+ to_string(cost[27]) +"','"+ to_string(cost[28]) +"','"+ to_string(cost[29]) +"','"+ to_string(cost[30]) +"','"+ to_string(cost[31]) +"','"+ to_string(cost[32]) +"','"+ to_string(cost[33]) +"','"+ to_string(cost[34]) +"','"+ to_string(cost[35]) +"','"+ to_string(cost[36]) +"','"+ to_string(cost[37]) +"','"+ to_string(cost[38]) +"','"+ to_string(cost[39]) +"','"+ to_string(cost[40]) +"','"+ to_string(cost[41]) +"','"+ to_string(cost[42]) +"','"+ to_string(cost[43]) +"','"+ to_string(cost[44]) +"','"+ to_string(cost[45]) +"','"+ to_string(cost[46]) +"','"+ to_string(cost[47]) +"','"+ to_string(cost[48]) +"','"+ to_string(cost[49]) +"','"+ to_string(cost[50]) +"','"+ to_string(cost[51]) +"','"+ to_string(cost[52]) +"','"+ to_string(cost[53]) +"','"+ to_string(cost[54]) +"','"+ to_string(cost[55]) +"','"+ to_string(cost[56]) +"','"+ to_string(cost[57]) +"','"+ to_string(cost[58]) +"','"+ to_string(cost[59]) +"','"+ to_string(cost[60]) +"','"+ to_string(cost[61]) +"','"+ to_string(cost[62]) +"','"+ to_string(cost[63]) +"','"+ to_string(cost[64]) +"','"+ to_string(cost[65]) +"','"+ to_string(cost[66]) +"','"+ to_string(cost[67]) +"','"+ to_string(cost[68]) +"','"+ to_string(cost[69]) +"','"+ to_string(cost[70]) +"','"+ to_string(cost[71]) +"','"+ to_string(cost[72]) +"','"+ to_string(cost[73]) +"','"+ to_string(cost[74]) +"','"+ to_string(cost[75]) +"','"+ to_string(cost[76]) +"','"+ to_string(cost[77]) +"','"+ to_string(cost[78]) +"','"+ to_string(cost[79]) +"','"+ to_string(cost[80]) +"','"+ to_string(cost[81]) +"','"+ to_string(cost[82]) +"','"+ to_string(cost[83]) +"','"+ to_string(cost[84]) +"','"+ to_string(cost[85]) +"','"+ to_string(cost[86]) +"','"+ to_string(cost[87]) +"','"+ to_string(cost[88]) +"','"+ to_string(cost[89]) +"','"+ to_string(cost[90]) +"','"+ to_string(cost[91]) +"','"+ to_string(cost[92]) +"','"+ to_string(cost[93]) +"','"+ to_string(cost[94]) +"','"+ to_string(cost[95]) +"')");
 }
 
 void SQLACTION::update_table_cost(string cost_name, vector<float> cost)
@@ -236,9 +235,9 @@ void SQLACTION::get_Pgrid_max_array()
 		for (int i = 0; i < ipt.bp.time_block - ipt.bp.Global_next_simulate_timeblock; i++)
 		{
 			sql.operate("SELECT SUM(A"+ to_string(i + ipt.bp.Global_next_simulate_timeblock) +") FROM `LHEMS_control_status` WHERE equip_name = 'dr_alpha'");
+			float dr_weighting_sumOfAlpha = sql.turnValueToFloat();
+			ipt.dr.Pgrid_max_array.push_back(ipt.bp.Pgrid_max / ipt.bp.householdAmount * dr_weighting_sumOfAlpha);
 		}
-		float dr_weighting_sumOfAlpha = sql.turnValueToFloat();
-		ipt.dr.Pgrid_max_array.push_back(ipt.bp.Pgrid_max / ipt.bp.householdAmount * dr_weighting_sumOfAlpha);
 	}
 	else
 	{
@@ -408,6 +407,27 @@ void SQLACTION::get_totalLoad_power()
 	}
 }
 
+void SQLACTION::get_dr_already_decrease_power()
+{
+	if (ipt.fg.dr_mode)
+	{
+		ipt.dr.already_decrease_power = 0.0;
+		if (ipt.dr.startTime - ipt.bp.Global_next_simulate_timeblock < 0)
+		{
+			for (int i = ipt.dr.startTime; i < ipt.bp.Global_next_simulate_timeblock; i++)
+			{
+				sql.operate("SELECT A"+ to_string(i) +" FROM `GHEMS_control_status` WHERE equip_name = 'Pgrid'");
+				float previous_grid_power = sql.turnValueToFloat();
+				ipt.dr.already_decrease_power += (ipt.dr.customer_baseLine - previous_grid_power) * ipt.bp.delta_T;
+			}
+		}
+	}
+	else
+	{
+		std::cout << "Function "<< __func__ <<" don't work, due to dr_mode = 0" << std::endl;
+	}
+}
+
 // hems
 void SQLACTION::get_distributedGroup_householdAndSampleTime(int group_num)
 {
@@ -477,8 +497,8 @@ void SQLACTION::init_totalLoad_tableAndFlag(int group_num)
 			{
 				sql.operate("UPDATE `totalLoad_model` SET `household"+ to_string(ipt.bp.real_household_id+i) +"` = '0'");
 			}
+			sql.operate("UPDATE `totalLoad_model` SET `totalLoad` = '0'");
 		}
-		sql.operate("UPDATE `totalLoad_model` SET `totalLoad` = '0'");
 	}
 }
 
@@ -820,12 +840,11 @@ void SQLACTION::get_varying_info()
 	}
 }
 
-
 void SQLACTION::get_household_participation()
 {
 	if (ipt.fg.dr_mode != 0)
 	{
-		for (int i = 0; i < ipt.dr.endTime-ipt.dr.startTime; i++)
+		for (int i = ipt.dr.startTime; i < ipt.dr.endTime; i++)
 		{
 			sql.operate("SELECT A"+ to_string(i) +" FROM `LHEMS_demand_response_participation` WHERE `household_id` = "+to_string(ipt.bp.real_household_id));
 			ipt.dr.participate_status.push_back(sql.turnValueToInt());
@@ -834,6 +853,66 @@ void SQLACTION::get_household_participation()
 }
 
 // export
+// common
+void SQLACTION::get_GLPK_solve_result(vector<vector<float>> GLPK_result)
+{
+	rx_result=GLPK_result;
+}
+
+void SQLACTION::insertOrUpdate_control_status(ENERGYMANAGESYSTEM ems_type)
+{
+	string table_name;
+	vector<float> pre_result;
+	switch (ems_type)
+	{
+	case HEMS:
+		table_name = "LHEMS_control_status";
+		if (ipt.bp.next_simulate_timeblock == 0)
+		{
+			for (int i = 0; i < rx_result.size(); i++)
+			{	
+				sql.operate("INSERT INTO "+ table_name +" ("+ sql.column +", equip_name, household_id) VALUES('"+ to_string(rx_result[i][0]) +"','"+ to_string(rx_result[i][1]) +"','"+ to_string(rx_result[i][2]) +"','"+ to_string(rx_result[i][3]) +"','"+ to_string(rx_result[i][4]) +"','"+ to_string(rx_result[i][5]) +"','"+ to_string(rx_result[i][6]) +"','"+ to_string(rx_result[i][7]) +"','"+ to_string(rx_result[i][8]) +"','"+ to_string(rx_result[i][9]) +"','"+ to_string(rx_result[i][10]) +"','"+ to_string(rx_result[i][11]) +"','"+ to_string(rx_result[i][12]) +"','"+ to_string(rx_result[i][13]) +"','"+ to_string(rx_result[i][14]) +"','"+ to_string(rx_result[i][15]) +"','"+ to_string(rx_result[i][16]) +"','"+ to_string(rx_result[i][17]) +"','"+ to_string(rx_result[i][18]) +"','"+ to_string(rx_result[i][19]) +"','"+ to_string(rx_result[i][20]) +"','"+ to_string(rx_result[i][21]) +"','"+ to_string(rx_result[i][22]) +"','"+ to_string(rx_result[i][23]) +"','"+ to_string(rx_result[i][24]) +"','"+ to_string(rx_result[i][25]) +"','"+ to_string(rx_result[i][26]) +"','"+ to_string(rx_result[i][27]) +"','"+ to_string(rx_result[i][28]) +"','"+ to_string(rx_result[i][29]) +"','"+ to_string(rx_result[i][30]) +"','"+ to_string(rx_result[i][31]) +"','"+ to_string(rx_result[i][32]) +"','"+ to_string(rx_result[i][33]) +"','"+ to_string(rx_result[i][34]) +"','"+ to_string(rx_result[i][35]) +"','"+ to_string(rx_result[i][36]) +"','"+ to_string(rx_result[i][37]) +"','"+ to_string(rx_result[i][38]) +"','"+ to_string(rx_result[i][39]) +"','"+ to_string(rx_result[i][40]) +"','"+ to_string(rx_result[i][41]) +"','"+ to_string(rx_result[i][42]) +"','"+ to_string(rx_result[i][43]) +"','"+ to_string(rx_result[i][44]) +"','"+ to_string(rx_result[i][45]) +"','"+ to_string(rx_result[i][46]) +"','"+ to_string(rx_result[i][47]) +"','"+ to_string(rx_result[i][48]) +"','"+ to_string(rx_result[i][49]) +"','"+ to_string(rx_result[i][50]) +"','"+ to_string(rx_result[i][51]) +"','"+ to_string(rx_result[i][52]) +"','"+ to_string(rx_result[i][53]) +"','"+ to_string(rx_result[i][54]) +"','"+ to_string(rx_result[i][55]) +"','"+ to_string(rx_result[i][56]) +"','"+ to_string(rx_result[i][57]) +"','"+ to_string(rx_result[i][58]) +"','"+ to_string(rx_result[i][59]) +"','"+ to_string(rx_result[i][60]) +"','"+ to_string(rx_result[i][61]) +"','"+ to_string(rx_result[i][62]) +"','"+ to_string(rx_result[i][63]) +"','"+ to_string(rx_result[i][64]) +"','"+ to_string(rx_result[i][65]) +"','"+ to_string(rx_result[i][66]) +"','"+ to_string(rx_result[i][67]) +"','"+ to_string(rx_result[i][68]) +"','"+ to_string(rx_result[i][69]) +"','"+ to_string(rx_result[i][70]) +"','"+ to_string(rx_result[i][71]) +"','"+ to_string(rx_result[i][72]) +"','"+ to_string(rx_result[i][73]) +"','"+ to_string(rx_result[i][74]) +"','"+ to_string(rx_result[i][75]) +"','"+ to_string(rx_result[i][76]) +"','"+ to_string(rx_result[i][77]) +"','"+ to_string(rx_result[i][78]) +"','"+ to_string(rx_result[i][79]) +"','"+ to_string(rx_result[i][80]) +"','"+ to_string(rx_result[i][81]) +"','"+ to_string(rx_result[i][82]) +"','"+ to_string(rx_result[i][83]) +"','"+ to_string(rx_result[i][84]) +"','"+ to_string(rx_result[i][85]) +"','"+ to_string(rx_result[i][86]) +"','"+ to_string(rx_result[i][87]) +"','"+ to_string(rx_result[i][88]) +"','"+ to_string(rx_result[i][89]) +"','"+ to_string(rx_result[i][90]) +"','"+ to_string(rx_result[i][91]) +"','"+ to_string(rx_result[i][92]) +"','"+ to_string(rx_result[i][93]) +"','"+ to_string(rx_result[i][94]) +"','"+ to_string(rx_result[i][95]) +"', '"+ ipt.variable_name[i] +"', '"+ to_string(ipt.bp.real_household_id) +"')");
+			}
+		}
+		else
+		{
+			for (int i = 0; i < rx_result.size(); i++)
+			{
+				sql.operate("SELECT "+ sql.column +" FROM "+ table_name +" WHERE equip_name = '"+ ipt.variable_name[i] +"' AND household_id = "+ to_string(ipt.bp.real_household_id));
+				pre_result = sql.turnArrayToFloat();
+				pre_result.erase(pre_result.begin()+ipt.bp.next_simulate_timeblock, pre_result.end());
+				rx_result[i].insert(rx_result[i].begin(), pre_result.begin(), pre_result.end());
+				pre_result.clear();
+				sql.operate("UPDATE "+ table_name +" set A0 = '"+ to_string(rx_result[i][0]) +"', A1 = '"+ to_string(rx_result[i][1]) +"', A2 = '"+ to_string(rx_result[i][2]) +"', A3 = '"+ to_string(rx_result[i][3]) +"', A4 = '"+ to_string(rx_result[i][4]) +"', A5 = '"+ to_string(rx_result[i][5]) +"', A6 = '"+ to_string(rx_result[i][6]) +"', A7 = '"+ to_string(rx_result[i][7]) +"', A8 = '"+ to_string(rx_result[i][8]) +"', A9 = '"+ to_string(rx_result[i][9]) +"', A10 = '"+ to_string(rx_result[i][10]) +"', A11 = '"+ to_string(rx_result[i][11]) +"', A12 = '"+ to_string(rx_result[i][12]) +"', A13 = '"+ to_string(rx_result[i][13]) +"', A14 = '"+ to_string(rx_result[i][14]) +"', A15 = '"+ to_string(rx_result[i][15]) +"', A16 = '"+ to_string(rx_result[i][16]) +"', A17 = '"+ to_string(rx_result[i][17]) +"', A18 = '"+ to_string(rx_result[i][18]) +"', A19 = '"+ to_string(rx_result[i][19]) +"', A20 = '"+ to_string(rx_result[i][20]) +"', A21 = '"+ to_string(rx_result[i][21]) +"', A22 = '"+ to_string(rx_result[i][22]) +"', A23 = '"+ to_string(rx_result[i][23]) +"', A24 = '"+ to_string(rx_result[i][24]) +"', A25 = '"+ to_string(rx_result[i][25]) +"', A26 = '"+ to_string(rx_result[i][26]) +"', A27 = '"+ to_string(rx_result[i][27]) +"', A28 = '"+ to_string(rx_result[i][28]) +"', A29 = '"+ to_string(rx_result[i][29]) +"', A30 = '"+ to_string(rx_result[i][30]) +"', A31 = '"+ to_string(rx_result[i][31]) +"', A32 = '"+ to_string(rx_result[i][32]) +"', A33 = '"+ to_string(rx_result[i][33]) +"', A34 = '"+ to_string(rx_result[i][34]) +"', A35 = '"+ to_string(rx_result[i][35]) +"', A36 = '"+ to_string(rx_result[i][36]) +"', A37 = '"+ to_string(rx_result[i][37]) +"', A38 = '"+ to_string(rx_result[i][38]) +"', A39 = '"+ to_string(rx_result[i][39]) +"', A40 = '"+ to_string(rx_result[i][40]) +"', A41 = '"+ to_string(rx_result[i][41]) +"', A42 = '"+ to_string(rx_result[i][42]) +"', A43 = '"+ to_string(rx_result[i][43]) +"', A44 = '"+ to_string(rx_result[i][44]) +"', A45 = '"+ to_string(rx_result[i][45]) +"', A46 = '"+ to_string(rx_result[i][46]) +"', A47 = '"+ to_string(rx_result[i][47]) +"', A48 = '"+ to_string(rx_result[i][48]) +"', A49 = '"+ to_string(rx_result[i][49]) +"', A50 = '"+ to_string(rx_result[i][50]) +"', A51 = '"+ to_string(rx_result[i][51]) +"', A52 = '"+ to_string(rx_result[i][52]) +"', A53 = '"+ to_string(rx_result[i][53]) +"', A54 = '"+ to_string(rx_result[i][54]) +"', A55 = '"+ to_string(rx_result[i][55]) +"', A56 = '"+ to_string(rx_result[i][56]) +"', A57 = '"+ to_string(rx_result[i][57]) +"', A58 = '"+ to_string(rx_result[i][58]) +"', A59 = '"+ to_string(rx_result[i][59]) +"', A60 = '"+ to_string(rx_result[i][60]) +"', A61 = '"+ to_string(rx_result[i][61]) +"', A62 = '"+ to_string(rx_result[i][62]) +"', A63 = '"+ to_string(rx_result[i][63]) +"', A64 = '"+ to_string(rx_result[i][64]) +"', A65 = '"+ to_string(rx_result[i][65]) +"', A66 = '"+ to_string(rx_result[i][66]) +"', A67 = '"+ to_string(rx_result[i][67]) +"', A68 = '"+ to_string(rx_result[i][68]) +"', A69 = '"+ to_string(rx_result[i][69]) +"', A70 = '"+ to_string(rx_result[i][70]) +"', A71 = '"+ to_string(rx_result[i][71]) +"', A72 = '"+ to_string(rx_result[i][72]) +"', A73 = '"+ to_string(rx_result[i][73]) +"', A74 = '"+ to_string(rx_result[i][74]) +"', A75 = '"+ to_string(rx_result[i][75]) +"', A76 = '"+ to_string(rx_result[i][76]) +"', A77 = '"+ to_string(rx_result[i][77]) +"', A78 = '"+ to_string(rx_result[i][78]) +"', A79 = '"+ to_string(rx_result[i][79]) +"', A80 = '"+ to_string(rx_result[i][80]) +"', A81 = '"+ to_string(rx_result[i][81]) +"', A82 = '"+ to_string(rx_result[i][82]) +"', A83 = '"+ to_string(rx_result[i][83]) +"', A84 = '"+ to_string(rx_result[i][84]) +"', A85 = '"+ to_string(rx_result[i][85]) +"', A86 = '"+ to_string(rx_result[i][86]) +"', A87 = '"+ to_string(rx_result[i][87]) +"', A88 = '"+ to_string(rx_result[i][88]) +"', A89 = '"+ to_string(rx_result[i][89]) +"', A90 = '"+ to_string(rx_result[i][90]) +"', A91 = '"+ to_string(rx_result[i][91]) +"', A92 = '"+ to_string(rx_result[i][92]) +"', A93 = '"+ to_string(rx_result[i][93]) +"', A94 = '"+ to_string(rx_result[i][94]) +"', A95 = '"+ to_string(rx_result[i][95]) +"' WHERE equip_name = '"+ ipt.variable_name[i] +"' AND household_id = "+ to_string(ipt.bp.real_household_id));
+			}
+		}
+		break;
+	
+	default:
+		table_name = "GHEMS_control_status";
+		if (ipt.bp.Global_next_simulate_timeblock == 0)
+		{
+			for (int i = 0; i < rx_result.size(); i++)
+			{	
+				sql.operate("INSERT INTO "+ table_name +" ("+ sql.column +", equip_name) VALUES('"+ to_string(rx_result[i][0]) +"','"+ to_string(rx_result[i][1]) +"','"+ to_string(rx_result[i][2]) +"','"+ to_string(rx_result[i][3]) +"','"+ to_string(rx_result[i][4]) +"','"+ to_string(rx_result[i][5]) +"','"+ to_string(rx_result[i][6]) +"','"+ to_string(rx_result[i][7]) +"','"+ to_string(rx_result[i][8]) +"','"+ to_string(rx_result[i][9]) +"','"+ to_string(rx_result[i][10]) +"','"+ to_string(rx_result[i][11]) +"','"+ to_string(rx_result[i][12]) +"','"+ to_string(rx_result[i][13]) +"','"+ to_string(rx_result[i][14]) +"','"+ to_string(rx_result[i][15]) +"','"+ to_string(rx_result[i][16]) +"','"+ to_string(rx_result[i][17]) +"','"+ to_string(rx_result[i][18]) +"','"+ to_string(rx_result[i][19]) +"','"+ to_string(rx_result[i][20]) +"','"+ to_string(rx_result[i][21]) +"','"+ to_string(rx_result[i][22]) +"','"+ to_string(rx_result[i][23]) +"','"+ to_string(rx_result[i][24]) +"','"+ to_string(rx_result[i][25]) +"','"+ to_string(rx_result[i][26]) +"','"+ to_string(rx_result[i][27]) +"','"+ to_string(rx_result[i][28]) +"','"+ to_string(rx_result[i][29]) +"','"+ to_string(rx_result[i][30]) +"','"+ to_string(rx_result[i][31]) +"','"+ to_string(rx_result[i][32]) +"','"+ to_string(rx_result[i][33]) +"','"+ to_string(rx_result[i][34]) +"','"+ to_string(rx_result[i][35]) +"','"+ to_string(rx_result[i][36]) +"','"+ to_string(rx_result[i][37]) +"','"+ to_string(rx_result[i][38]) +"','"+ to_string(rx_result[i][39]) +"','"+ to_string(rx_result[i][40]) +"','"+ to_string(rx_result[i][41]) +"','"+ to_string(rx_result[i][42]) +"','"+ to_string(rx_result[i][43]) +"','"+ to_string(rx_result[i][44]) +"','"+ to_string(rx_result[i][45]) +"','"+ to_string(rx_result[i][46]) +"','"+ to_string(rx_result[i][47]) +"','"+ to_string(rx_result[i][48]) +"','"+ to_string(rx_result[i][49]) +"','"+ to_string(rx_result[i][50]) +"','"+ to_string(rx_result[i][51]) +"','"+ to_string(rx_result[i][52]) +"','"+ to_string(rx_result[i][53]) +"','"+ to_string(rx_result[i][54]) +"','"+ to_string(rx_result[i][55]) +"','"+ to_string(rx_result[i][56]) +"','"+ to_string(rx_result[i][57]) +"','"+ to_string(rx_result[i][58]) +"','"+ to_string(rx_result[i][59]) +"','"+ to_string(rx_result[i][60]) +"','"+ to_string(rx_result[i][61]) +"','"+ to_string(rx_result[i][62]) +"','"+ to_string(rx_result[i][63]) +"','"+ to_string(rx_result[i][64]) +"','"+ to_string(rx_result[i][65]) +"','"+ to_string(rx_result[i][66]) +"','"+ to_string(rx_result[i][67]) +"','"+ to_string(rx_result[i][68]) +"','"+ to_string(rx_result[i][69]) +"','"+ to_string(rx_result[i][70]) +"','"+ to_string(rx_result[i][71]) +"','"+ to_string(rx_result[i][72]) +"','"+ to_string(rx_result[i][73]) +"','"+ to_string(rx_result[i][74]) +"','"+ to_string(rx_result[i][75]) +"','"+ to_string(rx_result[i][76]) +"','"+ to_string(rx_result[i][77]) +"','"+ to_string(rx_result[i][78]) +"','"+ to_string(rx_result[i][79]) +"','"+ to_string(rx_result[i][80]) +"','"+ to_string(rx_result[i][81]) +"','"+ to_string(rx_result[i][82]) +"','"+ to_string(rx_result[i][83]) +"','"+ to_string(rx_result[i][84]) +"','"+ to_string(rx_result[i][85]) +"','"+ to_string(rx_result[i][86]) +"','"+ to_string(rx_result[i][87]) +"','"+ to_string(rx_result[i][88]) +"','"+ to_string(rx_result[i][89]) +"','"+ to_string(rx_result[i][90]) +"','"+ to_string(rx_result[i][91]) +"','"+ to_string(rx_result[i][92]) +"','"+ to_string(rx_result[i][93]) +"','"+ to_string(rx_result[i][94]) +"','"+ to_string(rx_result[i][95]) +"', '"+ ipt.variable_name[i] +"')");
+			}
+		}
+		else
+		{
+			for (int i = 0; i < rx_result.size(); i++)
+			{
+				sql.operate("SELECT "+ sql.column +" FROM "+ table_name +" WHERE equip_name = '"+ ipt.variable_name[i] +"'");
+				pre_result = sql.turnArrayToFloat();
+				pre_result.erase(pre_result.begin()+ipt.bp.Global_next_simulate_timeblock, pre_result.end());
+				rx_result[i].insert(rx_result[i].begin(), pre_result.begin(), pre_result.end());
+				pre_result.clear();
+				sql.operate("UPDATE "+ table_name +" set A0 = '"+ to_string(rx_result[i][0]) +"', A1 = '"+ to_string(rx_result[i][1]) +"', A2 = '"+ to_string(rx_result[i][2]) +"', A3 = '"+ to_string(rx_result[i][3]) +"', A4 = '"+ to_string(rx_result[i][4]) +"', A5 = '"+ to_string(rx_result[i][5]) +"', A6 = '"+ to_string(rx_result[i][6]) +"', A7 = '"+ to_string(rx_result[i][7]) +"', A8 = '"+ to_string(rx_result[i][8]) +"', A9 = '"+ to_string(rx_result[i][9]) +"', A10 = '"+ to_string(rx_result[i][10]) +"', A11 = '"+ to_string(rx_result[i][11]) +"', A12 = '"+ to_string(rx_result[i][12]) +"', A13 = '"+ to_string(rx_result[i][13]) +"', A14 = '"+ to_string(rx_result[i][14]) +"', A15 = '"+ to_string(rx_result[i][15]) +"', A16 = '"+ to_string(rx_result[i][16]) +"', A17 = '"+ to_string(rx_result[i][17]) +"', A18 = '"+ to_string(rx_result[i][18]) +"', A19 = '"+ to_string(rx_result[i][19]) +"', A20 = '"+ to_string(rx_result[i][20]) +"', A21 = '"+ to_string(rx_result[i][21]) +"', A22 = '"+ to_string(rx_result[i][22]) +"', A23 = '"+ to_string(rx_result[i][23]) +"', A24 = '"+ to_string(rx_result[i][24]) +"', A25 = '"+ to_string(rx_result[i][25]) +"', A26 = '"+ to_string(rx_result[i][26]) +"', A27 = '"+ to_string(rx_result[i][27]) +"', A28 = '"+ to_string(rx_result[i][28]) +"', A29 = '"+ to_string(rx_result[i][29]) +"', A30 = '"+ to_string(rx_result[i][30]) +"', A31 = '"+ to_string(rx_result[i][31]) +"', A32 = '"+ to_string(rx_result[i][32]) +"', A33 = '"+ to_string(rx_result[i][33]) +"', A34 = '"+ to_string(rx_result[i][34]) +"', A35 = '"+ to_string(rx_result[i][35]) +"', A36 = '"+ to_string(rx_result[i][36]) +"', A37 = '"+ to_string(rx_result[i][37]) +"', A38 = '"+ to_string(rx_result[i][38]) +"', A39 = '"+ to_string(rx_result[i][39]) +"', A40 = '"+ to_string(rx_result[i][40]) +"', A41 = '"+ to_string(rx_result[i][41]) +"', A42 = '"+ to_string(rx_result[i][42]) +"', A43 = '"+ to_string(rx_result[i][43]) +"', A44 = '"+ to_string(rx_result[i][44]) +"', A45 = '"+ to_string(rx_result[i][45]) +"', A46 = '"+ to_string(rx_result[i][46]) +"', A47 = '"+ to_string(rx_result[i][47]) +"', A48 = '"+ to_string(rx_result[i][48]) +"', A49 = '"+ to_string(rx_result[i][49]) +"', A50 = '"+ to_string(rx_result[i][50]) +"', A51 = '"+ to_string(rx_result[i][51]) +"', A52 = '"+ to_string(rx_result[i][52]) +"', A53 = '"+ to_string(rx_result[i][53]) +"', A54 = '"+ to_string(rx_result[i][54]) +"', A55 = '"+ to_string(rx_result[i][55]) +"', A56 = '"+ to_string(rx_result[i][56]) +"', A57 = '"+ to_string(rx_result[i][57]) +"', A58 = '"+ to_string(rx_result[i][58]) +"', A59 = '"+ to_string(rx_result[i][59]) +"', A60 = '"+ to_string(rx_result[i][60]) +"', A61 = '"+ to_string(rx_result[i][61]) +"', A62 = '"+ to_string(rx_result[i][62]) +"', A63 = '"+ to_string(rx_result[i][63]) +"', A64 = '"+ to_string(rx_result[i][64]) +"', A65 = '"+ to_string(rx_result[i][65]) +"', A66 = '"+ to_string(rx_result[i][66]) +"', A67 = '"+ to_string(rx_result[i][67]) +"', A68 = '"+ to_string(rx_result[i][68]) +"', A69 = '"+ to_string(rx_result[i][69]) +"', A70 = '"+ to_string(rx_result[i][70]) +"', A71 = '"+ to_string(rx_result[i][71]) +"', A72 = '"+ to_string(rx_result[i][72]) +"', A73 = '"+ to_string(rx_result[i][73]) +"', A74 = '"+ to_string(rx_result[i][74]) +"', A75 = '"+ to_string(rx_result[i][75]) +"', A76 = '"+ to_string(rx_result[i][76]) +"', A77 = '"+ to_string(rx_result[i][77]) +"', A78 = '"+ to_string(rx_result[i][78]) +"', A79 = '"+ to_string(rx_result[i][79]) +"', A80 = '"+ to_string(rx_result[i][80]) +"', A81 = '"+ to_string(rx_result[i][81]) +"', A82 = '"+ to_string(rx_result[i][82]) +"', A83 = '"+ to_string(rx_result[i][83]) +"', A84 = '"+ to_string(rx_result[i][84]) +"', A85 = '"+ to_string(rx_result[i][85]) +"', A86 = '"+ to_string(rx_result[i][86]) +"', A87 = '"+ to_string(rx_result[i][87]) +"', A88 = '"+ to_string(rx_result[i][88]) +"', A89 = '"+ to_string(rx_result[i][89]) +"', A90 = '"+ to_string(rx_result[i][90]) +"', A91 = '"+ to_string(rx_result[i][91]) +"', A92 = '"+ to_string(rx_result[i][92]) +"', A93 = '"+ to_string(rx_result[i][93]) +"', A94 = '"+ to_string(rx_result[i][94]) +"', A95 = '"+ to_string(rx_result[i][95]) +"' WHERE equip_name = '"+ ipt.variable_name[i] +"'");
+			}
+		}
+		break;
+	}
+}
+
 // cems
 void SQLACTION::calculate_table_cost_info()
 {

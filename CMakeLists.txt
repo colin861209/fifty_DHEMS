@@ -16,95 +16,73 @@ include_directories(
     # /home/hems/glpk-4.65/src
 )
 
-link_directories(${LIBMYSQLCLIENT_LIBRARY_DIRS})
-add_library(common_lib src/new2D.cpp src/SQLFunction.cpp src/scheduling_parameter.cpp)
-
-add_library(LHEMS_lib src/fifty_LHEMS_function.cpp src/LHEMS_constraint.cpp)
-link_libraries(LHEMS_lib common_lib)
-add_library(GHEMS_lib src/GHEMS_function.cpp src/GHEMS_constraint.cpp)
-link_libraries(GHEMS_lib common_lib)
-
-add_library(class_lib src/sqlAction.cpp src/SQL.cpp)
+add_library(class_lib src/optimize.cpp src/constraint_function.cpp src/sqlAction.cpp src/SQL.cpp src/new2D.cpp src/scheduling_parameter.cpp)
 # add the executable
 # executable by 50 household CEMS
-add_executable(LHEMS src/LHEMS.cpp )
+add_executable(LHEMS src/hems_test.cpp )
 target_link_libraries(LHEMS 
-LHEMS_lib
+class_lib
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
-add_executable(LHEMS2 src/LHEMS2.cpp)
+add_executable(LHEMS2 src/hems_test2.cpp)
 target_link_libraries(LHEMS2 
-LHEMS_lib
+class_lib
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
-add_executable(LHEMS3 src/LHEMS3.cpp)
+add_executable(LHEMS3 src/hems_test3.cpp)
 target_link_libraries(LHEMS3 
-LHEMS_lib
+class_lib
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
-add_executable(LHEMS4 src/LHEMS4.cpp)
+add_executable(LHEMS4 src/hems_test4.cpp)
 target_link_libraries(LHEMS4 
-LHEMS_lib
+class_lib
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
-add_executable(LHEMS5 src/LHEMS5.cpp)
+add_executable(LHEMS5 src/hems_test5.cpp)
 target_link_libraries(LHEMS5 
-LHEMS_lib
+class_lib
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
-add_executable(LHEMS6 src/LHEMS6.cpp)
+add_executable(LHEMS6 src/hems_test6.cpp)
 target_link_libraries(LHEMS6 
-LHEMS_lib
+class_lib
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
-add_executable(LHEMS7 src/LHEMS7.cpp)
+add_executable(LHEMS7 src/hems_test7.cpp)
 target_link_libraries(LHEMS7 
-LHEMS_lib
+class_lib
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
-add_executable(LHEMS8 src/LHEMS8.cpp)
+add_executable(LHEMS8 src/hems_test8.cpp)
 target_link_libraries(LHEMS8 
-LHEMS_lib
+class_lib
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
-add_executable(LHEMS9 src/LHEMS9.cpp)
+add_executable(LHEMS9 src/hems_test9.cpp)
 target_link_libraries(LHEMS9 
-LHEMS_lib
+class_lib
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
-add_executable(LHEMS10 src/LHEMS10.cpp)
+add_executable(LHEMS10 src/hems_test10.cpp)
 target_link_libraries(LHEMS10 
-LHEMS_lib
+class_lib
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )
 
-add_executable(GHEMS src/GHEMS.cpp)
+add_executable(GHEMS src/cems_test.cpp)
 target_link_libraries(GHEMS 
-GHEMS_lib
-${LIBMYSQLCLIENT_LIBRARIES} 
-/usr/local/lib/libglpk.a
-)
-
-add_executable(cems_test src/cems_test.cpp)
-target_link_libraries(cems_test 
-class_lib 
-${LIBMYSQLCLIENT_LIBRARIES} 
-/usr/local/lib/libglpk.a
-)
-
-add_executable(hems_test src/hems_test.cpp)
-target_link_libraries(hems_test 
-class_lib 
+class_lib
 ${LIBMYSQLCLIENT_LIBRARIES} 
 /usr/local/lib/libglpk.a
 )

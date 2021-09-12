@@ -25,6 +25,7 @@ private:
         int minDecrease_power;
         int feedback_price;
         int customer_baseLine;
+        float already_decrease_power;
         vector<int> demand_info;
         vector<float> Pgrid_max_array;
         vector<bool> participate_status;

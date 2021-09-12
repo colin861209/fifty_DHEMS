@@ -22,28 +22,34 @@ int main(int argc, const char** argv) {
 	SQLACTION act("140.124.42.65","root", "fuzzy314", "DHEMS_fiftyHousehold");
 	
 	act.get_flag();
+	act.get_dr_mode();
 	act.get_experimental_parameters();
-	
 	act.determine_GHEMS_realTimeOrOneDayMode_andGetSOC();
 	
+	// dr info
+	act.get_demand_response();
+	act.get_Pgrid_max_array();
+	act.get_dr_already_decrease_power();
+	// base parm
 	act.create_variable_name();
 	act.get_allDay_price();
 	act.getOrUpdate_SolarInfo_ThroughSampleTime();
 	act.get_totalLoad_power();
-	
-	// dr info
-	act.get_dr_mode();
-	act.get_demand_response();
-	act.get_Pgrid_max_array();
 	
 	// public load
 	act.get_publicLoad_info();
 
 	// op.ipt = act.ipt;
 	optimize op(act.ipt, OBJECTIVETARGET::MINIMUM);
-	// act.result = op.result;
-	op.print();
-
+	op.setting_cems_coefficient();
+	op.setting_cems_objectiveFunction();
+	
+	if (op.verify_solution_after_sovle_GLPK() != -1)
+	{
+		op.saving_result();
+		act.get_GLPK_solve_result(op.solve_result);
+		act.insertOrUpdate_control_status();
+	}
 	act.calculate_table_cost_info();
 	act.update_table_cost_info();
 	act.calculate_table_BaseParameter_total_cost_info();
