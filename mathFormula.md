@@ -26,7 +26,12 @@ $$
     r_{ca}^{j}, j=0,...,N-1,~ca \in A_{c1} \\
 }}
 \sum_{j=k}^{N-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} -
-\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
+\sum_{j=\tau_{r}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
+\quad
+\begin{aligned}
+  \tau_{r}=\tau_{r}^{s},& if \quad k<\tau_{r}^{s}\\
+  \tau_{r}=k,& if \quad \tau_{r}^{s}\leq k<\tau_{r}^{e}\\
+\end{aligned}
 $$
  
 * Deamnd Response
@@ -192,7 +197,12 @@ $$ \min_{\substack{
     \alpha_{u}^{j}, j=0,..., N-1
 }}
 \sum_{j=k}^{N} \rho_{b}^{j}P^{j}_{u,grid} T_{s} +
-\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} D_{u}^{j}\rho_{f}^{j}P^{j}_{u,grid} T_{s}
+\sum_{j=\tau_{r}}^{\tau_{r}^{e}-1} D_{u}^{j}\rho_{f}^{j}P^{j}_{u,grid} T_{s},
+\quad 
+\begin{aligned}
+  \tau_{r}=\tau_{r}^{s},& if \quad k<\tau_{r}^{s}\\
+  \tau_{r}=k,&if \quad \tau_{r}^{s}\leq k<\tau_{r}^{e}\\ 
+\end{aligned}
 $$
 
 <!-- HEMS Constraint -->
