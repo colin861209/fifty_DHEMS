@@ -6,6 +6,7 @@
 #include <math.h>
 #include <mysql/mysql.h>
 #include <iostream>
+#include <numeric>
 #include "SQLFunction.hpp"
 #include "fifty_LHEMS_function.hpp"
 #include "LHEMS_constraint.hpp"
@@ -371,6 +372,8 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 			snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE LHEMS_control_status");
 			sent_query();
 			snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE LHEMS_real_status");
+			sent_query();
+			snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE LHEMS_cost");
 			sent_query();
 			update_distributed_group("real_time", 0, "group_id", distributed_group_num);
 			sample_time = 0;
@@ -1001,4 +1004,28 @@ float **calculate_comfortLevel_weighting(vector<vector<vector<int>>> comfortLeve
 		}
 	}
 	return weighting;
+}
+
+void calculateCostInfo(float* price)
+{
+	functionPrint(__func__);
+
+	vector<float> gridPrice_tmp;
+	for (int i = 0; i < time_block; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM `LHEMS_control_status` WHERE equip_name = 'Pgrid' AND household_id = '%d'", i, household_id);
+		gridPrice_tmp.push_back(turn_value_to_float(0) * price[i] * delta_T);
+	}
+	float gridPrice_total = accumulate(gridPrice_tmp.begin(), gridPrice_tmp.end(), 0);
+
+	if (sample_time == 0)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `LHEMS_cost` (household_id, origin_grid_price, %s) VALUES('%d','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, household_id, gridPrice_total, gridPrice_tmp[0], gridPrice_tmp[1], gridPrice_tmp[2], gridPrice_tmp[3], gridPrice_tmp[4], gridPrice_tmp[5], gridPrice_tmp[6], gridPrice_tmp[7], gridPrice_tmp[8], gridPrice_tmp[9], gridPrice_tmp[10], gridPrice_tmp[11], gridPrice_tmp[12], gridPrice_tmp[13], gridPrice_tmp[14], gridPrice_tmp[15], gridPrice_tmp[16], gridPrice_tmp[17], gridPrice_tmp[18], gridPrice_tmp[19], gridPrice_tmp[20], gridPrice_tmp[21], gridPrice_tmp[22], gridPrice_tmp[23], gridPrice_tmp[24], gridPrice_tmp[25], gridPrice_tmp[26], gridPrice_tmp[27], gridPrice_tmp[28], gridPrice_tmp[29], gridPrice_tmp[30], gridPrice_tmp[31], gridPrice_tmp[32], gridPrice_tmp[33], gridPrice_tmp[34], gridPrice_tmp[35], gridPrice_tmp[36], gridPrice_tmp[37], gridPrice_tmp[38], gridPrice_tmp[39], gridPrice_tmp[40], gridPrice_tmp[41], gridPrice_tmp[42], gridPrice_tmp[43], gridPrice_tmp[44], gridPrice_tmp[45], gridPrice_tmp[46], gridPrice_tmp[47], gridPrice_tmp[48], gridPrice_tmp[49], gridPrice_tmp[50], gridPrice_tmp[51], gridPrice_tmp[52], gridPrice_tmp[53], gridPrice_tmp[54], gridPrice_tmp[55], gridPrice_tmp[56], gridPrice_tmp[57], gridPrice_tmp[58], gridPrice_tmp[59], gridPrice_tmp[60], gridPrice_tmp[61], gridPrice_tmp[62], gridPrice_tmp[63], gridPrice_tmp[64], gridPrice_tmp[65], gridPrice_tmp[66], gridPrice_tmp[67], gridPrice_tmp[68], gridPrice_tmp[69], gridPrice_tmp[70], gridPrice_tmp[71], gridPrice_tmp[72], gridPrice_tmp[73], gridPrice_tmp[74], gridPrice_tmp[75], gridPrice_tmp[76], gridPrice_tmp[77], gridPrice_tmp[78], gridPrice_tmp[79], gridPrice_tmp[80], gridPrice_tmp[81], gridPrice_tmp[82], gridPrice_tmp[83], gridPrice_tmp[84], gridPrice_tmp[85], gridPrice_tmp[86], gridPrice_tmp[87], gridPrice_tmp[88], gridPrice_tmp[89], gridPrice_tmp[90], gridPrice_tmp[91], gridPrice_tmp[92], gridPrice_tmp[93], gridPrice_tmp[94], gridPrice_tmp[95]);
+		sent_query();
+	}
+	else
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_cost` set A0 = '%.3f', A1 = '%.3f', A2 = '%.3f', A3 = '%.3f', A4 = '%.3f', A5 = '%.3f', A6 = '%.3f', A7 = '%.3f', A8 = '%.3f', A9 = '%.3f', A10 = '%.3f', A11 = '%.3f', A12 = '%.3f', A13 = '%.3f', A14 = '%.3f', A15 = '%.3f', A16 = '%.3f', A17 = '%.3f', A18 = '%.3f', A19 = '%.3f', A20 = '%.3f', A21 = '%.3f', A22 = '%.3f', A23 = '%.3f', A24 = '%.3f', A25 = '%.3f', A26 = '%.3f', A27 = '%.3f', A28 = '%.3f', A29 = '%.3f', A30 = '%.3f', A31 = '%.3f', A32 = '%.3f', A33 = '%.3f', A34 = '%.3f', A35 = '%.3f', A36 = '%.3f', A37 = '%.3f', A38 = '%.3f', A39 = '%.3f', A40 = '%.3f', A41 = '%.3f', A42 = '%.3f', A43 = '%.3f', A44 = '%.3f', A45 = '%.3f', A46 = '%.3f', A47 = '%.3f', A48 = '%.3f', A49 = '%.3f', A50 = '%.3f', A51 = '%.3f', A52 = '%.3f', A53 = '%.3f', A54 = '%.3f', A55 = '%.3f', A56 = '%.3f', A57 = '%.3f', A58 = '%.3f', A59 = '%.3f', A60 = '%.3f', A61 = '%.3f', A62 = '%.3f', A63 = '%.3f', A64 = '%.3f', A65 = '%.3f', A66 = '%.3f', A67 = '%.3f', A68 = '%.3f', A69 = '%.3f', A70 = '%.3f', A71 = '%.3f', A72 = '%.3f', A73 = '%.3f', A74 = '%.3f', A75 = '%.3f', A76 = '%.3f', A77 = '%.3f', A78 = '%.3f', A79 = '%.3f', A80 = '%.3f', A81 = '%.3f', A82 = '%.3f', A83 = '%.3f', A84 = '%.3f', A85 = '%.3f', A86 = '%.3f', A87 = '%.3f', A88 = '%.3f', A89 = '%.3f', A90 = '%.3f', A91 = '%.3f', A92 = '%.3f', A93 = '%.3f', A94 = '%.3f', A95 = '%.3f', `origin_grid_price` = ''%.3f, `datetime` = CURRENT_TIMESTAMP WHERE household_id = '%d';", gridPrice_tmp[0], gridPrice_tmp[1], gridPrice_tmp[2], gridPrice_tmp[3], gridPrice_tmp[4], gridPrice_tmp[5], gridPrice_tmp[6], gridPrice_tmp[7], gridPrice_tmp[8], gridPrice_tmp[9], gridPrice_tmp[10], gridPrice_tmp[11], gridPrice_tmp[12], gridPrice_tmp[13], gridPrice_tmp[14], gridPrice_tmp[15], gridPrice_tmp[16], gridPrice_tmp[17], gridPrice_tmp[18], gridPrice_tmp[19], gridPrice_tmp[20], gridPrice_tmp[21], gridPrice_tmp[22], gridPrice_tmp[23], gridPrice_tmp[24], gridPrice_tmp[25], gridPrice_tmp[26], gridPrice_tmp[27], gridPrice_tmp[28], gridPrice_tmp[29], gridPrice_tmp[30], gridPrice_tmp[31], gridPrice_tmp[32], gridPrice_tmp[33], gridPrice_tmp[34], gridPrice_tmp[35], gridPrice_tmp[36], gridPrice_tmp[37], gridPrice_tmp[38], gridPrice_tmp[39], gridPrice_tmp[40], gridPrice_tmp[41], gridPrice_tmp[42], gridPrice_tmp[43], gridPrice_tmp[44], gridPrice_tmp[45], gridPrice_tmp[46], gridPrice_tmp[47], gridPrice_tmp[48], gridPrice_tmp[49], gridPrice_tmp[50], gridPrice_tmp[51], gridPrice_tmp[52], gridPrice_tmp[53], gridPrice_tmp[54], gridPrice_tmp[55], gridPrice_tmp[56], gridPrice_tmp[57], gridPrice_tmp[58], gridPrice_tmp[59], gridPrice_tmp[60], gridPrice_tmp[61], gridPrice_tmp[62], gridPrice_tmp[63], gridPrice_tmp[64], gridPrice_tmp[65], gridPrice_tmp[66], gridPrice_tmp[67], gridPrice_tmp[68], gridPrice_tmp[69], gridPrice_tmp[70], gridPrice_tmp[71], gridPrice_tmp[72], gridPrice_tmp[73], gridPrice_tmp[74], gridPrice_tmp[75], gridPrice_tmp[76], gridPrice_tmp[77], gridPrice_tmp[78], gridPrice_tmp[79], gridPrice_tmp[80], gridPrice_tmp[81], gridPrice_tmp[82], gridPrice_tmp[83], gridPrice_tmp[84], gridPrice_tmp[85], gridPrice_tmp[86], gridPrice_tmp[87], gridPrice_tmp[88], gridPrice_tmp[89], gridPrice_tmp[90], gridPrice_tmp[91], gridPrice_tmp[92], gridPrice_tmp[93], gridPrice_tmp[94], gridPrice_tmp[95], gridPrice_total, household_id);
+		sent_query();
+	}
 }
