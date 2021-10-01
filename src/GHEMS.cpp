@@ -176,6 +176,7 @@ int main(int argc, const char **argv)
 
 	optimization(variable_name, Pgrid_max_array, load_model, price);
 	calculateCostInfo(price, publicLoad_flag, Pgrid_flag, Psell_flag, Pess_flag, Pfc_flag);
+	updateSingleHouseholdCost();
 	
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET value = (SELECT A%d FROM GHEMS_control_status where equip_name = 'SOC') WHERE parameter_name = 'now_SOC'", sample_time);
 	sent_query();

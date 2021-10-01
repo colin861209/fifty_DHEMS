@@ -469,12 +469,22 @@ float *getOrUpdate_SolarInfo_ThroughSampleTime(const char *weather)
 	return solar2;
 }
 
-void updateTableCost(float *totalLoad, float *totalLoad_price, float *real_grid_pirce, float *fuelCell_kW_price, float *Hydrogen_g_consumption, float *real_sell_pirce, float *demandResponse_feedback, float totalLoad_sum, float totalLoad_priceSum, float real_grid_pirceSum, float fuelCell_kW_priceSum, float Hydrogen_g_consumptionSum, float real_sell_pirceSum, float totalLoad_taipowerPriceSum, float demandResponse_feedbackSum)
+void updateTableCost(float *totalLoad, float *totalLoad_price, float *real_grid_pirce, float *publicLoad, float *publicLoad_price, float *fuelCell_kW_price, float *Hydrogen_g_consumption, float *real_sell_pirce, float *demandResponse_feedback, float totalLoad_sum, float totalLoad_priceSum, float real_grid_pirceSum, float publicLoad_sum, float publicLoad_priceSum, float fuelCell_kW_priceSum, float Hydrogen_g_consumptionSum, float real_sell_pirceSum, float totalLoad_taipowerPriceSum, float demandResponse_feedbackSum)
 {
 	functionPrint(__func__);
 
 	if (sample_time == 0)
 	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, "public_load_power", publicLoad[0], publicLoad[1], publicLoad[2], publicLoad[3], publicLoad[4], publicLoad[5], publicLoad[6], publicLoad[7], publicLoad[8], publicLoad[9], publicLoad[10], publicLoad[11], publicLoad[12], publicLoad[13], publicLoad[14], publicLoad[15], publicLoad[16], publicLoad[17], publicLoad[18], publicLoad[19], publicLoad[20], publicLoad[21], publicLoad[22], publicLoad[23], publicLoad[24], publicLoad[25], publicLoad[26], publicLoad[27], publicLoad[28], publicLoad[29], publicLoad[30], publicLoad[31], publicLoad[32], publicLoad[33], publicLoad[34], publicLoad[35], publicLoad[36], publicLoad[37], publicLoad[38], publicLoad[39], publicLoad[40], publicLoad[41], publicLoad[42], publicLoad[43], publicLoad[44], publicLoad[45], publicLoad[46], publicLoad[47], publicLoad[48], publicLoad[49], publicLoad[50], publicLoad[51], publicLoad[52], publicLoad[53], publicLoad[54], publicLoad[55], publicLoad[56], publicLoad[57], publicLoad[58], publicLoad[59], publicLoad[60], publicLoad[61], publicLoad[62], publicLoad[63], publicLoad[64], publicLoad[65], publicLoad[66], publicLoad[67], publicLoad[68], publicLoad[69], publicLoad[70], publicLoad[71], publicLoad[72], publicLoad[73], publicLoad[74], publicLoad[75], publicLoad[76], publicLoad[77], publicLoad[78], publicLoad[79], publicLoad[80], publicLoad[81], publicLoad[82], publicLoad[83], publicLoad[84], publicLoad[85], publicLoad[86], publicLoad[87], publicLoad[88], publicLoad[89], publicLoad[90], publicLoad[91], publicLoad[92], publicLoad[93], publicLoad[94], publicLoad[95]);
+		sent_query();
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'publicLoad' ", publicLoad_sum);
+		sent_query();
+
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, "public_load_price", publicLoad_price[0], publicLoad_price[1], publicLoad_price[2], publicLoad_price[3], publicLoad_price[4], publicLoad_price[5], publicLoad_price[6], publicLoad_price[7], publicLoad_price[8], publicLoad_price[9], publicLoad_price[10], publicLoad_price[11], publicLoad_price[12], publicLoad_price[13], publicLoad_price[14], publicLoad_price[15], publicLoad_price[16], publicLoad_price[17], publicLoad_price[18], publicLoad_price[19], publicLoad_price[20], publicLoad_price[21], publicLoad_price[22], publicLoad_price[23], publicLoad_price[24], publicLoad_price[25], publicLoad_price[26], publicLoad_price[27], publicLoad_price[28], publicLoad_price[29], publicLoad_price[30], publicLoad_price[31], publicLoad_price[32], publicLoad_price[33], publicLoad_price[34], publicLoad_price[35], publicLoad_price[36], publicLoad_price[37], publicLoad_price[38], publicLoad_price[39], publicLoad_price[40], publicLoad_price[41], publicLoad_price[42], publicLoad_price[43], publicLoad_price[44], publicLoad_price[45], publicLoad_price[46], publicLoad_price[47], publicLoad_price[48], publicLoad_price[49], publicLoad_price[50], publicLoad_price[51], publicLoad_price[52], publicLoad_price[53], publicLoad_price[54], publicLoad_price[55], publicLoad_price[56], publicLoad_price[57], publicLoad_price[58], publicLoad_price[59], publicLoad_price[60], publicLoad_price[61], publicLoad_price[62], publicLoad_price[63], publicLoad_price[64], publicLoad_price[65], publicLoad_price[66], publicLoad_price[67], publicLoad_price[68], publicLoad_price[69], publicLoad_price[70], publicLoad_price[71], publicLoad_price[72], publicLoad_price[73], publicLoad_price[74], publicLoad_price[75], publicLoad_price[76], publicLoad_price[77], publicLoad_price[78], publicLoad_price[79], publicLoad_price[80], publicLoad_price[81], publicLoad_price[82], publicLoad_price[83], publicLoad_price[84], publicLoad_price[85], publicLoad_price[86], publicLoad_price[87], publicLoad_price[88], publicLoad_price[89], publicLoad_price[90], publicLoad_price[91], publicLoad_price[92], publicLoad_price[93], publicLoad_price[94], publicLoad_price[95]);
+		sent_query();
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'publicLoadSpend(threeLevelPrice)' ", publicLoad_priceSum);
+		sent_query();
+
 		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, "total_load_power", totalLoad[0], totalLoad[1], totalLoad[2], totalLoad[3], totalLoad[4], totalLoad[5], totalLoad[6], totalLoad[7], totalLoad[8], totalLoad[9], totalLoad[10], totalLoad[11], totalLoad[12], totalLoad[13], totalLoad[14], totalLoad[15], totalLoad[16], totalLoad[17], totalLoad[18], totalLoad[19], totalLoad[20], totalLoad[21], totalLoad[22], totalLoad[23], totalLoad[24], totalLoad[25], totalLoad[26], totalLoad[27], totalLoad[28], totalLoad[29], totalLoad[30], totalLoad[31], totalLoad[32], totalLoad[33], totalLoad[34], totalLoad[35], totalLoad[36], totalLoad[37], totalLoad[38], totalLoad[39], totalLoad[40], totalLoad[41], totalLoad[42], totalLoad[43], totalLoad[44], totalLoad[45], totalLoad[46], totalLoad[47], totalLoad[48], totalLoad[49], totalLoad[50], totalLoad[51], totalLoad[52], totalLoad[53], totalLoad[54], totalLoad[55], totalLoad[56], totalLoad[57], totalLoad[58], totalLoad[59], totalLoad[60], totalLoad[61], totalLoad[62], totalLoad[63], totalLoad[64], totalLoad[65], totalLoad[66], totalLoad[67], totalLoad[68], totalLoad[69], totalLoad[70], totalLoad[71], totalLoad[72], totalLoad[73], totalLoad[74], totalLoad[75], totalLoad[76], totalLoad[77], totalLoad[78], totalLoad[79], totalLoad[80], totalLoad[81], totalLoad[82], totalLoad[83], totalLoad[84], totalLoad[85], totalLoad[86], totalLoad[87], totalLoad[88], totalLoad[89], totalLoad[90], totalLoad[91], totalLoad[92], totalLoad[93], totalLoad[94], totalLoad[95]);
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'totalLoad' ", totalLoad_sum);
@@ -551,6 +561,8 @@ void updateTableCost(float *totalLoad, float *totalLoad_price, float *real_grid_
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'LoadSpend(taipowerPrice)' ", totalLoad_taipowerPriceSum);
 	sent_query();
 
+	messagePrint(__LINE__, "public loads power cost(kW): ", 'F', publicLoad_sum, 'Y');
+	messagePrint(__LINE__, "public loads power cost by three level electric price(NTD): ", 'F', publicLoad_priceSum, 'Y');
 	messagePrint(__LINE__, "total loads power cost(kW): ", 'F', totalLoad_sum, 'Y');
 	messagePrint(__LINE__, "total loads power cost by taipower(NTD): ", 'F', totalLoad_taipowerPriceSum, 'Y');
 	messagePrint(__LINE__, "total loads power cost by three level electric price(NTD): ", 'F', totalLoad_priceSum, 'Y');
@@ -567,8 +579,8 @@ void calculateCostInfo(float *price, bool publicLoad_flag, bool Pgrid_flag, bool
 {
 	functionPrint(__func__);
 
-	float totalLoad[time_block] = {0.0}, totalLoad_price[time_block] = {0.0}, real_grid_pirce[time_block] = {0.0};
-	float totalLoad_sum = 0.0, totalLoad_priceSum = 0.0, real_grid_pirceSum = 0.0, totalLoad_taipowerPriceSum = 0.0;
+	float totalLoad[time_block] = {0.0}, totalLoad_price[time_block] = {0.0}, real_grid_pirce[time_block] = {0.0}, publicLoad[time_block] = {0.0}, publicLoad_price[time_block] = {0.0};
+	float totalLoad_sum = 0.0, totalLoad_priceSum = 0.0, real_grid_pirceSum = 0.0, publicLoad_sum = 0.0, publicLoad_priceSum = 0.0, totalLoad_taipowerPriceSum = 0.0;
 	float fuelCell_kW_price[time_block] = {0.0}, Hydrogen_g_consumption[time_block] = {0.0};
 	float fuelCell_kW_priceSum = 0.0, Hydrogen_g_consumptionSum = 0.0;
 	float real_sell_pirce[time_block] = {0.0}, real_sell_pirceSum = 0.0;
@@ -576,6 +588,17 @@ void calculateCostInfo(float *price, bool publicLoad_flag, bool Pgrid_flag, bool
 
 	for (int i = 0; i < sample_time; i++)
 	{
+		if (publicLoad_flag)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM cost WHERE cost_name = '%s'", i, "public_load_power");
+			publicLoad[i] = turn_value_to_float(0);
+			publicLoad_sum += publicLoad[i];
+
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM cost WHERE cost_name = '%s'", i, "public_load_price");
+			publicLoad_price[i] = turn_value_to_float(0);
+			publicLoad_priceSum += publicLoad_price[i];
+		}
+
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM cost WHERE cost_name = '%s'", i, "total_load_power");
 		totalLoad[i] = turn_value_to_float(0);
 		totalLoad_sum += totalLoad[i];
@@ -620,17 +643,24 @@ void calculateCostInfo(float *price, bool publicLoad_flag, bool Pgrid_flag, bool
 	for (int i = sample_time; i < time_block; i++)
 	{
 		// =-=-=-=-=-=-=- calculate total load spend how much money if only use grid power -=-=-=-=-=-=-= //
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT totalLoad FROM totalLoad_model WHERE time_block = %d ", i);
-		totalLoad[i] = turn_value_to_float(0);
-
-		for (int j = 0; j < publicLoad_num; j++)
+		if (publicLoad_flag)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, ("publicLoad"+to_string(j+1)).c_str());
-			int status_tmp = turn_value_to_int(0);
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = 5 LIMIT %d, %d", j, j + 1);
-			float power_tmp = turn_value_to_float(0);
-			totalLoad[i] += status_tmp * power_tmp;
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT totalLoad FROM totalLoad_model WHERE time_block = %d ", i);
+			totalLoad[i] = turn_value_to_float(0);
+
+			for (int j = 0; j < publicLoad_num; j++)
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, ("publicLoad"+to_string(j+1)).c_str());
+				int status_tmp = turn_value_to_int(0);
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = 5 LIMIT %d, %d", j, j + 1);
+				float power_tmp = turn_value_to_float(0);
+				publicLoad[i] += status_tmp * power_tmp;
+			}
+			publicLoad_sum += publicLoad[i];
+			publicLoad_price[i] = publicLoad[i] * price[i] * delta_T;
+			publicLoad_priceSum += publicLoad_price[i];
 		}
+		totalLoad[i] += publicLoad[i];
 		totalLoad_sum += totalLoad[i];
 		totalLoad_price[i] = totalLoad[i] * price[i] * delta_T;
 		totalLoad_priceSum += totalLoad_price[i];
@@ -691,7 +721,33 @@ void calculateCostInfo(float *price, bool publicLoad_flag, bool Pgrid_flag, bool
 	else if (totalLoad_sum > (1000.0 / 30.0))
 		totalLoad_taipowerPriceSum = (120.0 * P_1 + (330.0 - 120.0) * P_2 + (500.0 - 330.0) * P_3 + (700.0 - 500.0) * P_4 + (1000.0 - 700.0) * P_5 + (totalLoad_sum * 30.0 - 1000.0) * P_6) / 30.0;
 
-	updateTableCost(totalLoad, totalLoad_price, real_grid_pirce, fuelCell_kW_price, Hydrogen_g_consumption, real_sell_pirce, demandResponse_feedback, totalLoad_sum, totalLoad_priceSum, real_grid_pirceSum, fuelCell_kW_priceSum, Hydrogen_g_consumptionSum, real_sell_pirceSum, totalLoad_taipowerPriceSum, demandResponse_feedbackSum);
+	updateTableCost(totalLoad, totalLoad_price, real_grid_pirce, publicLoad, publicLoad_price, fuelCell_kW_price, Hydrogen_g_consumption, real_sell_pirce, demandResponse_feedback, totalLoad_sum, totalLoad_priceSum, real_grid_pirceSum, publicLoad_sum, publicLoad_priceSum, fuelCell_kW_priceSum, Hydrogen_g_consumptionSum, real_sell_pirceSum, totalLoad_taipowerPriceSum, demandResponse_feedbackSum);
+}
+
+void updateSingleHouseholdCost()
+{
+	functionPrint(__func__);
+
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(origin_grid_price) FROM `LHEMS_cost`");
+	float origin_grid_priceSum = turn_value_to_float(0);
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM `BaseParameter` WHERE parameter_name = 'householdAmount'");
+	float householdTotal = turn_value_to_float(0);
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM `BaseParameter` WHERE parameter_name = 'realGridPurchase'");
+	float total_gridCost = turn_value_to_float(0);
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM `BaseParameter` WHERE parameter_name = 'publicLoadSpend(threeLevelPrice)'");
+	float total_publicCost = turn_value_to_float(0);
+	
+	float single_public_price = total_publicCost / householdTotal;
+	for (int i = 0; i < householdTotal; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT origin_grid_price FROM `LHEMS_cost` WHERE household_id = %d", i + 1);
+		float single_origin_grid_price = turn_value_to_float(0);
+		float real_grid_price = single_origin_grid_price / origin_grid_priceSum * (total_gridCost - total_publicCost);
+		float final_pay_price = real_grid_price + single_public_price;
+		float saving_efficiency = (single_origin_grid_price - final_pay_price) / single_origin_grid_price;
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_cost` SET `real_grid_price` = '%.3f', `public_price` = '%.3f', `final_pay_price` = '%.3f', `saving_efficiency` = '%.5f' WHERE `household_id` = %d", real_grid_price, single_public_price, final_pay_price, saving_efficiency, i + 1);
+		sent_query();
+	}	
 }
 
 void insert_GHEMS_variable()
