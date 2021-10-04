@@ -321,16 +321,20 @@ $$
 * $T_{u}^{price}$ 各住戶原始購買市電電費
   $$ T_{u}^{price} = \sum_{j=0}^{N}\rho^{j}P_{u,grid}^{j}T_{s} $$
 
-* $O_{u}^{cost}$ 各住戶最佳化市電花費
-  $$ O_{u}^{cost} = \frac{T_{u}^{price}}{\sum_{u=1}^{U}T_{u}^{price}} \times (O_{total}^{cost}-O_{ca}^{cost}) $$
-
 * $O_{u}^{ca, cost}$ 各住戶公設花費
-  $$ O_{u, ca}^{cost} = \frac{O_{ca}^{cost}}{U} $$
+  $$ O_{u}^{ca, cost} = \frac{O_{ca}^{cost}}{U} $$
+
+* $T_{u}^{total, price}$ 各住戶原始總花費
+  $$ T_{u}^{total, price} = T_{u}^{price}+O_{u}^{ca, cost} $$
+
+* $O_{u}^{cost}$ 各住戶最佳化市電花費
+  $$ O_{u}^{cost} = \frac{T_{u}^{total, price}}{\sum_{u=1}^{U}T_{u}^{total, price}} \times (O_{total}^{cost}-O_{ca}^{cost}) $$
 
 * $O_{u}^{total, cost}$ 各住戶最佳化總花費
-  $$ O_{u, total}^{cost} = O_{u}^{cost}+O_{u, ca}^{cost} $$
+  $$ O_{u}^{total, cost} = O_{u}^{cost}+O_{u}^{ca, cost} $$
+
 * $\eta_{u}^{cost}$ 各住戶節省電費比
-  $$ \eta_{u}^{cost} = \frac{T_{u}^{price}-O_{u, total}^{cost}}{T_{u}^{price}} $$
+  $$ \eta_{u}^{cost} = \frac{T_{u}^{total, price}-O_{u, total}^{cost}}{T_{u}^{total, price}} $$
 
 ##### CEMS
 * $O_{ca}^{cost}$ 社區公設花費

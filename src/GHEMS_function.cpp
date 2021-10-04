@@ -737,15 +737,17 @@ void updateSingleHouseholdCost()
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM `BaseParameter` WHERE parameter_name = 'publicLoadSpend(threeLevelPrice)'");
 	float total_publicCost = turn_value_to_float(0);
 	
+	float total_origin_priceSum = origin_grid_priceSum + total_publicCost;
 	float single_public_price = total_publicCost / householdTotal;
 	for (int i = 0; i < householdTotal; i++)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT origin_grid_price FROM `LHEMS_cost` WHERE household_id = %d", i + 1);
 		float single_origin_grid_price = turn_value_to_float(0);
-		float real_grid_price = single_origin_grid_price / origin_grid_priceSum * (total_gridCost - total_publicCost);
+		float total_single_origin_price = single_origin_grid_price + single_public_price;
+		float real_grid_price = total_single_origin_price / total_origin_priceSum * (total_gridCost - total_publicCost);
 		float final_pay_price = real_grid_price + single_public_price;
-		float saving_efficiency = (single_origin_grid_price - final_pay_price) / single_origin_grid_price;
-		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_cost` SET `real_grid_price` = '%.3f', `public_price` = '%.3f', `final_pay_price` = '%.3f', `saving_efficiency` = '%.5f' WHERE `household_id` = %d", real_grid_price, single_public_price, final_pay_price, saving_efficiency, i + 1);
+		float saving_efficiency = (total_single_origin_price - final_pay_price) / total_single_origin_price;
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_cost` SET `real_grid_price` = '%.3f', `public_price` = '%.3f', `origin_pay_price` = '%.3f', `final_pay_price` = '%.3f', `saving_efficiency` = '%.5f' WHERE `household_id` = %d", real_grid_price, single_public_price, total_single_origin_price, final_pay_price, saving_efficiency, i + 1);
 		sent_query();
 	}	
 }
