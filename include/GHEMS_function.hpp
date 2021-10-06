@@ -15,10 +15,11 @@ extern bool SOC_change_flag, publicLoad_flag;
 
 int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> variable_name);
 float *getOrUpdate_SolarInfo_ThroughSampleTime(const char *weather);
-void updateTableCost(float *totalLoad, float *totalLoad_price, float *real_grid_pirce, float *fuelCell_kW_price, float *Hydrogen_g_consumption, float *real_sell_price, float *demandResponse_feedback, float totalLoad_sum, float totalLoad_priceSum, float real_grid_pirceSum, float fuelCell_kW_priceSum, float Hydrogen_g_consumptionSum, float real_sell_priceSum, float totalLoad_taipowerPriceSum, float demandResponse_feedbackSum);
+void updateTableCost(float *totalLoad, float *totalLoad_price, float *real_grid_pirce, float *publicLoad, float *publicLoad_price, float *fuelCell_kW_price, float *Hydrogen_g_consumption, float *real_sell_pirce, float *demandResponse_feedback, float totalLoad_sum, float totalLoad_priceSum, float real_grid_pirceSum, float publicLoad_sum, float publicLoad_priceSum, float fuelCell_kW_priceSum, float Hydrogen_g_consumptionSum, float real_sell_pirceSum, float totalLoad_taipowerPriceSum, float demandResponse_feedbackSum);
 void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, float *load_model, float *price);
 void setting_GLPK_columnBoundary(vector<string> variable_name, vector<float> Pgrid_max_array, glp_prob *mip);
 void calculateCostInfo(float *price, bool publicLoad_flag, bool Pgrid_flag, bool Psell_flag, bool Pess_flag, bool Pfc_flag);
+void updateSingleHouseholdCost();
 void insert_GHEMS_variable();
 float getPrevious_battery_dischargeSOC(int sample_time, string target_equip_name);
 float *get_allDay_price(string col_name);
