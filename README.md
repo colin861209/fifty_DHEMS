@@ -49,3 +49,14 @@
 
 + Commit Link [f30a6a7](https://github.com/colin861209/fifty_DHEMS/commit/f30a6a73bfb23b6b177e3a9ca148b4376ed3f8d6)
 + Feature: Comfort level in LHEMS
+
+---
+### 2021/10/06
+
++ Commit Link [4dcff12](https://github.com/colin861209/fifty_DHEMS/commit/4dcff1263e80df2546c13f292b8e9f02787b1162)
++ Feature: LHEMS Cost
++ Calculate each household's cost details
+  + Origin cost
+  + Public cost
+  + Real cost after optimize
+  + Saving efficiency
