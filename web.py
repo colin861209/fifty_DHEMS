@@ -39,15 +39,15 @@ class Xpath:
         self.text_BaseParameter =                   '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[6]/a'
         self.text_cost =                            '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[7]/a'
         self.text_dr =                              '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[8]/a'
-        self.text_dr_alpha =                        '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[9]/a'
-        self.text_distributed_group =               '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[10]/a'
-        self.text_GHEMS_control_status =            '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[11]/a'
-        self.text_GHEMS_flag =                      '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[12]/a'
-        self.text_GHEMS__history_control_status =   '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[13]/a'
-        self.text_GHEMS_real_status =               '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[14]/a'
-        self.text_GHEMS_variable =                  '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[15]/a'
-        self.text_LHEMS_comfort_level =             '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[16]/a'
-        self.text_LHEMS_control_status =            '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[17]/a'
+        self.text_distributed_group =               '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[9]/a'
+        self.text_GHEMS_control_status =            '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[10]/a'
+        self.text_GHEMS_flag =                      '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[11]/a'
+        self.text_GHEMS__history_control_status =   '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[12]/a'
+        self.text_GHEMS_real_status =               '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[13]/a'
+        self.text_GHEMS_variable =                  '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[14]/a'
+        self.text_LHEMS_comfort_level =             '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[15]/a'
+        self.text_LHEMS_control_status =            '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[16]/a'
+        self.text_LHEMS_cost =                      '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[17]/a'
         self.text_LHEMS_dr_participation =          '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[18]/a'
         self.text_LHEMS_flag =                      '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[19]/a'
         self.text_LHEMS__history_control_status =   '//*[@id="pma_navigation_tree_content"]/ul/li[3]/div[3]/ul/li[4]/div[4]/ul/li[20]/a'
@@ -78,6 +78,7 @@ class Xpath:
         self.range_bar = '//*[@id="button_household_range"]/button'
         self.range_bar_go = '/html/body/div[9]/div/div[6]/button[1]'
         self.LHEMS_household_text = '//*[@id="household_id"]'
+        self.LHEMS_table = '/html/body/div[7]/table[1]'
         self.LHEMS_household_status = '//*[@id="each_household_status"]'
         self.LHEMS_load1 = '//*[@id="con_0"]'
         self.LHEMS_load2 = '//*[@id="con_1"]'
@@ -124,7 +125,7 @@ class WEBDRIVER:
             self.screenshot_path=screenshot_path
             prefs = {"download.default_directory" : self.screenshot_path}
             options.add_experimental_option("prefs", prefs)
-        self.chrome = webdriver.Chrome('./chromedriver', chrome_options=options)
+        self.chrome = webdriver.Chrome('C:/Users/sonu/Desktop/howThesis/webDriver/chromedriver', options=options)
         self.chrome.get(url)
         self.wait = WebDriverWait(self.chrome, timeout=self.timeout)
         # get screenshot path
@@ -204,6 +205,7 @@ class WEBDRIVER:
         self.gotoTable(export_table)
         sleep(0.5)
         self.gotoExport(export_table)
+        sleep(0.5)
 
     def screenshot_file(self, file):
         sleep(1)
@@ -280,8 +282,8 @@ class WEBDRIVER:
         self.chrome.find_element_by_xpath(xpath.range_bar_go).click()
 
         chart_sequence = {
-            'file_name' : ["status.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg"],
-            'file_xpath' : [xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15]
+            'file_name' : ["cost.jpg", "status.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg"],
+            'file_xpath' : [xpath.LHEMS_table, xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15]
         }
         chart_sequence['file_xpath'].reverse()
         chart_sequence['file_name'].reverse()
@@ -336,4 +338,5 @@ if __name__ == "__main__":
     db.exportTable(xpath.text_GHEMS_flag)
     db.exportTable(xpath.text_LHEMS_control_status)
     db.exportTable(xpath.text_LHEMS_flag)
+    db.exportTable(xpath.text_LHEMS_cost)
     db.exportTable(xpath.text_totalLoad_model)

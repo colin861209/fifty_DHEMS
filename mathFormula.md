@@ -26,7 +26,12 @@ $$
     r_{ca}^{j}, j=0,...,N-1,~ca \in A_{c1} \\
 }}
 \sum_{j=k}^{N-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} -
-\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
+\sum_{j=\tau_{r}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
+\quad
+\begin{aligned}
+  \tau_{r}=\tau_{r}^{s},& if \quad k<\tau_{r}^{s}\\
+  \tau_{r}=k,& if \quad \tau_{r}^{s}\leq k<\tau_{r}^{e}\\
+\end{aligned}
 $$
  
 * Deamnd Response
@@ -192,7 +197,12 @@ $$ \min_{\substack{
     \alpha_{u}^{j}, j=0,..., N-1
 }}
 \sum_{j=k}^{N} \rho_{b}^{j}P^{j}_{u,grid} T_{s} +
-\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} D_{u}^{j}\rho_{f}^{j}P^{j}_{u,grid} T_{s}
+\sum_{j=\tau_{r}}^{\tau_{r}^{e}-1} D_{u}^{j}\rho_{f}^{j}P^{j}_{u,grid} T_{s},
+\quad 
+\begin{aligned}
+  \tau_{r}=\tau_{r}^{s},& if \quad k<\tau_{r}^{s}\\
+  \tau_{r}=k,&if \quad \tau_{r}^{s}\leq k<\tau_{r}^{e}\\ 
+\end{aligned}
 $$
 
 <!-- HEMS Constraint -->
@@ -304,3 +314,37 @@ $$
     $$ \forall a \in A_{u,c3} $$
 
     $$ \psi_{u, a}^{j+n} \geq \delta_{u,a}^{j} \sigma_{u,a}^{n} $$
+
+## CEMS & HEMS Cost
+
+##### HEMS
+* $T_{u}^{price}$ 各住戶原始購買市電電費
+  $$ T_{u}^{price} = \sum_{j=0}^{N}\rho^{j}P_{u,grid}^{j}T_{s} $$
+
+* $O_{u}^{ca, cost}$ 各住戶公設花費
+  $$ O_{u}^{ca, cost} = \frac{O_{ca}^{cost}}{U} $$
+
+* $T_{u}^{total, price}$ 各住戶原始總花費
+  $$ T_{u}^{total, price} = T_{u}^{price}+O_{u}^{ca, cost} $$
+
+* $O_{u}^{cost}$ 各住戶最佳化市電花費
+  $$ O_{u}^{cost} = \frac{T_{u}^{total, price}}{\sum_{u=1}^{U}T_{u}^{total, price}} \times (O_{total}^{cost}-O_{ca}^{cost}) $$
+
+* $O_{u}^{dr, feedback}$ 各住戶輔助服務回饋
+  $$ O_{u}^{dr, feedback} = \frac{\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} D_{u}^{j}}{\sum_{u=1}^{U}\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1}D_{u}^{j}} \times O_{dr}^{feedback} $$
+
+* $O_{u}^{total, cost}$ 各住戶最佳化總花費
+  $$ O_{u}^{total, cost} = O_{u}^{cost}+O_{u}^{ca, cost} - O_{u}^{dr, feedback} $$
+
+* $\eta_{u}^{cost}$ 各住戶節省電費比
+  $$ \eta_{u}^{cost} = \frac{T_{u}^{total, price}-O_{u}^{total, cost}}{T_{u}^{total, price}} $$
+
+##### CEMS
+* $O_{ca}^{cost}$ 社區公設花費
+  $$ O_{ca}^{cost} = \sum_{j=0}^{N}\rho^{j}P_{ca}^{j}T_{s} $$
+
+* $O_{total}^{cost}$ 社區總市電花費
+  $$ O_{total}^{cost} = \sum_{j=0}^{N}\rho^{j}P_{grid}^{j}T_{s} $$
+
+* $O_{dr}^{feedback}$ 社區輔助服務回饋
+  $$ O_{dr}^{feedback} = \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}$$

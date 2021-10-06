@@ -19,7 +19,7 @@ include_directories(
 link_directories(${LIBMYSQLCLIENT_LIBRARY_DIRS})
 add_library(common_lib src/new2D.cpp src/SQLFunction.cpp src/scheduling_parameter.cpp)
 
-add_library(LHEMS_lib src/fifty_LHEMS_function.cpp src/LHEMS_constraint.cpp)
+add_library(LHEMS_lib src/LHEMS_function.cpp src/LHEMS_constraint.cpp)
 link_libraries(LHEMS_lib common_lib)
 add_library(GHEMS_lib src/GHEMS_function.cpp src/GHEMS_constraint.cpp)
 link_libraries(GHEMS_lib common_lib)

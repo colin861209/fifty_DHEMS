@@ -28,5 +28,5 @@ void init_totalLoad_flag_and_table(int distributed_group_num);
 void setting_LHEMS_columnBoundary(vector<string> variable_name, glp_prob *mip, float* varying_p_max);
 vector<vector<int>> get_comfortLevel_timeInterval(int household_id, int app_count, int total_timeInterval, int comfort_level);
 float **calculate_comfortLevel_weighting(vector<vector<vector<int>>> comfortLevel_startEnd, int comfortLevel, int total_timeInterval, int app_count);
-
+void calculateCostInfo(float* price);
 #endif
