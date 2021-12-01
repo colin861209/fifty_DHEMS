@@ -328,13 +328,13 @@ $$
   $$ T_{u}^{total, price} = T_{u}^{price}+O_{u}^{ca, cost} $$
 
 * $O_{u}^{cost}$ 各住戶最佳化市電花費
-  $$ O_{u}^{cost} = \frac{T_{u}^{total, price}}{\sum_{u=1}^{U}T_{u}^{total, price}} \times (O_{total}^{cost}-O_{ca}^{cost}) $$
+  $$ O_{u}^{cost} = \frac{T_{u}^{total, price}}{\sum_{u=1}^{U}T_{u}^{total, price}} \times O_{total}^{cost} $$
 
 * $O_{u}^{dr, feedback}$ 各住戶輔助服務回饋
   $$ O_{u}^{dr, feedback} = \frac{\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} D_{u}^{j}}{\sum_{u=1}^{U}\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1}D_{u}^{j}} \times O_{dr}^{feedback} $$
 
 * $O_{u}^{total, cost}$ 各住戶最佳化總花費
-  $$ O_{u}^{total, cost} = O_{u}^{cost}+O_{u}^{ca, cost} - O_{u}^{dr, feedback} $$
+  $$ O_{u}^{total, cost} = O_{u}^{cost} - O_{u}^{dr, feedback} $$
 
 * $\eta_{u}^{cost}$ 各住戶節省電費比
   $$ \eta_{u}^{cost} = \frac{T_{u}^{total, price}-O_{u}^{total, cost}}{T_{u}^{total, price}} $$
