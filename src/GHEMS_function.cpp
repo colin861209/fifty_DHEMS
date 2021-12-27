@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <random>
 
 #define P_1 1.63
 #define P_2 2.38
@@ -74,7 +75,29 @@ void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, f
 		int *buff = countPublicLoads_AlreadyOpenedTimes(publicLoad_num);
 		public_reot = count_publicLoads_RemainOperateTime(publicLoad_num, public_ot, buff);
 	}
-
+	
+	// TODO: For optimize
+	// vector<int> Pole_ID, departure_timeblock;
+	// vector<float> SOC, battery_voltage, battery_current, battery_power, battery_capacity;
+	// if (EV_flag)
+	// {
+	// 	for (int i = 0; i < EV_can_charge_amount; i++)
+	// 	{
+	// 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `Pole_ID`, `SOC`, `BAT_CAP`, `V_battery`, `I_battery`, `Departure_timeblock` FROM `EV_Pole` WHERE `sure` = 1 LIMIT 1 OFFSET %d", i);
+	// 		fetch_row_value();
+	// 		Pole_ID.push_back(turn_int(0));
+	// 		SOC.push_back(turn_float(1));
+	// 		float bat_cap_tmp = turn_float(2);
+	// 		float bat_v_tmp = turn_float(3);
+	// 		float bat_i_tmp = turn_float(4);
+	// 		departure_timeblock.push_back(turn_int(5));
+	// 		battery_voltage.push_back(bat_v_tmp);
+	// 		battery_current.push_back(bat_i_tmp);
+	// 		battery_power.push_back(bat_v_tmp*bat_i_tmp/1000);
+	// 		battery_capacity.push_back(bat_cap_tmp*bat_v_tmp/1000);
+	// 	}
+	// }
+	
 	int rowTotal = (time_block - sample_time) * 200 + 1;
 	int colTotal = variable * (time_block - sample_time);
 	glp_prob *mip;
@@ -392,6 +415,15 @@ void setting_GLPK_columnBoundary(vector<string> variable_name, vector<float> Pgr
 				glp_set_col_kind(mip, (find_variableName_position(variable_name, "lambda_Pfc" + to_string(j)) + 1 + i * variable), GLP_CV);
 			}
 		}
+		// TODO: For optimize
+		// if (EV_flag)
+		// {
+		// 	for (int j = 1; j <= EV_can_charge_amount; j++)
+		// 	{
+		// 		glp_set_col_bnds(mip, (find_variableName_position(variable_name, "EV_charge_flag" + to_string(j)) + 1 + i * variable), GLP_DB, 0.0, 1.0); //λ_Pfc
+		// 		glp_set_col_kind(mip, (find_variableName_position(variable_name, "EV_charge_flag" + to_string(j)) + 1 + i * variable), GLP_BV);
+		// 	}	
+		// }
 	}
 }
 
@@ -425,6 +457,36 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE cost");
 		sent_query();
+
+		if (EV_flag)
+		{
+			// make sure EV pole is no users using
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `EV_Pole` WHERE `number` IS NOT NULL"); 
+			if (turn_value_to_int(0) != 0)
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `number` = NULL, `sure` = '0', `charging_status` = '0', `discharge_status` = '0', `full` = '0', `wait` = '0', `SOC` = NULL, `BAT_CAP` = NULL, `Start_timeblock` = NULL, `Departure_timeblock` = NULL;");
+				sent_query();
+			}		
+			// TRUNCATE EV result table
+			if (EV_generate_result_flag)
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE `EV_user_result`");
+				sent_query();
+				snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE `EV_fast_user_result`");
+				sent_query();
+				snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE `EV_super_fast_user_result`");
+				sent_query();
+			}
+			else
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_user_result` SET `Departure_SOC` = NULL, `Real_departure_timeblock` = NULL");
+				sent_query();
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_fast_user_result` SET `Departure_SOC` = NULL, `Real_departure_timeblock` = NULL");
+				sent_query();
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_super_fast_user_result` SET `Departure_SOC` = NULL, `Real_departure_timeblock` = NULL");
+				sent_query();
+			}
+		}
 
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM BaseParameter WHERE parameter_name = 'ini_SOC' "); //get ini_SOC
 		SOC_ini = turn_value_to_float(0);
@@ -893,4 +955,437 @@ int *count_publicLoads_RemainOperateTime(int public_num, int *public_ot, int *bu
 		messagePrint(__LINE__, "Public load remain times: ", 'I', public_reot[i], 'Y');
 	}
 	return public_reot;
+}
+
+void update_fullSOC_or_overtime_EV_inPole(int sample_time)
+{
+	functionPrint(__func__);
+
+	float total_power = 0.0, normal_power = 0.0, fast_power = 0.0, super_fast_power = 0.0, discharge_normal_power;
+	
+	for (int i = 0; i < total_charging_pole; i++)
+	{
+		// check each pole is allowed charging or discharging, update SOC
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `Pole_ID`, `number`, `sure`, `charging_status`, `discharge_status`, `full`, `wait`, `SOC`, `BAT_CAP`, `V_battery`, `I_battery`, `Departure_timeblock` FROM `EV_Pole` WHERE id = '%d'", i + 1);
+		fetch_row_value();
+		int pole_id = turn_int(0);
+		int number = turn_int(1);
+		bool allow_chargeOrDischarge = turn_int(2);
+		bool charging_status = turn_int(3);
+		bool discharging_status = turn_int(4);
+		bool SOC_full = turn_int(5);
+		int wait = turn_int(6);
+		float SOC = turn_float(7);
+		float BAT_capacity = turn_float(8);
+		float BAT_voltage = turn_float(9);
+		float BAT_current = turn_float(10);
+		float departure_timeblock = turn_float(11);
+		float BAT_power = (BAT_voltage * BAT_current) / 1000;
+		BAT_capacity = (BAT_capacity * BAT_voltage) / 1000;
+		
+		if (allow_chargeOrDischarge)
+		{
+			// charging now, vehicle SOC increase
+			if (charging_status)
+			{
+				if (i < normal_charging_pole)
+					normal_power += BAT_power;
+				else if (i >= normal_charging_pole && i < fast_charging_pole)
+					fast_power += BAT_power;
+				else if (i >= fast_charging_pole && i < super_fast_charging_pole)
+					super_fast_power += BAT_power;
+				
+				SOC += (BAT_power * 0.25) / BAT_capacity;
+				if (SOC >= EV_MAX_SOC)
+				{
+					SOC = EV_MAX_SOC;
+					if (i < normal_charging_pole)
+					{
+						snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `SOC` = %.2f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+						sent_query();
+					}
+					else if (i >= normal_charging_pole && i < normal_charging_pole+fast_charging_pole)
+					{
+						snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `sure` = 0, `charging_status` = '0', `full` = 1, `SOC` = %.2f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+						sent_query();
+					}
+					else if (i >= normal_charging_pole+fast_charging_pole && i < normal_charging_pole+fast_charging_pole+super_fast_charging_pole)
+					{
+						snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `sure` = 0, `charging_status` = '0', `full` = 1, `SOC` = %.2f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+						sent_query();
+					}
+				}
+				else
+				{
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET SOC = %.2f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+					sent_query();
+				}
+			}
+			// normal pole discharging now, vehicle SOC decrease
+			else if (discharging_status)
+			{
+				if (i < normal_charging_pole)
+					discharge_normal_power -= BAT_power;
+
+				SOC -= (BAT_power * 0.25) / BAT_capacity;
+				if (SOC <= EV_MIN_SOC)
+				{
+					SOC = EV_MIN_SOC;
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET SOC = %.2f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+					sent_query();
+				}
+				else
+				{
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET SOC = %.2f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+					sent_query();
+				}
+			}	
+			
+			// vehicle charging times up, set full = 1, and determine later
+			// EX: depT=4 & sample_time=3, and when sample_time=4 wait--, sample_time=3 charging and sample_time=4 stop, so sample_time=3 full=1
+			if (departure_timeblock <= sample_time + 1)
+			{
+				// setting correspond pole id not to charge or discharge
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `sure` = '0', `charging_status` = '0' , `discharge_status` = '0', `full` = '1', `SOC` = '%.2f' WHERE `Pole_ID` = %d;", SOC, pole_id);
+				sent_query();
+			}
+		}
+		
+		// check full flag, and start decrease wait (stay time) until become 0 
+		if (SOC_full)
+		{
+			if (departure_timeblock <= sample_time)
+			{
+				if (wait == 0)
+				{
+					// clean pole and record result
+					empty_charging_pole(pole_id);
+					if (i < normal_charging_pole)
+					{
+						record_vehicle_result("EV_user_result", SOC, sample_time, number);
+					}
+					else if (i >= normal_charging_pole && i < normal_charging_pole+fast_charging_pole)
+					{
+						record_vehicle_result("EV_fast_user_result", SOC, sample_time, number);
+					}
+					else if (i >= normal_charging_pole+fast_charging_pole && i < normal_charging_pole+fast_charging_pole+super_fast_charging_pole)
+					{
+						record_vehicle_result("EV_super_fast_user_result", SOC, sample_time, number);
+					}
+				}
+				else
+				{
+					wait--;
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `wait` = '%d' WHERE `Pole_ID` = %d;", wait, pole_id);
+					sent_query();
+				}
+			}
+		}
+		if (sample_time == 95)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `number` FROM `EV_Pole` WHERE `id` = '%d'", i + 1);
+			int number = turn_value_to_int(0);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `SOC` FROM `EV_Pole` WHERE `id` = '%d'", i + 1);
+			float SOC = turn_value_to_float(0);
+			empty_charging_pole(pole_id);
+			if (i < normal_charging_pole)
+			{
+				record_vehicle_result("EV_user_result", SOC, sample_time, number);
+			}
+			else if (i >= normal_charging_pole && i < normal_charging_pole+fast_charging_pole)
+			{
+				record_vehicle_result("EV_fast_user_result", SOC, sample_time, number);
+			}
+			else if (i >= normal_charging_pole+fast_charging_pole && i < normal_charging_pole+fast_charging_pole+super_fast_charging_pole)
+			{
+				record_vehicle_result("EV_super_fast_user_result", SOC, sample_time, number);
+			}
+		}
+	}
+	// TODO: make sure what purpose it is
+	// ?? update total_power after timeblock bigger than 0 due to the 0 timeblock doesn't have any vehicle enter to the parking lot ??
+	if (sample_time > 0)
+	{
+		total_power = normal_power + fast_power + super_fast_power;
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_user_number` SET `total_power` = %.2f, `normal_power` = '%.2f',`discharge_normal_power` = '%.2f', `fast_power` = '%.2f', `super_fast_power` = '%.2f' WHERE `timeblock` = '%d'", total_power, normal_power, discharge_normal_power, fast_power, super_fast_power, sample_time - 1);
+		sent_query();
+	}
+}
+
+// Contained in 'update_fullSOC_or_overtime_EV_inPole'
+void record_vehicle_result(string table, float SOC, int sample_time, int number)
+{
+	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `%s` SET `Departure_SOC` = '%.2f', `Real_departure_timeblock` = '%d' WHERE `number` = %d;", table.c_str(), SOC, sample_time, number);
+	sent_query();
+}
+
+// Contained in 'update_fullSOC_or_overtime_EV_inPole'
+void empty_charging_pole(int pole_id)
+{
+	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `number` = NULL, `sure` = '0', `charging_status` = '0', `discharge_status` = '0', `full` = '0' , `wait` = 0, `SOC` = NULL, `BAT_CAP` = NULL , `Start_timeblock` = NULL , `Departure_timeblock` = NULL WHERE `Pole_ID` = %d;", pole_id);
+	sent_query();	
+}
+
+void enter_newEVInfo_inPole(int sample_time)
+{
+	functionPrint(__func__);
+
+	// count normal/fast/super fast not using charging pole id
+	vector<int> empty_normal_pole, usingNow_normal_pole, empty_fast_pole, usingNow_fast_pole, empty_superFast_pole, usingNow_superFast_pole;
+	for (int i = 0; i < total_charging_pole; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `Pole_ID` FROM `EV_Pole` WHERE `id` = '%d'", i + 1);
+		int pole_id = turn_value_to_int(0);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `sure` FROM `EV_Pole` WHERE `id` = '%d'", i + 1);
+		bool allow_chargeOrDischarge = turn_value_to_int(0);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `full` FROM `EV_Pole` WHERE `id` = '%d'", i + 1);
+		bool SOC_full = turn_value_to_int(0);
+		if (i < normal_charging_pole)
+		{
+			if (allow_chargeOrDischarge || SOC_full)
+				usingNow_normal_pole.push_back(pole_id);
+			else
+				empty_normal_pole.push_back(pole_id);
+		}
+		else if (i >= normal_charging_pole && i < normal_charging_pole+fast_charging_pole)
+		{
+			if (allow_chargeOrDischarge || SOC_full)
+				usingNow_fast_pole.push_back(pole_id);
+			else
+				empty_fast_pole.push_back(pole_id);
+		}
+		else if (i >= normal_charging_pole+fast_charging_pole && i < normal_charging_pole+fast_charging_pole+super_fast_charging_pole)
+		{
+			if (allow_chargeOrDischarge || SOC_full)
+				usingNow_superFast_pole.push_back(pole_id);
+			else
+				empty_superFast_pole.push_back(pole_id);
+		}
+	}
+	
+	// get current timeblock will enter how many new EV and number
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `user_number` FROM `EV_user_number` WHERE `timeblock` = '%d'", sample_time);
+	int normal_EV_amount = turn_value_to_int(0);
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(user_number) FROM `EV_user_number` WHERE `timeblock` < '%d'", sample_time);
+	int normal_start_number = turn_value_to_int(0);
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `fast_user_number` FROM `EV_user_number` WHERE `timeblock` = '%d'", sample_time);
+	int fast_EV_amount = turn_value_to_int(0);
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(fast_user_number) FROM `EV_user_number` WHERE `timeblock` < '%d'", sample_time);
+	int fast_start_number = turn_value_to_int(0);
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `super_fast_user_number` FROM `EV_user_number` WHERE `timeblock` = '%d'", sample_time);
+	int super_fast_EV_amount = turn_value_to_int(0);
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(super_fast_user_number) FROM `EV_user_number` WHERE `timeblock` < '%d'", sample_time);
+	int super_fast_start_number = turn_value_to_int(0);
+	
+	// When sample_time=0 start_number will return -999, so set start number = 0
+	if (normal_start_number == -999) {normal_start_number = 0;}
+	if (fast_start_number == -999) {fast_start_number = 0;}
+	if (super_fast_start_number == -999) {super_fast_start_number = 0;}
+	// get which type and how many user will get in parking lot in this timeblock
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(capacity) FROM `EV_motor_type`");
+	int type_count = turn_value_to_int(0);
+	vector<float> normal_capacity, fast_capacity, super_fast_capacity;
+	vector<int> normal_type_id, fast_type_id, super_fast_type_id, normal_user, fast_user, super_fast_user;
+	for (int i = 0; i < type_count; i++)
+	{
+		switch (i)
+		{
+		case 0:
+		case 3:
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `type_%d` FROM `EV_wholeDay_userChargingNumber` WHERE `timeblock` = '%d';", i, sample_time);
+			super_fast_user.push_back(turn_value_to_int(0));
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `capacity` FROM `EV_motor_type` WHERE id = %d", i);
+			super_fast_capacity.push_back(turn_value_to_float(0));
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `id` FROM `EV_motor_type` WHERE id = %d", i);
+			super_fast_type_id.push_back(turn_value_to_int(0));
+			break;
+		case 1:
+		case 4:
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `type_%d` FROM `EV_wholeDay_userChargingNumber` WHERE `timeblock` = '%d';", i, sample_time);
+			fast_user.push_back(turn_value_to_int(0));
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `capacity` FROM `EV_motor_type` WHERE `id` = %d", i);
+			fast_capacity.push_back(turn_value_to_float(0));
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `id` FROM `EV_motor_type` WHERE `id` = %d", i);
+			fast_type_id.push_back(turn_value_to_int(0));
+			break;
+		default:
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `type_%d` FROM `EV_wholeDay_userChargingNumber` WHERE `timeblock` = '%d';", i, sample_time);
+			normal_user.push_back(turn_value_to_int(0));
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `capacity` FROM `EV_motor_type` WHERE `id` = %d", i);
+			normal_capacity.push_back(turn_value_to_float(0));
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `id` FROM `EV_motor_type` WHERE `id` = %d", i);
+			normal_type_id.push_back(turn_value_to_int(0));
+			break;
+		}
+	}
+	
+	if (EV_generate_result_flag)
+	{
+		messagePrint(__LINE__, "Generate random vehicle result", 'S', 0, 'Y');
+		int normal_soc_mean = value_receive("EV_Parameter_of_randomResult", "parameter_name", "normal_soc_mean");
+		int normal_soc_variance = value_receive("EV_Parameter_of_randomResult", "parameter_name", "normal_soc_variance");
+		int normal_time_mean = value_receive("EV_Parameter_of_randomResult", "parameter_name", "normal_time_mean");
+		int normal_time_variance = value_receive("EV_Parameter_of_randomResult", "parameter_name", "normal_time_variance");
+		int normal_wait_mean = value_receive("EV_Parameter_of_randomResult", "parameter_name", "normal_wait_mean");
+		int normal_wait_variance = value_receive("EV_Parameter_of_randomResult", "parameter_name", "normal_wait_variance");
+		
+		int fast_soc_mean = value_receive("EV_Parameter_of_randomResult", "parameter_name", "fast_soc_mean");
+		int fast_soc_variance = value_receive("EV_Parameter_of_randomResult", "parameter_name", "fast_soc_variance");
+		int fast_time_mean = value_receive("EV_Parameter_of_randomResult", "parameter_name", "fast_time_mean");
+		int fast_time_variance = value_receive("EV_Parameter_of_randomResult", "parameter_name", "fast_time_variance");
+		int fast_wait_mean = value_receive("EV_Parameter_of_randomResult", "parameter_name", "fast_wait_mean");
+		int fast_wait_variance = value_receive("EV_Parameter_of_randomResult", "parameter_name", "fast_wait_variance");
+
+		int super_fast_soc_mean = value_receive("EV_Parameter_of_randomResult", "parameter_name", "super_fast_soc_mean");
+		int super_fast_soc_variance = value_receive("EV_Parameter_of_randomResult", "parameter_name", "super_fast_soc_variance");
+		int super_fast_time_mean = value_receive("EV_Parameter_of_randomResult", "parameter_name", "super_fast_time_mean");
+		int super_fast_time_variance = value_receive("EV_Parameter_of_randomResult", "parameter_name", "super_fast_time_variance");
+		int super_fast_wait_mean = value_receive("EV_Parameter_of_randomResult", "parameter_name", "super_fast_wait_mean");
+		int super_fast_wait_variance = value_receive("EV_Parameter_of_randomResult", "parameter_name", "super_fast_wait_variance");
+		
+		// insert normal/fast/super fast user reuslt, EV content include: motor type, battery capacity, start timeblock, departure timeblock, SOC, stay time
+		generate_vehicle_result("EV_user_result", normal_EV_amount, normal_time_mean, normal_time_variance, normal_soc_mean, normal_soc_variance, normal_wait_mean, normal_wait_variance, normal_start_number, normal_user, normal_capacity, normal_type_id, empty_normal_pole, sample_time);
+		generate_vehicle_result("EV_fast_user_result", fast_EV_amount, fast_time_mean, fast_time_variance, fast_soc_mean, fast_soc_variance, fast_wait_mean, fast_wait_variance, fast_start_number, fast_user, fast_capacity, fast_type_id, empty_fast_pole, sample_time);
+		generate_vehicle_result("EV_super_fast_user_result", super_fast_EV_amount, super_fast_time_mean, super_fast_time_variance, super_fast_soc_mean, super_fast_soc_variance, super_fast_wait_mean, super_fast_wait_variance, super_fast_start_number, super_fast_user, super_fast_capacity, super_fast_type_id, empty_superFast_pole, sample_time);		
+	}
+	else
+	{
+		messagePrint(__LINE__, "Fetch vehicle result", 'S', 0, 'Y');
+		fetch_vehicle_result("EV_user_result", normal_EV_amount, normal_start_number, empty_normal_pole, sample_time);
+		fetch_vehicle_result("EV_fast_user_result", fast_EV_amount, fast_start_number, empty_fast_pole, sample_time);
+		fetch_vehicle_result("EV_super_fast_user_result", super_fast_EV_amount, super_fast_start_number, empty_superFast_pole, sample_time);
+	}
+}
+
+// Contained in 'enter_newEVInfo_inPole'
+void generate_vehicle_result(string table, int EV_amount, int time_mean, int time_variance, int soc_mean, int soc_variance, int wait_mean, int wait_variance, int start_number, vector<int> user, vector<float> capacity, vector<int> type_id, vector<int> empty_pole, int sample_time)
+{
+	int x = 0, type_num = 0;
+	int empty_pole_amount = empty_pole.size();
+	mt19937 generator(time(NULL));
+
+	// current timeblock will enter 'EV_amount' new EV and number
+	for (int i = 0; i < EV_amount; i++)
+	{
+		if (empty_pole_amount > 0)
+		{
+			normal_distribution<float> time_dis(time_mean, time_variance);
+			normal_distribution<float> soc_dis(soc_mean, soc_variance);
+			normal_distribution<float> wait_dis(wait_mean, wait_variance);
+			float BAT_capacity = 0.0;
+			// FIXME: always insert the same type vehicle
+			// decide which type vehicle to insert
+			if (table == "EV_user_result")
+			{
+				if (/*x == 0 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+				if (/*x == 1 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+				if (/*x == 2 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+				if (/*x == 3 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+				if (/*x == 4 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+				if (/*x == 5 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+			}
+			else if (table == "EV_fast_user_result")
+			{
+				if (/*x == 0 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+				if (/*x == 1 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+			}
+			else if (table == "EV_super_fast_user_result")
+			{
+				if (/*x == 0 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+				if (/*x == 1 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+			}
+
+			decide_type:
+			int start_timeblock = sample_time;
+			int rand_parktime = time_dis(generator);
+			int rand_wait = wait_dis(generator);
+			float rand_SOC = soc_dis(generator) / 100;
+
+			if (rand_SOC < EV_MIN_SOC) {rand_SOC = EV_MIN_SOC;}
+			if (rand_SOC > EV_MAX_SOC) {rand_SOC = EV_MAX_SOC;}
+			if (rand_parktime <= 0) {rand_parktime = time_mean + time_variance;}
+			float departure_timeblock = start_timeblock + rand_parktime;
+			if (departure_timeblock > 95) {departure_timeblock = 95;}
+			if (rand_wait < 0) {rand_wait = 1;}
+
+			enter_charging_pole(start_number+i+1, rand_wait, rand_SOC, BAT_capacity, start_timeblock, departure_timeblock, empty_pole[i]);
+			insert_vehicle_result(table, empty_pole[i], start_number+i+1, type_num, BAT_capacity, start_timeblock, rand_SOC, departure_timeblock, rand_wait);
+			
+			if (BAT_capacity != 0 && table == "EV_super_fast_user_result")
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `charging_status` = '1' WHERE `Pole_ID` = '%d'", empty_pole[i]);
+				sent_query();
+			}
+			empty_pole_amount--;
+			// if (x + 1 < type_id.size())
+			// 	x++;
+			// else
+			// 	x = 0;
+		}
+		else
+		{
+			insert_vehicle_result(table, 0, start_number+i+1, 0, 0, sample_time, 0, 0, 0);
+		}
+	}
+}
+
+// Contained in 'enter_newEVInfo_inPole'
+void fetch_vehicle_result(string table, int EV_amount, int start_number, vector<int> empty_pole, int sample_time)
+{
+	int x = 0, type_num = 0;
+	int empty_pole_amount = empty_pole.size();
+
+	// current timeblock will enter 'EV_amount' new EV and number
+	for (int i = 0; i < EV_amount; i++)
+	{
+		if (empty_pole_amount > 0)
+		{
+			int start_timeblock = sample_time;
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `BAT_CAP` FROM %s WHERE `start_timeblock` = '%d' AND `number` = '%d'", table.c_str(), sample_time, start_number+i+1);
+			float BAT_capacity = turn_value_to_float(0);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `Start_SOC` FROM %s WHERE `start_timeblock` = '%d' AND `number` = '%d'", table.c_str(), sample_time, start_number+i+1);
+			float SOC = turn_value_to_float(0);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `Original_departure_timeblock` FROM %s WHERE `start_timeblock` = '%d' AND `number` = '%d'", table.c_str(), sample_time, start_number+i+1);
+			int departure_timeblock = turn_value_to_int(0);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `wait` FROM %s WHERE `start_timeblock` = '%d' AND `number` = '%d'", table.c_str(), sample_time, start_number+i+1);
+			int wait = turn_value_to_int(0);
+			enter_charging_pole(start_number+i+1, wait, SOC, BAT_capacity, start_timeblock, departure_timeblock, empty_pole[i]);
+						
+			if (BAT_capacity != 0 && table == "EV_super_fast_user_result")
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `charging_status` = 1 WHERE `Pole_ID` = '%d'", empty_pole[i]);
+				sent_query();
+			}
+			empty_pole_amount--;
+		}
+	}
+}
+
+// Contained in 'enter_newEVInfo_inPole'
+void enter_charging_pole(int number, int wait, float SOC, float BAT_capacity, int start_timeblock, int departure_timeblock, int pole_id)
+{
+	if (BAT_capacity != 0)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `number` = '%d', `sure` = '1', `wait` = '%d', `SOC` = '%.2f', `BAT_CAP` = '%.2f', `Start_timeblock` = '%d', `Departure_timeblock` = '%d' WHERE `Pole_ID` = %d;", number, wait, SOC, BAT_capacity, start_timeblock, departure_timeblock, pole_id);
+		sent_query();
+		// CLEAN: below is for testing
+		// printf("`number` = '%d', `SOC` = '%.2f', `Start_timeblock` = '%d', `Departure_timeblock` = '%d', `wait` = '%d'\n", number, SOC, start_timeblock, departure_timeblock, wait);
+		// snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `charging_status` = 1 WHERE `Pole_ID` = %d", pole_id);
+		// sent_query();
+	}
+}
+
+// Contained in 'enter_newEVInfo_inPole'
+void insert_vehicle_result(string table, int Pole_ID, int number, int type, float BAT_CAP, int start_timeblock, float start_SOC, int original_departure_timeblock, int wait)
+{
+	if (BAT_CAP != 0)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `%s` (`Pole_ID`, `number`, `type`, `BAT_CAP`, `Start_timeblock`, `Start_SOC`, `Original_departure_timeblock`, `wait`) VALUES ('%d', '%d', '%d', '%.2f', '%d', '%.2f', '%d', '%d');", table.c_str(), Pole_ID, number, type, BAT_CAP, start_timeblock, start_SOC, original_departure_timeblock, wait);
+		sent_query();
+	}
+	else
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `%s` (`Pole_ID` ,`number`, `type` , `BAT_CAP` , `Start_timeblock` ,`Start_SOC`, `Original_departure_timeblock` , `wait`) VALUES ('%d', '%d', NULL, NULL, '%d', '%.2f', '%d', '%d');", table.c_str(), Pole_ID, number, start_timeblock, start_SOC, original_departure_timeblock, wait);
+		sent_query();
+	}
 }
