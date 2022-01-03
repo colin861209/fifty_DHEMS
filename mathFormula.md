@@ -51,7 +51,7 @@ $$
   
 * Blanced Function
     
-    $$ P^{j}_{grid} + P^{j}_{PV} + P^{j}_{FC} - P^{j}_{sell} - P^{j}_{ESS} = \sum_{ca \in A_{c1}} P_{ca}^{j} + \sum_{u=1}^{U}(\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} + \sum_{a \in A_{uc}} P_{u, uc}^{j}) $$
+    $$ P^{j}_{grid} + P^{j}_{PV} + P^{j}_{FC} - P^{j}_{sell} - P^{j}_{ESS} = \sum_{n=1}^{T}r_{ev, n}^{c, j}P_{n}^{max} + \sum_{ca \in A_{c1}} P_{ca}^{j} + \sum_{u=1}^{U}(\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} + \sum_{a \in A_{uc}} P_{u, uc}^{j}) $$
 
 * Grid & Sell
   <!-- * $P_{u, grid}^{j}$ 第 u 個住戶在第 j 個時刻消耗的市電功率 -->
@@ -145,6 +145,24 @@ $$
       $$ \forall ca \in A_{c1} $$
     * Constraint
       $$ \sum_{k=0}^{T-1} r_{ca}^{j} \geq Q_{ca} - |d|, \qquad \forall d \in [\tau_{ca}^{s}, \tau_{ca}^{e}] \cap [\tau_{r}^{s}, \tau_{r}^{e}] $$
+  ---
+* Electric Motor
+    * $r_{ev, n}^{c, j}$ 第n充電柱在第j時刻的可充電旗標
+    * $SOC_{ev}^{max} SOC_{ev}^{min}$ 電動機車SOC最大最小值
+    * $SOC_{ev}^{threshold}$ 電動機車離場時規定SOC值
+    * $\tau_{ev, n}^{s}$ 第n充電柱進場電動機車時刻
+    * $\tau_{ev, n}^{e}$ 第n充電柱離場電動機車時刻
+    * Variable
+      $$ r_{ev, n}^{c, j} \in \{0,1\}, \qquad \forall j \in [\tau_{ev, n}^{s}, \tau_{ev, n}^{e}] $$
+
+      $$ r_{ev, n}^{j} = 0, \qquad \forall j \in [0,N-1] \backslash [\tau_{ev, n}^{s}, \tau_{ev, n}^{e}] $$
+
+      <!-- $$ SOC_{ev}^{min} \leq SOC_{ev, n}^{j} \leq SOC_{ev}^{max} $$ -->
+
+    * Constraint
+      $$ SOC_{ev}^{min} \leq SOC_{ev, n}^{j-1} + \frac{P_{n}^{c, max}r_{ev, n}^{j}T_{s}}{E_{n}^{cap}} $$
+      
+      $$ SOC_{ev}^{threshold} \leq SOC_{ev, n}^{j-1} + \sum_{j=\tau_{ev, n}^{s}}^{\tau_{ev, n}^{e}-1} \frac{P_{n}^{c, max}r_{ev, n}^{j}T_{s}}{E_{n}^{cap}}$$
 
     <!-- * For GHEMS => LHEMS
     $$ P_{ESS}^{j} = \sum_{u=1}^{U} \beta_{u}^{j} P_{u,ESS}^{j} $$
@@ -165,7 +183,7 @@ $$
 
     <!-- $$ 0 \leq \lambda^{j}_{i} \leq z^{j}_{i} \quad i=0,1,...,m-1$$ -->
 
-    <!-- $$ \sum_{i=0}^{m-1} z^{j}_{i} =1$$ -->
+    <!-- $$ \**sum_**{i=0}^{m-1} z^{j}_{i} =1$$ -->
 
     <!-- $$ \begin{aligned}
     P^{j}_{FC} &= 0 \cdot z^{j}_{0} \\
@@ -327,7 +345,7 @@ $$
 * $T_{u}^{total, price}$ 各住戶原始總花費
   $$ T_{u}^{total, price} = T_{u}^{price}+O_{u}^{ca, cost} $$
 
-* $O_{u}^{cost}$ 各住戶最佳化市電花費
+* $O_{u}^{cost}$ **各住戶最佳化市電花費**
   $$ O_{u}^{cost} = \frac{T_{u}^{total, price}}{\sum_{u=1}^{U}T_{u}^{total, price}} \times O_{total}^{cost} $$
 
 * $O_{u}^{dr, feedback}$ 各住戶輔助服務回饋

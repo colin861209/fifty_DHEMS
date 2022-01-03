@@ -216,7 +216,7 @@ void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *m
 }
 
 // =-=-=-=-=-=-=- balanced equation -=-=-=-=-=-=-= //
-void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoad(int *public_start, int *public_end, float *public_p, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(int *public_start, int *public_end, float *public_p, float *solar2, float *load_model, float normal_charging_power, vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
     
@@ -244,6 +244,17 @@ void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusP
         }
     }
 
+    if (EM_flag)
+    {
+        for (int n = 0; n < EM_can_charge_amount; n++)
+        {
+            for (int i = 0; i < departure_timeblock[n] - sample_time; i++)
+            {
+                coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = normal_charging_power;
+            }
+        }
+    }
+    
     for (int i = 0; i < (time_block - sample_time); i++)
     {
         if (Pgrid_flag)
@@ -299,6 +310,60 @@ void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultipl
     }
     glp_set_row_name(mip, bnd_row_num, "");
     glp_set_row_bnds(mip, bnd_row_num, GLP_LO, dr_minDecrease_power - dr_sumOfCBL, 0.0);
+    coef_row_num += row_num_maxAddition;
+    bnd_row_num += row_num_maxAddition;
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+}
+
+// =-=-=-=-=-=-=- EM -=-=-=-=-=-=-= //
+void EM_previousSOCPlusPchargeTransToSOC_biggerThan_SOCmin(vector<int> departure_timeblock, vector<float> EM_now_SOC, vector<float> battery_capacity, float normal_charging_power, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+{
+    functionPrint(__func__);
+    
+    for (int n = 0; n < EM_can_charge_amount ; n++)
+    {
+        for (int i = 0; i < (time_block - sample_time); i++)
+        {
+            if (i < departure_timeblock[n] - sample_time)
+            {
+                for (int j = 0; j <= i ; j++)
+                {
+                    coefficient[coef_row_num + (time_block - sample_time) * n + i][j * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = 1;
+                }
+            }
+            
+            glp_set_row_name(mip, (bnd_row_num + (time_block - sample_time) * n + i), "");
+            glp_set_row_bnds(mip, (bnd_row_num + (time_block - sample_time) * n + i), GLP_LO, (EM_MIN_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T), 0.0);
+        }
+    }
+    coef_row_num += row_num_maxAddition;
+    bnd_row_num += row_num_maxAddition;
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+}
+
+void EM_previousSOCPlusSummationPchargeTransToSOC_biggerThan_SOCthreshold(vector<int> departure_timeblock, vector<float> EM_now_SOC, vector<int> start_timeblock, vector<float> EM_start_SOC, vector<float> battery_capacity, float normal_charging_power, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+{
+    functionPrint(__func__);
+    
+    for (int n = 0; n < EM_can_charge_amount ; n++)
+    {
+        for (int i = 0; i < (departure_timeblock[n] - sample_time); i++)
+        {
+            coefficient[coef_row_num + n][i * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = 1;
+        }
+
+        float leastTimeblock_toChargeSOCThreshold = ceil((EM_threshold_SOC - EM_start_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T));
+        if (departure_timeblock[n] - start_timeblock[n] >= leastTimeblock_toChargeSOCThreshold)
+        {
+            glp_set_row_name(mip, (bnd_row_num + n), "");
+            glp_set_row_bnds(mip, (bnd_row_num + n), GLP_LO, ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)), 0.0);
+        }
+        else
+        {
+            glp_set_row_name(mip, (bnd_row_num + n), "");
+            glp_set_row_bnds(mip, (bnd_row_num + n), GLP_LO, float(departure_timeblock[n] - sample_time), 0.0);
+        }
+    }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);

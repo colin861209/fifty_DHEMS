@@ -22,13 +22,13 @@ vector<string> variable_name;
 int time_block = 0, variable = 0, divide = 0, sample_time = 0, point_num = 0, piecewise_num;
 float delta_T = 0.0;
 float Cbat = 0.0, Vsys = 0.0, SOC_ini = 0.0, SOC_min = 0.0, SOC_max = 0.0, SOC_thres = 0.0, Pbat_min = 0.0, Pbat_max = 0.0, Pgrid_max = 0.0, Psell_max = 0.0, Delta_battery = 0.0, Pfc_max = 0.0;
-// EV parameter
-int total_charging_pole = 0, normal_charging_pole = 0, fast_charging_pole = 0, super_fast_charging_pole = 0, EV_can_charge_amount = 0;
-float EV_MAX_SOC = 0.0, EV_MIN_SOC = 0.0;
+// EM parameter
+int total_charging_pole = 0, normal_charging_pole = 0, fast_charging_pole = 0, super_fast_charging_pole = 0, EM_can_charge_amount = 0;
+float EM_MAX_SOC = 0.0, EM_MIN_SOC = 0.0, EM_threshold_SOC = 0.0;
 // dr
 int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 // flag
-bool publicLoad_flag, Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, SOC_change_flag, EV_flag, EV_generate_result_flag;
+bool publicLoad_flag, Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, SOC_change_flag, EM_flag, EM_generate_result_flag;
 int publicLoad_num = 0;
 vector<float> Pgrid_max_array;
 
@@ -94,25 +94,19 @@ int main(int argc, const char **argv)
 	Pess_flag = flag_receive("GHEMS_flag", "Pess");
 	Pfc_flag = flag_receive("GHEMS_flag", "Pfc");
 	SOC_change_flag = flag_receive("GHEMS_flag", "SOC_change");
-	EV_flag = flag_receive("GHEMS_flag", "ElectricVehicle");
 	
-	// =-=-=-=-=-=-=- get parameter values from EV_parameter in need -=-=-=-=-=-=-= //
-	if (EV_flag)
+	// =-=-=-=-=-=-=- get parameter values from EM_parameter in need -=-=-=-=-=-=-= //
+	EM_flag = value_receive("BaseParameter", "parameter_name", "ElectricMotor");
+	if (EM_flag)
 	{
-		total_charging_pole = value_receive("EV_Parameter", "parameter_name", "Total_Charging_Pole");
-		normal_charging_pole = value_receive("EV_Parameter", "parameter_name", "Normal_Charging_Pole");
-		fast_charging_pole = value_receive("EV_Parameter", "parameter_name", "Fast_Charging_Pole");
-		super_fast_charging_pole = value_receive("EV_Parameter", "parameter_name", "Super_Fast_Charging_Pole");
-		EV_MAX_SOC = value_receive("EV_Parameter", "parameter_name", "EV_Upper_SOC", 'F');
-		EV_MIN_SOC = value_receive("EV_Parameter", "parameter_name", "EV_Lower_SOC", 'F');
-		EV_generate_result_flag = value_receive("BaseParameter", "parameter_name", "EV_generate_random_user_result");
-		// FIXME: below variables are not nessary to fetch right row, they are using in optimize
-		// normal_charging_power = value_receive("EV_Parameter", "parameter_name", "Normal_Charging_power", 'F');
-		// fast_charging_power = value_receive("EV_Parameter", "parameter_name", "Fast_Charging_power", 'F');
-		// super_fast_charging_power = value_receive("EV_Parameter", "parameter_name", "Super_Fast_Charging_power", 'F');
-		// charging_efficiency = value_receive("EV_Parameter", "parameter_name", "charging_pole_charging_efficiency", 'F');
-		// discharging_efficiency = value_receive("EV_Parameter", "parameter_name", "charging_pole_discharging_efficiency", 'F');
-		// EV_Pgrid_max = value_receive("EV_Parameter", "parameter_name", "Pgrid_Upper_limit", 'F');
+		total_charging_pole = value_receive("EM_Parameter", "parameter_name", "Total_Charging_Pole");
+		normal_charging_pole = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_Pole");
+		fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Fast_Charging_Pole");
+		super_fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Super_Fast_Charging_Pole");
+		EM_MAX_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Upper_SOC", 'F');
+		EM_threshold_SOC = value_receive("EM_Parameter", "parameter_name", "EM_threshold_SOC", 'F');
+		EM_MIN_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Lower_SOC", 'F');
+		EM_generate_result_flag = value_receive("BaseParameter", "parameter_name", "EM_generate_random_user_result");
 	}
 
 	// determine realtime mode should after getting above related parameter
@@ -127,14 +121,11 @@ int main(int argc, const char **argv)
 	sample_time = value_receive("BaseParameter", "parameter_name", "Global_next_simulate_timeblock");
 	messagePrint(__LINE__, "sample time from database = ", 'I', sample_time);
 
-	// =-=-=-=-=-=-=- create EV users -=-=-=-=-=-=-= //
-	if (EV_flag)
+	// =-=-=-=-=-=-=- create EM users -=-=-=-=-=-=-= //
+	if (EM_flag)
 	{
-		enter_newEVInfo_inPole(sample_time);
-		// TODO: For optimize
-		// count how many vehicles can charge
-		// snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM EV_Pole WHERE `sure` = 1");
-		// EV_can_charge_amount = turn_value_to_int(0);
+		// return how many motors can charge (means flag 'sure' = 1)
+		EM_can_charge_amount = enter_newEMInfo_inPole(sample_time);
 	}
 
 	if (publicLoad_flag == 1)
@@ -177,14 +168,11 @@ int main(int argc, const char **argv)
 		for (int i = 0; i < piecewise_num; i++)
 			variable_name.push_back("lambda_Pfc" + to_string(i + 1));
 	}
-	// TODO: For optimize
-	// if (EV_flag)
-	// {
-	// 	for (int i = 0; i < EV_can_charge_amount; i++)
-	// 	{
-	// 		variable_name.push_back(""+to_string(i+1));
-	// 	}
-	// }
+	if (EM_flag)
+	{
+		for (int i = 0; i < EM_can_charge_amount; i++)
+			variable_name.push_back("EM_charging" + to_string(i+1));
+	}
 	variable = variable_name.size();
 
 	// =-=-=-=-=-=-=- get electric price data -=-=-=-=-=-=-= //
@@ -217,10 +205,9 @@ int main(int argc, const char **argv)
 	calculateCostInfo(price, publicLoad_flag, Pgrid_flag, Psell_flag, Pess_flag, Pfc_flag);
 	updateSingleHouseholdCost();
 	
-	// TODO: 12/21 Confirm function update_fullSOC_or_overtime_EV_inPole should excute where, maybe after doing optimize
-	if (EV_flag)
+	if (EM_flag)
 	{
-		update_fullSOC_or_overtime_EV_inPole(sample_time);
+		update_fullSOC_or_overtime_EM_inPole(sample_time);
 	}
 	
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET value = (SELECT A%d FROM GHEMS_control_status where equip_name = 'SOC') WHERE parameter_name = 'now_SOC'", sample_time);
