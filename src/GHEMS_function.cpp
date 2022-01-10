@@ -78,7 +78,7 @@ void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, f
 	
 	// NOTE: efficieny is not used
 	vector<int> Pole_ID, start_timeblock, departure_timeblock;
-	vector<float> EM_now_SOC, EM_start_SOC, battery_capacity;
+	vector<float> EM_now_SOC, EM_start_SOC, battery_capacity, weighting;
 	float normal_charging_power, fast_charging_power, super_fast_charging_power, charging_efficiency, discharging_efficiency, EM_Pgrid_max;
 	if (EM_flag)
 	{
@@ -90,7 +90,7 @@ void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, f
 		EM_Pgrid_max = value_receive("EM_Parameter", "parameter_name", "Pgrid_Upper_limit", 'F');
 		for (int i = 0; i < EM_can_charge_amount; i++)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `EM_Pole`.`Pole_ID`, `EM_Pole`.`SOC`, `EM_Pole`.`BAT_CAP`, `EM_Pole`.`V_battery`, `EM_Pole`.`Departure_timeblock`, `EM_user_result`.`Start_timeblock`, `EM_user_result`.`Start_SOC` FROM `EM_Pole` INNER JOIN `EM_user_result` ON `EM_Pole`.`number`=`EM_user_result`.`number` WHERE `sure` = 1 LIMIT 1 OFFSET %d", i);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `EM_Pole`.`Pole_ID`, `EM_Pole`.`SOC`, `EM_Pole`.`BAT_CAP`, `EM_motor_type`.`voltage`, `EM_Pole`.`Departure_timeblock`, `EM_user_result`.`Start_timeblock`, `EM_user_result`.`Start_SOC` FROM `EM_Pole` INNER JOIN `EM_user_result` ON `EM_Pole`.`number`=`EM_user_result`.`number` INNER JOIN `EM_motor_type` ON `EM_user_result`.`type`=`EM_motor_type`.`id` WHERE `sure` = 1 LIMIT 1 OFFSET %d", i);
 			fetch_row_value();
 			Pole_ID.push_back(turn_int(0));
 			EM_now_SOC.push_back(turn_float(1));
@@ -98,10 +98,20 @@ void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, f
 			departure_timeblock.push_back(turn_int(4));
 			start_timeblock.push_back(turn_int(5));
 			EM_start_SOC.push_back(turn_float(6));
+			weighting.push_back(battery_capacity[i]*(EM_MAX_SOC-EM_now_SOC[i])/normal_charging_power*(departure_timeblock[i]-sample_time));
 		}
 	}
-	
-	int rowTotal = (time_block - sample_time) * 200 + 1;
+	// sum by 'row_num_maxAddition' in every constraint below
+	int rowTotal = 0;
+	if (publicLoad_flag) { rowTotal += publicLoad_num; }
+	if (Pgrid_flag) { rowTotal += (time_block - sample_time); }
+	if (Psell_flag)	{ rowTotal += (time_block - sample_time) * 2;}
+	if (Pess_flag) { rowTotal += (time_block - sample_time) * 4 + 1; }
+	rowTotal += (time_block - sample_time);
+	if (dr_mode != 0) { rowTotal += 1; }
+	if (Pfc_flag) { rowTotal += (time_block - sample_time) * (7 + piecewise_num); }
+	if (EM_flag) { rowTotal += (time_block - sample_time) *  EM_can_charge_amount + EM_can_charge_amount; }
+	if (EM_can_discharge && EM_flag) { rowTotal += (time_block - sample_time) * (3 * EM_can_charge_amount); }
 	int colTotal = variable * (time_block - sample_time);
 	glp_prob *mip;
 	mip = glp_create_prob();
@@ -229,14 +239,22 @@ void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, f
 
 	if (EM_flag)
 	{
-		// EM's SOC min <= SOC j - 1 + (P n max * r n j * Ts) / E n cap
+		if (EM_can_discharge)
+		{	
+			// EM's r n c,j <= μ n j
+			EM_Rcharging_smallerThan_mu(departure_timeblock, coefficient, mip, EM_can_charge_amount * (time_block - sample_time));
+			// EM's r n d,j <= (1-μ n j)
+			EM_Rdischarging_smallerThan_oneMinusMu(departure_timeblock, coefficient, mip, EM_can_charge_amount * (time_block - sample_time));
+		}
+
+		// EM's SOC min <= SOC j - 1 + ((P n c,max * r n c,j * Ts / E n cap) - (P n d,max * r n d,j * Ts / E n cap))
 		EM_previousSOCPlusPchargeTransToSOC_biggerThan_SOCmin(departure_timeblock, EM_now_SOC, battery_capacity, normal_charging_power, coefficient, mip, EM_can_charge_amount * (time_block - sample_time));
 		
-		// EM's SOC threshold, <= SOC j - 1 + sum((Pess * r n j * Ts) / E n cap), each EM have only one constranit formula
+		// EM's SOC threshold, <= SOC j - 1 + sum((P n c,max * r n c,j * Ts) / E n cap - (P n d,max * r n d,j * Ts / E n cap))), each EM have only one constranit formula
 		EM_previousSOCPlusSummationPchargeTransToSOC_biggerThan_SOCthreshold(departure_timeblock, EM_now_SOC, start_timeblock, EM_start_SOC, battery_capacity, normal_charging_power, coefficient, mip, EM_can_charge_amount);	
 	}
 	
-	setting_GHEMS_ObjectiveFunction(price, mip);
+	setting_GHEMS_ObjectiveFunction(weighting, price, mip);
 
 	int *ia = new int[rowTotal * colTotal + 1];
 	int *ja = new int[rowTotal * colTotal + 1];
@@ -305,11 +323,23 @@ void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, f
 	{
 		for (int n = 0; n < EM_can_charge_amount; n++)
 		{
-			float result = glp_mip_col_val(mip, find_variableName_position(variable_name, "EM_charging" + to_string(n + 1)) + 1);
-			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `charging_status` = '%d' WHERE `Pole_ID` = '%d'", int(result), Pole_ID[n]);
+			float c_status = glp_mip_col_val(mip, find_variableName_position(variable_name, "EM_charging" + to_string(n + 1)) + 1);
+			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `charging_status` = '%d' WHERE `Pole_ID` = '%d'", int(c_status), Pole_ID[n]);
 			sent_query();
+			if (EM_can_discharge)
+			{
+				float d_status = glp_mip_col_val(mip, find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1)) + 1);
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `discharge_status` = '%d' WHERE `Pole_ID` = '%d'", int(d_status), Pole_ID[n]);
+				sent_query();
+			}
 		}
-		for (int i = 1; i <= variable - EM_can_charge_amount; i++)
+
+		int size_without_EM = 0;
+		if (EM_can_discharge)
+			size_without_EM = variable - EM_can_charge_amount * 3;
+		else
+			size_without_EM = variable - EM_can_charge_amount;
+		for (int i = 1; i <= size_without_EM; i++)
 		{
 			int h = i;
 			if (sample_time == 0)
@@ -482,6 +512,19 @@ void setting_GLPK_columnBoundary(vector<string> variable_name, vector<float> Pgr
 			{
 				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "EM_charging" + to_string(j)) + 1 + i * variable), GLP_DB, 0.0, 1.0);
 				glp_set_col_kind(mip, (find_variableName_position(variable_name, "EM_charging" + to_string(j)) + 1 + i * variable), GLP_BV);
+			}
+			if (EM_can_discharge)
+			{
+				for (int j = 1; j <= EM_can_charge_amount; j++)
+				{
+					glp_set_col_bnds(mip, (find_variableName_position(variable_name, "EM_discharging" + to_string(j)) + 1 + i * variable), GLP_DB, 0.0, 1.0);
+					glp_set_col_kind(mip, (find_variableName_position(variable_name, "EM_discharging" + to_string(j)) + 1 + i * variable), GLP_BV);
+				}
+				for (int j = 1; j <= EM_can_charge_amount; j++)
+				{
+					glp_set_col_bnds(mip, (find_variableName_position(variable_name, "EM_mu" + to_string(j)) + 1 + i * variable), GLP_DB, 0.0, 1.0);
+					glp_set_col_kind(mip, (find_variableName_position(variable_name, "EM_mu" + to_string(j)) + 1 + i * variable), GLP_BV);
+				}
 			}
 		}
 	}
@@ -1030,7 +1073,7 @@ void update_fullSOC_or_overtime_EM_inPole(int sample_time)
 	for (int i = 0; i < total_charging_pole; i++)
 	{
 		// check each pole is allowed charging or discharging, update SOC
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `Pole_ID`, `number`, `sure`, `charging_status`, `discharge_status`, `full`, `wait`, `SOC`, `BAT_CAP`, `V_battery`, `I_battery`, `Departure_timeblock` FROM `EM_Pole` WHERE id = '%d'", i + 1);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `EM_Pole`.`Pole_ID`, `EM_Pole`.`number`, `EM_Pole`.`sure`, `EM_Pole`.`charging_status`, `EM_Pole`.`discharge_status`, `EM_Pole`.`full`, `EM_Pole`.`wait`, `EM_Pole`.`SOC`, `EM_Pole`.`BAT_CAP`, `EM_Pole`.`V_battery`, `EM_Pole`.`I_battery`, `EM_Pole`.`Departure_timeblock`,  `EM_motor_type`.`voltage` FROM `EM_Pole` LEFT JOIN `EM_user_result` ON `EM_Pole`.`number`=`EM_user_result`.`number` LEFT JOIN `EM_motor_type` ON `EM_user_result`.`type`=`EM_motor_type`.`id` WHERE EM_Pole.id = '%d'", i + 1);
 		fetch_row_value();
 		int pole_id = turn_int(0);
 		int number = turn_int(1);
@@ -1040,12 +1083,9 @@ void update_fullSOC_or_overtime_EM_inPole(int sample_time)
 		bool SOC_full = turn_int(5);
 		int wait = turn_int(6);
 		float SOC = turn_float(7);
-		float BAT_capacity = turn_float(8);
-		float BAT_voltage = turn_float(9);
-		float BAT_current = turn_float(10);
+		float charging_pole_power = (turn_float(9) * turn_float(10)) / 1000;
 		float departure_timeblock = turn_float(11);
-		float BAT_power = (BAT_voltage * BAT_current) / 1000;
-		BAT_capacity = (BAT_capacity * BAT_voltage) / 1000;
+		float BAT_capacity = (turn_float(8) * turn_float(12)) / 1000;
 		
 		if (allow_chargeOrDischarge)
 		{
@@ -1053,20 +1093,22 @@ void update_fullSOC_or_overtime_EM_inPole(int sample_time)
 			if (charging_status)
 			{
 				if (i < normal_charging_pole)
-					normal_power += BAT_power;
+					normal_power += charging_pole_power;
 				else if (i >= normal_charging_pole && i < fast_charging_pole)
-					fast_power += BAT_power;
+					fast_power += charging_pole_power;
 				else if (i >= fast_charging_pole && i < super_fast_charging_pole)
-					super_fast_power += BAT_power;
+					super_fast_power += charging_pole_power;
 				
-				SOC += (BAT_power * 0.25) / BAT_capacity;
+				SOC += (charging_pole_power * 0.25) / BAT_capacity;
 				if (SOC >= EM_threshold_SOC)
 				{
 					SOC = EM_threshold_SOC;
 					if (i < normal_charging_pole)
 					{
-						// snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `SOC` = %.2f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
-						snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `sure` = 0, `charging_status` = '0', `full` = 1, `SOC` = %.3f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+						if (EM_can_discharge)
+							snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `SOC` = %.3f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+						else
+							snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `sure` = 0, `charging_status` = '0', `full` = 1, `SOC` = %.3f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
 						sent_query();
 					}
 					else if (i >= normal_charging_pole && i < normal_charging_pole+fast_charging_pole)
@@ -1090,9 +1132,9 @@ void update_fullSOC_or_overtime_EM_inPole(int sample_time)
 			else if (discharging_status)
 			{
 				if (i < normal_charging_pole)
-					discharge_normal_power -= BAT_power;
+					discharge_normal_power -= charging_pole_power;
 
-				SOC -= (BAT_power * 0.25) / BAT_capacity;
+				SOC -= (charging_pole_power * 0.25) / BAT_capacity;
 				if (SOC <= EM_MIN_SOC)
 				{
 					SOC = EM_MIN_SOC;
