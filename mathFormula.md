@@ -24,8 +24,11 @@ $$
     z_{i}^{j}, i=0,...,M-1,~j=0,...,N-1 \\
     \lambda_{i}^{j}, i=0,...,M-1,~j=0,...,N-1 \\
     r_{ca}^{j}, j=0,...,N-1,~ca \in A_{c1} \\
+    r_{em,n}^{c,j}, n=1,...,T,j=0,...,N-1 \\
+    r_{em,n}^{d,j}, n=1,...,T,j=0,...,N-1 \\
+    \mu_{em,n}^{j}, n=1,...,T,j=0,...,N-1 \\
 }}
-\sum_{j=k}^{N-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} -
+\sum_{j=k}^{N-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} - \sum_{j=k}^{N-1}\sum_{n=1}^{T} \rho_{b}^{j}w_{n}^{j}P_{n}^{d,max}r_{em,n}^{d,j}T_{s} -
 \sum_{j=\tau_{r}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
 \quad
 \begin{aligned}
@@ -51,7 +54,7 @@ $$
   
 * Blanced Function
     
-    $$ P^{j}_{grid} + P^{j}_{PV} + P^{j}_{FC} - P^{j}_{sell} - P^{j}_{ESS} = \sum_{n=1}^{T}r_{ev, n}^{c, j}P_{n}^{max} + \sum_{ca \in A_{c1}} P_{ca}^{j} + \sum_{u=1}^{U}(\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} + \sum_{a \in A_{uc}} P_{u, uc}^{j}) $$
+    $$ P^{j}_{grid} + P^{j}_{PV} + P^{j}_{FC} - P^{j}_{sell} - P^{j}_{ESS} = \sum_{n=1}^{T}(r_{em, n}^{c, j}P_{n}^{c,max}-r_{em, n}^{d, j}P_{n}^{d,max}) + \sum_{ca \in A_{c1}} P_{ca}^{j} + \sum_{u=1}^{U}(\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} + \sum_{a \in A_{uc}} P_{u, uc}^{j}) $$
 
 * Grid & Sell
   <!-- * $P_{u, grid}^{j}$ 第 u 個住戶在第 j 個時刻消耗的市電功率 -->
@@ -147,22 +150,32 @@ $$
       $$ \sum_{k=0}^{T-1} r_{ca}^{j} \geq Q_{ca} - |d|, \qquad \forall d \in [\tau_{ca}^{s}, \tau_{ca}^{e}] \cap [\tau_{r}^{s}, \tau_{r}^{e}] $$
   ---
 * Electric Motor
-    * $r_{ev, n}^{c, j}$ 第n充電柱在第j時刻的可充電旗標
-    * $SOC_{ev}^{max} SOC_{ev}^{min}$ 電動機車SOC最大最小值
-    * $SOC_{ev}^{threshold}$ 電動機車離場時規定SOC值
-    * $\tau_{ev, n}^{s}$ 第n充電柱進場電動機車時刻
-    * $\tau_{ev, n}^{e}$ 第n充電柱離場電動機車時刻
+    * $r_{em, n}^{c, j}$ 第n充電柱在第j時刻的可充電旗標
+    * $r_{em, n}^{d, j}$ 第n充電柱在第j時刻的可放電旗標
+    * $SOC_{em}^{max} SOC_{em}^{min}$ 電動機車SOC最大最小值
+    * $SOC_{em}^{threshold}$ 電動機車離場時規定SOC值
+    * $\tau_{em, n}^{s}$ 第n充電柱進場電動機車時刻
+    * $\tau_{em, n}^{e}$ 第n充電柱離場電動機車時刻
+    * Formula
+      $$ w_{n}^{j}=\frac{E_{n}^{cap}(SOC_{em,n}^{max}-SOC_{em,n}^{j})}{P_{n}^{max}(\tau_{em,n}^{e}-j)} $$
     * Variable
-      $$ r_{ev, n}^{c, j} \in \{0,1\}, \qquad \forall j \in [\tau_{ev, n}^{s}, \tau_{ev, n}^{e}] $$
+      $$ r_{em, n}^{c, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, n}^{s}, \tau_{em, n}^{e}] $$
 
-      $$ r_{ev, n}^{j} = 0, \qquad \forall j \in [0,N-1] \backslash [\tau_{ev, n}^{s}, \tau_{ev, n}^{e}] $$
+      $$ r_{em, n}^{c, j} = 0, \qquad \forall j \in [0,N-1] \backslash [\tau_{em, n}^{s}, \tau_{em, n}^{e}] $$
 
-      <!-- $$ SOC_{ev}^{min} \leq SOC_{ev, n}^{j} \leq SOC_{ev}^{max} $$ -->
+      $$ r_{em, n}^{d, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, n}^{s}, \tau_{em, n}^{e}] $$
+
+      $$ r_{em, n}^{d, j} = 0, \qquad \forall j \in [0,N-1] \backslash [\tau_{em, n}^{s}, \tau_{em, n}^{e}] $$
+      <!-- $$ SOC_{em}^{min} \leq SOC_{em, n}^{j} \leq SOC_{em}^{max} $$ -->
 
     * Constraint
-      $$ SOC_{ev}^{min} \leq SOC_{ev, n}^{j-1} + \frac{P_{n}^{c, max}r_{ev, n}^{j}T_{s}}{E_{n}^{cap}} $$
+      $$ r_{em,n}^{c,j} \leq \mu_{em, n}^{j}, \qquad \forall n \in [0,T] $$
+
+      $$ r_{em,n}^{d,j} \leq (1-\mu_{em, n}^{j}), \qquad \forall n \in [0,T] $$
+
+      $$ SOC_{em}^{min} \leq SOC_{em, n}^{j-1} + (\frac{P_{n}^{c, max}r_{em, n}^{c,j}T_{s}}{E_{n}^{cap}} - \frac{P_{n}^{d, max}r_{em, n}^{d, j}T_{s}}{E_{n}^{cap}}), \qquad \forall n \in [0,T] $$
       
-      $$ SOC_{ev}^{threshold} \leq SOC_{ev, n}^{j-1} + \sum_{j=\tau_{ev, n}^{s}}^{\tau_{ev, n}^{e}-1} \frac{P_{n}^{c, max}r_{ev, n}^{j}T_{s}}{E_{n}^{cap}}$$
+      $$ SOC_{em}^{threshold} \leq SOC_{em, n}^{j-1} + \sum_{j=\tau_{em, n}^{s}}^{\tau_{em, n}^{e}-1} (\frac{P_{n}^{c, max}r_{em, n}^{c,j}T_{s}}{E_{n}^{cap}} - \frac{P_{n}^{d, max}r_{em, n}^{d, j}T_{s}}{E_{n}^{cap}}), \qquad \forall n \in [0,T] $$
 
     <!-- * For GHEMS => LHEMS
     $$ P_{ESS}^{j} = \sum_{u=1}^{U} \beta_{u}^{j} P_{u,ESS}^{j} $$
@@ -273,7 +286,7 @@ $$
   
     $$ 0 \leq P_{u,grid}^{j} \leq \alpha_{u}^{j}P_{u, grid}^{max} $$
 
-* Battery
+<!-- * Battery
   
   $$ P_{u,charge}^{max} = \frac{P_{charge}^{max}}{U}$$
   
@@ -287,7 +300,7 @@ $$
 
   $$ SOC_{j-1} + \sum_{j=k}^{T-1} \frac{P^{j}_{u,ESS}T_{s}}{C_{ESS}V_{u,ESS}} \geq SOC^{threshold} $$
 
-  $$ SOC_{j} = SOC_{j-1} + \frac {P^{j}_{u,ESS}T_{s}}{C_{ESS}V_{u,ESS}} $$
+  $$ SOC_{j} = SOC_{j-1} + \frac {P^{j}_{u,ESS}T_{s}}{C_{ESS}V_{u,ESS}} $$ -->
 
 * Loads Constraint
   <!-- Uncontrollable load Constraint -->
