@@ -216,7 +216,7 @@ void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *m
 }
 
 // =-=-=-=-=-=-=- balanced equation -=-=-=-=-=-=-= //
-void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoad(int *public_start, int *public_end, float *public_p, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(int *public_start, int *public_end, float *public_p, float *solar2, float *load_model, float normal_charging_power, vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
     
@@ -244,6 +244,19 @@ void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusP
         }
     }
 
+    if (EM_flag)
+    {
+        for (int n = 0; n < EM_can_charge_amount; n++)
+        {
+            for (int i = 0; i < departure_timeblock[n] - sample_time; i++)
+            {
+                coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = normal_charging_power;
+                if (EM_can_discharge)
+                    coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1))] = -normal_charging_power;
+            }
+        }
+    }
+    
     for (int i = 0; i < (time_block - sample_time); i++)
     {
         if (Pgrid_flag)
@@ -299,6 +312,140 @@ void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultipl
     }
     glp_set_row_name(mip, bnd_row_num, "");
     glp_set_row_bnds(mip, bnd_row_num, GLP_LO, dr_minDecrease_power - dr_sumOfCBL, 0.0);
+    coef_row_num += row_num_maxAddition;
+    bnd_row_num += row_num_maxAddition;
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+}
+
+// =-=-=-=-=-=-=- EM -=-=-=-=-=-=-= //
+void EM_Rcharging_smallerThan_mu(vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+{
+    functionPrint(__func__);
+    
+    for (int i = 0; i < (time_block - sample_time); i++)
+    {
+    	for (int n = 0; n < EM_can_charge_amount; n++)
+    	{
+    		if(i < departure_timeblock[n] - sample_time)
+    		{
+                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = -1;
+                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, "EM_mu" + to_string(n + 1))] = 1;
+
+                glp_set_row_name(mip, (bnd_row_num + (time_block - sample_time) * n + i), "");
+                glp_set_row_bnds(mip, (bnd_row_num + (time_block - sample_time) * n + i), GLP_LO, 0.0, 0.0);
+			}
+		}
+    }
+    coef_row_num += row_num_maxAddition;
+    bnd_row_num += row_num_maxAddition;
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+}
+
+void EM_Rdischarging_smallerThan_oneMinusMu(vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+{
+    functionPrint(__func__);
+    
+    for (int i = 0; i < (time_block - sample_time); i++)
+    {
+    	for (int n = 0; n < EM_can_charge_amount; n++)
+    	{
+    		if(i < departure_timeblock[n] - sample_time)
+    		{
+                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1))] = 1;
+                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, "EM_mu" + to_string(n + 1))] = 1;
+
+                glp_set_row_name(mip, (bnd_row_num + (time_block - sample_time) * n + i), "");
+                glp_set_row_bnds(mip, (bnd_row_num + (time_block - sample_time) * n + i), GLP_UP, 0.0, 1.0);
+			}
+		}
+    }
+    coef_row_num += row_num_maxAddition;
+    bnd_row_num += row_num_maxAddition;
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+}
+
+void EM_RchargeMinusRdischarge_biggerThan_zero(vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+{
+    functionPrint(__func__);
+
+    for (int i = 0; i < (time_block - sample_time); i++)
+    {
+        for (int n = 0; n < EM_can_charge_amount; n++)
+        {
+            if(i < departure_timeblock[n] - sample_time)
+    		{
+                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = 1;
+                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1))] = -1;
+
+                glp_set_row_name(mip, (bnd_row_num + (time_block - sample_time) * n + i), "");
+                glp_set_row_bnds(mip, (bnd_row_num + (time_block - sample_time) * n + i), GLP_LO, 0.0, 0.0);
+			}   
+        }
+    }
+}
+
+void EM_previousSOCPlusPchargeTransToSOC_biggerThan_SOCmin(vector<int> departure_timeblock, vector<float> EM_now_SOC, vector<float> battery_capacity, float normal_charging_power, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+{
+    functionPrint(__func__);
+    
+    for (int n = 0; n < EM_can_charge_amount ; n++)
+    {
+        for (int i = 0; i < (time_block - sample_time); i++)
+        {
+            if (i < departure_timeblock[n] - sample_time)
+            {
+                for (int j = 0; j <= i ; j++)
+                {
+                    coefficient[coef_row_num + (time_block - sample_time) * n + i][j * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = 1;
+                    if (EM_can_discharge)
+                        coefficient[coef_row_num + (time_block - sample_time) * n + i][j * variable + find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1))] = -1;
+                }
+            }
+            if (departure_timeblock[n] - sample_time <= 2 && EM_now_SOC[n] >= EM_threshold_SOC)
+            {
+                // NOTE: avoid last charging time smaller than least charging timeblock (below constraint limit)
+                // Should smaller than 1 in normal, but we use ceil to calculate least charging timeblock, so modify to smaller than 2
+                glp_set_row_name(mip, (bnd_row_num + (time_block - sample_time) * n + i), "");
+                glp_set_row_bnds(mip, (bnd_row_num + (time_block - sample_time) * n + i), GLP_FX, 0.0, 0.0);
+            }
+            else
+            {
+                glp_set_row_name(mip, (bnd_row_num + (time_block - sample_time) * n + i), "");
+                glp_set_row_bnds(mip, (bnd_row_num + (time_block - sample_time) * n + i), GLP_LO, (EM_MIN_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T), 0.0);
+            }
+        }
+    }
+    coef_row_num += row_num_maxAddition;
+    bnd_row_num += row_num_maxAddition;
+    saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
+}
+
+void EM_previousSOCPlusSummationPchargeTransToSOC_biggerThan_SOCthreshold(vector<int> departure_timeblock, vector<float> EM_now_SOC, vector<int> start_timeblock, vector<float> EM_start_SOC, vector<float> battery_capacity, float normal_charging_power, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+{
+    functionPrint(__func__);
+    
+    for (int n = 0; n < EM_can_charge_amount ; n++)
+    {
+        for (int i = 0; i < (departure_timeblock[n] - sample_time); i++)
+        {
+            coefficient[coef_row_num + n][i * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = 1;
+            if (EM_can_discharge)
+                coefficient[coef_row_num + n][i * variable + find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1))] = -1;
+        }
+        // NOTE: can remove ceil or instead of round to test, at first remove 
+        float leastTimeblock_toChargeSOCThreshold = ceil((EM_threshold_SOC - EM_start_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T));
+        if (departure_timeblock[n] - start_timeblock[n] >= leastTimeblock_toChargeSOCThreshold)
+        {
+            glp_set_row_name(mip, (bnd_row_num + n), "");
+            glp_set_row_bnds(mip, (bnd_row_num + n), GLP_LO, ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)), 0.0);
+        }
+        else
+        {
+            // avoid EM user setting too less time and EM can't charge to threshold although charging every time
+            glp_set_row_name(mip, (bnd_row_num + n), "");
+            glp_set_row_bnds(mip, (bnd_row_num + n), GLP_LO, float(departure_timeblock[n] - sample_time), 0.0);
+        }
+    }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
@@ -543,7 +690,7 @@ void summation_SOCNegative_biggerThan_targetDischargeSOC(float target_dischargeS
 }
 
 // =-=-=-=-=-=-=- objective function -=-=-=-=-=-=-= //
-void setting_GHEMS_ObjectiveFunction(float *price, glp_prob *mip)
+void setting_GHEMS_ObjectiveFunction(vector<float> weighting, float *price, glp_prob *mip)
 {
     functionPrint(__func__);
 
@@ -555,6 +702,13 @@ void setting_GHEMS_ObjectiveFunction(float *price, glp_prob *mip)
 			glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Psell") + 1 + j * variable), price[j + sample_time] * delta_T * (-1));
 		if (Pfc_flag)
 			glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pfct") + 1 + j * variable), Hydro_Price / Hydro_Cons * delta_T); //FC cost
+        if (EM_flag)
+        {
+            for (int n = 0; n < EM_can_charge_amount; n++)
+            {                
+			    glp_set_obj_coef(mip, (find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1)) + 1 + j * variable), -0.6 * weighting[n] * price[j + sample_time] * delta_T);
+            }
+        }
 	}
 	if (dr_mode != 0)
 	{
