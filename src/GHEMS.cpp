@@ -28,7 +28,7 @@ float EM_MAX_SOC = 0.0, EM_MIN_SOC = 0.0, EM_threshold_SOC = 0.0;
 // dr
 int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 // flag
-bool publicLoad_flag, Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, SOC_change_flag, EM_flag, EM_generate_result_flag;
+bool publicLoad_flag, Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, SOC_change_flag, EM_flag, EM_generate_result_flag, EM_can_discharge;
 int publicLoad_num = 0;
 vector<float> Pgrid_max_array;
 
@@ -96,6 +96,7 @@ int main(int argc, const char **argv)
 	SOC_change_flag = flag_receive("GHEMS_flag", "SOC_change");
 	
 	// =-=-=-=-=-=-=- get parameter values from EM_parameter in need -=-=-=-=-=-=-= //
+	// NOTE: 2022/01/03 Discuss with professor comfirm not using fast/super fast charging users
 	EM_flag = value_receive("BaseParameter", "parameter_name", "ElectricMotor");
 	if (EM_flag)
 	{
@@ -106,6 +107,7 @@ int main(int argc, const char **argv)
 		EM_MAX_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Upper_SOC", 'F');
 		EM_threshold_SOC = value_receive("EM_Parameter", "parameter_name", "EM_threshold_SOC", 'F');
 		EM_MIN_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Lower_SOC", 'F');
+		EM_can_discharge = value_receive("EM_Parameter", "parameter_name", "Motor_can_discharge");
 		EM_generate_result_flag = value_receive("BaseParameter", "parameter_name", "EM_generate_random_user_result");
 	}
 
@@ -171,7 +173,14 @@ int main(int argc, const char **argv)
 	if (EM_flag)
 	{
 		for (int i = 0; i < EM_can_charge_amount; i++)
-			variable_name.push_back("EM_charging" + to_string(i+1));
+			variable_name.push_back("EM_charging" + to_string(i + 1));
+		if (EM_can_discharge)
+		{
+			for (int i = 0; i < EM_can_charge_amount; i++)
+				variable_name.push_back("EM_discharging" + to_string(i + 1));
+			for (int i = 0; i < EM_can_charge_amount; i++)
+				variable_name.push_back("EM_mu" + to_string(i + 1));
+		}
 	}
 	variable = variable_name.size();
 
@@ -219,7 +228,11 @@ int main(int argc, const char **argv)
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = '%d' WHERE  parameter_name = 'Global_next_simulate_timeblock' ", sample_time + 1);
 	sent_query();
 
-	// TODO: 12/21 when timeblock to the end, update flag generate random user result to 0, easy to do other simulation
+	if (sample_time == 95)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET `value` = '0' WHERE `parameter_name` = 'EM_generate_random_user_result'");
+		sent_query();
+	}
 
 	mysql_close(mysql_con);
 	return 0;

@@ -35,41 +35,42 @@ class Xpath:
         self.text_backup_BaseParameter =            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[3]/a'
         self.text_backup_EM_Parameter =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[4]/a'
         self.text_backup_EM_user_number =           '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[5]/a'
-        self.text_backup_GHEMS =                    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[6]/a'
-        self.text_backup_LHEMS =                    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[7]/a'
-        self.text_backup_totalLoad =                '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[8]/a'
-        self.text_BaseParameter =                   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[9]/a'
-        self.text_cost =                            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[10]/a'
-        self.text_dr =                              '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[11]/a'
-        self.text_distributed_group =               '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[12]/a'
-        self.text_EM_fast_user_result =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[13]/a'
-        self.text_EM_motor_type =                   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[14]/a'
-        self.text_EM_Parameter =                    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[15]/a'
-        self.text_EM_Parameter_of_ESS =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[16]/a'
-        self.text_EM_Parameter_of_randomResult =    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[17]/a'
-        self.text_EM_Pole =                         '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[18]/a'
-        self.text_EM_super_fast_user_result =       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[19]/a'
-        self.text_EM_user_number =                  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[20]/a'
-        self.text_EM_user_result =                  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[21]/a'
-        self.text_EM_wholeDay_userChargingNumber =  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[22]/a'
-        self.text_GHEMS_control_status =            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[23]/a'
-        self.text_GHEMS_flag =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[24]/a'
-        self.text_GHEMS__history_control_status =   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[25]/a'
-        self.text_GHEMS_real_status =               '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[26]/a'
-        self.text_GHEMS_variable =                  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[27]/a'
-        self.text_LHEMS_comfort_level =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[28]/a'
-        self.text_LHEMS_control_status =            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[29]/a'
-        self.text_LHEMS_cost =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[30]/a'
-        self.text_LHEMS_dr_participation =          '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[31]/a'
-        self.text_LHEMS_flag =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[32]/a'
-        self.text_LHEMS__history_control_status =   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[33]/a'
-        self.text_LHEMS_real_status =               '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[34]/a'
-        self.text_LHEMS_ucLoad =                    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[35]/a'
-        self.text_load_list =                       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[36]/a'
-        self.text_price =                           '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[37]/a'
-        self.text_soalr_data =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[38]/a'
-        self.text_soalr_day =                       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[39]/a'
-        self.text_totalLoad_model =                 '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[40]/a'
+        self.text_backup_EM_user_result =           '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[6]/a'
+        self.text_backup_GHEMS =                    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[7]/a'
+        self.text_backup_LHEMS =                    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[8]/a'
+        self.text_backup_totalLoad =                '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[9]/a'
+        self.text_BaseParameter =                   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[10]/a'
+        self.text_cost =                            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[11]/a'
+        self.text_dr =                              '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[12]/a'
+        self.text_distributed_group =               '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[13]/a'
+        self.text_EM_fast_user_result =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[14]/a'
+        self.text_EM_motor_type =                   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[15]/a'
+        self.text_EM_Parameter =                    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[16]/a'
+        self.text_EM_Parameter_of_ESS =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[17]/a'
+        self.text_EM_Parameter_of_randomResult =    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[18]/a'
+        self.text_EM_Pole =                         '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[19]/a'
+        self.text_EM_super_fast_user_result =       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[20]/a'
+        self.text_EM_user_number =                  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[21]/a'
+        self.text_EM_user_result =                  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[22]/a'
+        self.text_EM_wholeDay_userChargingNumber =  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[23]/a'
+        self.text_GHEMS_control_status =            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[24]/a'
+        self.text_GHEMS_flag =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[25]/a'
+        self.text_GHEMS__history_control_status =   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[26]/a'
+        self.text_GHEMS_real_status =               '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[27]/a'
+        self.text_GHEMS_variable =                  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[28]/a'
+        self.text_LHEMS_comfort_level =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[29]/a'
+        self.text_LHEMS_control_status =            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[30]/a'
+        self.text_LHEMS_cost =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[31]/a'
+        self.text_LHEMS_dr_participation =          '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[32]/a'
+        self.text_LHEMS_flag =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[33]/a'
+        self.text_LHEMS__history_control_status =   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[34]/a'
+        self.text_LHEMS_real_status =               '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[35]/a'
+        self.text_LHEMS_ucLoad =                    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[36]/a'
+        self.text_load_list =                       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[37]/a'
+        self.text_price =                           '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[38]/a'
+        self.text_soalr_data =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[39]/a'
+        self.text_soalr_day =                       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[40]/a'
+        self.text_totalLoad_model =                 '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[41]/a'
         # page export
         self.btn_export = '//*[@id="topmenu"]/li[6]/a'
         self.title_text_export = '//*[@id="header"]'
@@ -84,6 +85,7 @@ class Xpath:
         self.GHEMS_Price = '//*[@id="priceVsLoad"]'
         self.GHEMS_SOC = '//*[@id="SOCVsLoad"]'
         self.GHEMS_loadModel = '//*[@id="loadModel"]'
+        self.GHEMS_EMchargingSOC = '//*[@id="EMchargingSOC"]'
         self.GHEMS_table = '/html/body/table'
         self.LHEMS_loadSum = '//*[@id="households_loadsSum"]'
         self.auto_run = '//*[@id="auto"]'
@@ -129,15 +131,18 @@ class WEBDRIVER:
         self.password_value="fuzzy314"
         # setting driver then open browser
         options = Options()
+        options.add_argument('--headless')
         options.add_argument("--disable-notifications")  #不啟用通知
         options.add_experimental_option("excludeSwitches", ['enable-automation', 'ignore-certificate-errors']) # 關閉 "chrome目前受到自動測試軟體控制”信息"
         if "html" in url:
-            options.add_argument("--start-fullscreen")
+            # options.add_argument("start-maximized")
+            pass
         else:
             self.screenshot_path=screenshot_path
             prefs = {"download.default_directory" : self.screenshot_path}
             options.add_experimental_option("prefs", prefs)
         self.chrome = webdriver.Chrome('C:/Users/sonu/Desktop/howThesis/webDriver/chromedriver', options=options)
+        self.chrome.set_window_size(1920, 1080)
         self.chrome.get(url)
         self.wait = WebDriverWait(self.chrome, timeout=self.timeout)
         # get screenshot path
@@ -230,6 +235,8 @@ class WEBDRIVER:
                 element = self.chrome.find_element_by_xpath(xpath.GHEMS_SOC)
             elif "_loadModel" in file:
                 element = self.chrome.find_element_by_xpath(xpath.GHEMS_loadModel)
+            elif "_EMchargingSOC" in file:
+                element = self.chrome.find_element_by_xpath(xpath.GHEMS_EMchargingSOC)
             elif "_table" in file:
                 element = self.chrome.find_element_by_xpath(xpath.GHEMS_table)
             self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
@@ -323,6 +330,7 @@ class WEBDRIVER:
 
 if __name__ == "__main__":
     
+    start_time=time()
     xpath = Xpath()
     url = URL()
     ###############################################################
@@ -338,6 +346,7 @@ if __name__ == "__main__":
     webpage.screenshot_file("GHEMS_Price.jpg")
     webpage.screenshot_file("GHEMS_SOC.jpg")
     webpage.screenshot_file("GHEMS_loadModel.jpg")
+    webpage.screenshot_file("GHEMS_EMchargingSOC.jpg")
     webpage.screenshot_file("GHEMS_table.jpg")
     webpage.screenshot_everyHousehold_eachLoad_file()
 
@@ -356,3 +365,4 @@ if __name__ == "__main__":
     db.exportTable(xpath.text_EM_Parameter)
     db.exportTable(xpath.text_EM_user_number)
     db.exportTable(xpath.text_EM_user_result)
+    print(f"//--------------- {time()-start_time} ---------------\\")

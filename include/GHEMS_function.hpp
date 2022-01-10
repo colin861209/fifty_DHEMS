@@ -15,7 +15,7 @@ extern int total_charging_pole, normal_charging_pole, fast_charging_pole, super_
 extern float EM_MAX_SOC, EM_MIN_SOC, EM_threshold_SOC;
 
 // flag
-extern bool SOC_change_flag, publicLoad_flag, EM_flag, EM_generate_result_flag;
+extern bool SOC_change_flag, publicLoad_flag, EM_flag, EM_generate_result_flag, EM_can_discharge;
 
 int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> variable_name);
 float *getOrUpdate_SolarInfo_ThroughSampleTime(const char *weather);
