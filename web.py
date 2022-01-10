@@ -33,6 +33,7 @@ class Xpath:
         # DHEMS_fiftyHousehold tables
         self.text_create_newTable =                 '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[2]/a'
         self.text_backup_BaseParameter =            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[3]/a'
+
         self.text_backup_EM_Parameter =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[4]/a'
         self.text_backup_EM_user_number =           '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[5]/a'
         self.text_backup_EM_user_result =           '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[6]/a'
@@ -71,6 +72,7 @@ class Xpath:
         self.text_soalr_data =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[39]/a'
         self.text_soalr_day =                       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[40]/a'
         self.text_totalLoad_model =                 '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[41]/a'
+
         # page export
         self.btn_export = '//*[@id="topmenu"]/li[6]/a'
         self.title_text_export = '//*[@id="header"]'
@@ -341,7 +343,7 @@ if __name__ == "__main__":
     ## screenshot_file: name of the file                         ##
     ## choose_DHEMS_DB: 'DHEMS group' Process                    ##
     ###############################################################
-    webpage = WEBDRIVER(url.DHEMS_web_baseParameter, savingFolder="10.EM\\charging_only\\")
+    webpage = WEBDRIVER(url.DHEMS_web_baseParameter, savingFolder="9.comfortLevel\\")
     webpage.screenshot_file("LHEMS.jpg")
     webpage.screenshot_file("GHEMS_Price.jpg")
     webpage.screenshot_file("GHEMS_SOC.jpg")
@@ -360,6 +362,7 @@ if __name__ == "__main__":
     db.exportTable(xpath.text_LHEMS_control_status)
     db.exportTable(xpath.text_LHEMS_flag)
     db.exportTable(xpath.text_LHEMS_cost)
+
     db.exportTable(xpath.text_totalLoad_model)
     # EM table
     db.exportTable(xpath.text_EM_Parameter)
