@@ -12,7 +12,7 @@ extern float Cbat, Vsys, SOC_ini, SOC_min, SOC_max, SOC_thres, Pbat_min, Pbat_ma
 
 // EM parameter
 extern int total_charging_pole, normal_charging_pole, fast_charging_pole, super_fast_charging_pole, EM_can_charge_amount;
-extern float EM_MAX_SOC, EM_MIN_SOC, EM_threshold_SOC;
+extern float EM_MAX_SOC, EM_MIN_SOC, EM_threshold_SOC, normal_charging_power;
 
 // flag
 extern bool SOC_change_flag, publicLoad_flag, EM_flag, EM_generate_result_flag, EM_can_discharge;

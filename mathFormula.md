@@ -28,7 +28,7 @@ $$
     r_{em,n}^{d,j}, n=1,...,N,j=0,...,J-1 \\
     \mu_{em,n}^{j}, n=1,...,N,j=0,...,J-1 \\
 }}
-\sum_{j=k}^{J-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} - \sum_{j=k}^{J-1}\sum_{n=1}^{N} \rho_{b}^{j}w_{n}^{j}P_{n}^{d,max}r_{em,n}^{d,j}T_{s} -
+\sum_{j=k}^{J-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} - \sum_{j=k}^{J-1}\sum_{n=1}^{N} \rho_{b}^{j}P_{n}^{d,max}r_{em,n}^{d,j}T_{s} -
 \sum_{j=\tau_{r}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
 \quad
 \begin{aligned}
@@ -156,8 +156,8 @@ $$
     * $SOC_{em}^{threshold}$ 電動機車離場時規定SOC值
     * $\tau_{em, n}^{s}$ 第n充電柱進場電動機車時刻
     * $\tau_{em, n}^{e}$ 第n充電柱離場電動機車時刻
-    * Formula
-      $$ w_{n}^{j}=\frac{E_{n}^{cap}(SOC_{em,n}^{max}-SOC_{em,n}^{j})}{P_{n}^{max}(\tau_{em,n}^{e}-j)} $$
+    <!-- * Formula -->
+      <!-- $$ w_{n}^{j}=\frac{E_{n}^{cap}(SOC_{em,n}^{max}-SOC_{em,n}^{j})}{P_{n}^{max}(\tau_{em,n}^{e}-j)} $$ -->
     * Variable
       $$ r_{em, n}^{c, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, n}^{s}, \tau_{em, n}^{e}], \forall n \in [0,N] $$
 

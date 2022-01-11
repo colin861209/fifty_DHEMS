@@ -24,7 +24,7 @@ float delta_T = 0.0;
 float Cbat = 0.0, Vsys = 0.0, SOC_ini = 0.0, SOC_min = 0.0, SOC_max = 0.0, SOC_thres = 0.0, Pbat_min = 0.0, Pbat_max = 0.0, Pgrid_max = 0.0, Psell_max = 0.0, Delta_battery = 0.0, Pfc_max = 0.0;
 // EM parameter
 int total_charging_pole = 0, normal_charging_pole = 0, fast_charging_pole = 0, super_fast_charging_pole = 0, EM_can_charge_amount = 0;
-float EM_MAX_SOC = 0.0, EM_MIN_SOC = 0.0, EM_threshold_SOC = 0.0;
+float EM_MAX_SOC = 0.0, EM_MIN_SOC = 0.0, EM_threshold_SOC = 0.0, normal_charging_power = 0.0;
 // dr
 int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 // flag
@@ -96,7 +96,7 @@ int main(int argc, const char **argv)
 	SOC_change_flag = flag_receive("GHEMS_flag", "SOC_change");
 	
 	// =-=-=-=-=-=-=- get parameter values from EM_parameter in need -=-=-=-=-=-=-= //
-	// NOTE: 2022/01/03 Discuss with professor comfirm not using fast/super fast charging users
+	// NOTE: 2022/01/03 Discuss with professor comfirm not using fast/super fast charging users, so not fully complete all the process
 	EM_flag = value_receive("BaseParameter", "parameter_name", "ElectricMotor");
 	if (EM_flag)
 	{
@@ -104,6 +104,7 @@ int main(int argc, const char **argv)
 		normal_charging_pole = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_Pole");
 		fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Fast_Charging_Pole");
 		super_fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Super_Fast_Charging_Pole");
+		normal_charging_power = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_power", 'F');
 		EM_MAX_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Upper_SOC", 'F');
 		EM_threshold_SOC = value_receive("EM_Parameter", "parameter_name", "EM_threshold_SOC", 'F');
 		EM_MIN_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Lower_SOC", 'F');
