@@ -76,22 +76,24 @@ void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, f
 		public_reot = count_publicLoads_RemainOperateTime(publicLoad_num, public_ot, buff);
 	}
 	
-	vector<int> Pole_ID, start_timeblock, departure_timeblock;
+	vector<int> Pole_ID, start_timeblock, departure_timeblock, EM_number;
 	vector<float> EM_now_SOC, EM_start_SOC, battery_capacity;
 	if (EM_flag)
 	{
 		for (int i = 0; i < EM_can_charge_amount; i++)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `EM_Pole`.`Pole_ID`, `EM_Pole`.`SOC`, `EM_Pole`.`BAT_CAP`, `EM_motor_type`.`voltage`, `EM_Pole`.`Departure_timeblock`, `EM_user_result`.`Start_timeblock`, `EM_user_result`.`Start_SOC` FROM `EM_Pole` INNER JOIN `EM_user_result` ON `EM_Pole`.`number`=`EM_user_result`.`number` INNER JOIN `EM_motor_type` ON `EM_user_result`.`type`=`EM_motor_type`.`id` WHERE `sure` = 1 LIMIT 1 OFFSET %d", i);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `EM_Pole`.`Pole_ID`, `EM_Pole`.`SOC`, `EM_Pole`.`BAT_CAP`, `EM_motor_type`.`voltage`, `EM_Pole`.`Departure_timeblock`, `EM_Pole`.`number`, `EM_user_result`.`Start_timeblock`, `EM_user_result`.`Start_SOC` FROM `EM_Pole` INNER JOIN `EM_user_result` ON `EM_Pole`.`number`=`EM_user_result`.`number` INNER JOIN `EM_motor_type` ON `EM_user_result`.`type`=`EM_motor_type`.`id` WHERE `sure` = 1 LIMIT 1 OFFSET %d", i);
 			fetch_row_value();
 			Pole_ID.push_back(turn_int(0));
 			EM_now_SOC.push_back(turn_float(1));
 			battery_capacity.push_back(turn_float(2)*turn_float(3)/1000);
 			departure_timeblock.push_back(turn_int(4));
-			start_timeblock.push_back(turn_int(5));
-			EM_start_SOC.push_back(turn_float(6));
+			EM_number.push_back(turn_int(5));
+			start_timeblock.push_back(turn_int(6));
+			EM_start_SOC.push_back(turn_float(7));
 		}
 	}
+
 	// sum by 'row_num_maxAddition' in every constraint below
 	int rowTotal = 0;
 	if (publicLoad_flag) { rowTotal += publicLoad_num; }
@@ -306,11 +308,24 @@ void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, f
 		printf("Error > sol is 0, No Solution, give up the solution\n");
 		printf("%.2f\n", glp_mip_col_val(mip, find_variableName_position(variable_name, "SOC") + 1));
 		// CLEAN:
-		for (int n = 0; n < EM_can_charge_amount; n++)
+		if (EM_can_discharge)
 		{
-			if (departure_timeblock[n]-sample_time<ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)))
+			for (int n = 0; n < EM_can_charge_amount; n++)
 			{
-				printf("POLE %d, %d >= %.0f (%d), dis=%.0f\n", Pole_ID[n], departure_timeblock[n]-sample_time, ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)), departure_timeblock[n]-sample_time>=ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)), glp_mip_col_val(mip, find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1)) + 1));
+				if (departure_timeblock[n]-sample_time<ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)))
+				{
+					printf("Number %d, %d >= %.0f (%d), dis=%.0f\n", EM_number[n], departure_timeblock[n]-sample_time, ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)), departure_timeblock[n]-sample_time>=ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)), glp_mip_col_val(mip, find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1)) + 1));
+				}
+			}
+		}
+		else
+		{
+			for (int n = 0; n < EM_can_charge_amount; n++)
+			{
+				if (departure_timeblock[n]-sample_time<ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)))
+				{
+					printf("Number %d, %d >= %.0f (%d)\n", EM_number[n], departure_timeblock[n]-sample_time, ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)), departure_timeblock[n]-sample_time>=ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)));
+				}
 			}
 		}
 		exit(0);
@@ -330,6 +345,13 @@ void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, f
 			{
 				float d_status = glp_mip_col_val(mip, find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1)) + 1);
 				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `discharge_status` = '%d' WHERE `Pole_ID` = '%d'", int(d_status), Pole_ID[n]);
+				sent_query();
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_chargingOrDischarging_status` SET `A%d` = '%d' WHERE `user_number` = %d", sample_time, int(c_status)-int(d_status), EM_number[n]);
+				sent_query();
+			}
+			else
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_chargingOrDischarging_status` SET `A%d` = '%d' WHERE `user_number` = %d", sample_time, int(c_status), EM_number[n]);
 				sent_query();
 			}
 		}
@@ -563,6 +585,9 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 
 		if (EM_flag)
 		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE `EM_chargingOrDischarging_status`");
+			sent_query();
+
 			// Reset columns which record related ev power after optimization
 			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_user_number` SET `total_power` = '0', `normal_power` = '0', `discharge_normal_power` = '0', `fast_power` = '0', `super_fast_power` = '0';");
 			sent_query();
@@ -1467,6 +1492,8 @@ void enter_charging_pole(int number, int wait, float SOC, float BAT_capacity, in
 	if (BAT_capacity != 0)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `number` = '%d', `sure` = '1', `wait` = '%d', `SOC` = '%.2f', `BAT_CAP` = '%.2f', `Start_timeblock` = '%d', `Departure_timeblock` = '%d' WHERE `Pole_ID` = %d;", number, wait, SOC, BAT_capacity, start_timeblock, departure_timeblock, pole_id);
+		sent_query();
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `EM_chargingOrDischarging_status` (`user_number`) VALUES ('%d')", number);
 		sent_query();
 	}
 }

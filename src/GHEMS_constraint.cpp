@@ -422,21 +422,26 @@ void EM_previousSOCPlusSummationPchargeTransToSOC_biggerThan_SOCthreshold(vector
             if (EM_can_discharge)
                 coefficient[coef_row_num + n][i * variable + find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1))] = -1;
         }
+        
         float leastTimeblock_toChargeSOCThreshold = ceil((EM_threshold_SOC - EM_start_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T));
         if (departure_timeblock[n] - start_timeblock[n] >= leastTimeblock_toChargeSOCThreshold)
         {
-            // 最後時刻達門檻值不充放電，未達門檻值強制充電
-            if (departure_timeblock[n] - sample_time == 1 && EM_now_SOC[n] < EM_threshold_SOC)
-            {
-                glp_set_row_name(mip, (bnd_row_num + n), "");
-                glp_set_row_bnds(mip, (bnd_row_num + n), GLP_FX, 1.0, 1.0);
+            if (EM_can_discharge)
+            {   
+                // Error handling: all users force charging except already got threshold users,
+                // avoid use ceil due to return become 2 got error, but in fact 1 is enough to reach the threshold
+                if (departure_timeblock[n] - sample_time == 1 && EM_now_SOC[n] < EM_threshold_SOC)
+                {
+                    
+                    glp_set_row_name(mip, (bnd_row_num + n), "");
+                    glp_set_row_bnds(mip, (bnd_row_num + n), GLP_FX, 1.0, 1.0);
+                }
+                else
+                {
+                    glp_set_row_name(mip, (bnd_row_num + n), "");
+                    glp_set_row_bnds(mip, (bnd_row_num + n), GLP_LO, ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)), 0.0);
+                }
             }
-            // // 前三時刻未達門檻值，充電次數一定大於放電次數
-            // else if (departure_timeblock[n] - sample_time <= 3 && EM_now_SOC[n] < EM_threshold_SOC)
-            // {
-            //     glp_set_row_name(mip, (bnd_row_num + n), "");
-            //     glp_set_row_bnds(mip, (bnd_row_num + n), GLP_LO, 1.0, 0.0);
-            // }
             else
             {
                 glp_set_row_name(mip, (bnd_row_num + n), "");
@@ -706,7 +711,7 @@ void setting_GHEMS_ObjectiveFunction(float *price, glp_prob *mip)
 			glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Psell") + 1 + j * variable), price[j + sample_time] * delta_T * (-1));
 		if (Pfc_flag)
 			glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pfct") + 1 + j * variable), Hydro_Price / Hydro_Cons * delta_T); //FC cost
-        if (EM_flag)
+        if (EM_flag && EM_can_discharge)
         {
             for (int n = 0; n < EM_can_charge_amount; n++)         
 			    glp_set_obj_coef(mip, (find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1)) + 1 + j * variable), -normal_charging_power * price[j + sample_time] * delta_T);

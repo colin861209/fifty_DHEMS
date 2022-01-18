@@ -156,9 +156,8 @@ $$
     * $SOC_{em}^{threshold}$ 電動機車離場時規定SOC值
     * $\tau_{em, n}^{s}$ 第n充電柱進場電動機車時刻
     * $\tau_{em, n}^{e}$ 第n充電柱離場電動機車時刻
-    <!-- * Formula -->
-      <!-- $$ w_{n}^{j}=\frac{E_{n}^{cap}(SOC_{em,n}^{max}-SOC_{em,n}^{j})}{P_{n}^{max}(\tau_{em,n}^{e}-j)} $$ -->
     * Variable
+    
       $$ r_{em, n}^{c, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, n}^{s}, \tau_{em, n}^{e}], \forall n \in [0,N] $$
 
       $$ r_{em, n}^{c, j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{em, n}^{s}, \tau_{em, n}^{e}], \forall n \in [0,N] $$
@@ -166,7 +165,6 @@ $$
       $$ r_{em, n}^{d, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, n}^{s}, \tau_{em, n}^{e}], \forall n \in [0,N] $$
 
       $$ r_{em, n}^{d, j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{em, n}^{s}, \tau_{em, n}^{e}], \forall n \in [0,N] $$
-      <!-- $$ SOC_{em}^{min} \leq SOC_{em, n}^{j} \leq SOC_{em}^{max} $$ -->
 
     * Constraint
       $$ r_{em,n}^{c,j} \leq \mu_{em, n}^{j}, \qquad \forall n \in [0,N] $$
