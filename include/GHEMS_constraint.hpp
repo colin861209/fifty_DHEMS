@@ -19,7 +19,7 @@ void pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(float **coefficie
 void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // balance function
-void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(int *public_start, int *public_end, float *public_p, float *solar2, float *load_model, float normal_charging_power, vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(int *public_start, int *public_end, float *public_p, float *solar2, float *load_model, vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // demand response
 void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs(float **coefficient, glp_prob *mip, int row_num_maxAddition);
@@ -44,8 +44,8 @@ void summation_SOCNegative_biggerThan_targetDischargeSOC(float target_dischargeS
 // EM
 void EM_Rcharging_smallerThan_mu(vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void EM_Rdischarging_smallerThan_oneMinusMu(vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void EM_previousSOCPlusPchargeTransToSOC_biggerThan_SOCmin(vector<int> departure_timeblock, vector<float> EM_now_SOC, vector<float> battery_capacity, float normal_charging_power, float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void EM_previousSOCPlusSummationPchargeTransToSOC_biggerThan_SOCthreshold(vector<int> departure_timeblock, vector<float> EM_now_SOC, vector<int> start_timeblock, vector<float> EM_start_SOC, vector<float> battery_capacity, float normal_charging_power, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void EM_previousSOCPlusPchargeTransToSOC_biggerThan_SOCmin(vector<int> departure_timeblock, vector<float> EM_now_SOC, vector<float> battery_capacity, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void EM_previousSOCPlusSummationPchargeTransToSOC_biggerThan_SOCthreshold(vector<int> departure_timeblock, vector<float> EM_now_SOC, vector<int> start_timeblock, vector<float> EM_start_SOC, vector<float> battery_capacity, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
-void setting_GHEMS_ObjectiveFunction(vector<float> weighting, float* price, glp_prob *mip);
+void setting_GHEMS_ObjectiveFunction(float* price, glp_prob *mip);
 #endif

@@ -33,7 +33,6 @@ class Xpath:
         # DHEMS_fiftyHousehold tables
         self.text_create_newTable =                 '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[2]/a'
         self.text_backup_BaseParameter =            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[3]/a'
-
         self.text_backup_EM_Parameter =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[4]/a'
         self.text_backup_EM_user_number =           '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[5]/a'
         self.text_backup_EM_user_result =           '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[6]/a'
@@ -44,35 +43,35 @@ class Xpath:
         self.text_cost =                            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[11]/a'
         self.text_dr =                              '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[12]/a'
         self.text_distributed_group =               '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[13]/a'
-        self.text_EM_fast_user_result =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[14]/a'
-        self.text_EM_motor_type =                   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[15]/a'
-        self.text_EM_Parameter =                    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[16]/a'
-        self.text_EM_Parameter_of_ESS =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[17]/a'
-        self.text_EM_Parameter_of_randomResult =    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[18]/a'
-        self.text_EM_Pole =                         '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[19]/a'
-        self.text_EM_super_fast_user_result =       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[20]/a'
-        self.text_EM_user_number =                  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[21]/a'
-        self.text_EM_user_result =                  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[22]/a'
-        self.text_EM_wholeDay_userChargingNumber =  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[23]/a'
-        self.text_GHEMS_control_status =            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[24]/a'
-        self.text_GHEMS_flag =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[25]/a'
-        self.text_GHEMS__history_control_status =   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[26]/a'
-        self.text_GHEMS_real_status =               '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[27]/a'
-        self.text_GHEMS_variable =                  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[28]/a'
-        self.text_LHEMS_comfort_level =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[29]/a'
-        self.text_LHEMS_control_status =            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[30]/a'
-        self.text_LHEMS_cost =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[31]/a'
-        self.text_LHEMS_dr_participation =          '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[32]/a'
-        self.text_LHEMS_flag =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[33]/a'
-        self.text_LHEMS__history_control_status =   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[34]/a'
-        self.text_LHEMS_real_status =               '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[35]/a'
-        self.text_LHEMS_ucLoad =                    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[36]/a'
-        self.text_load_list =                       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[37]/a'
-        self.text_price =                           '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[38]/a'
-        self.text_soalr_data =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[39]/a'
-        self.text_soalr_day =                       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[40]/a'
-        self.text_totalLoad_model =                 '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[41]/a'
-
+        self.text_EM_chargingOrDischarging_status = '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[14]/a'
+        self.text_EM_fast_user_result =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[15]/a'
+        self.text_EM_motor_type =                   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[16]/a'
+        self.text_EM_Parameter =                    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[17]/a'
+        self.text_EM_Parameter_of_ESS =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[18]/a'
+        self.text_EM_Parameter_of_randomResult =    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[19]/a'
+        self.text_EM_Pole =                         '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[20]/a'
+        self.text_EM_super_fast_user_result =       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[21]/a'
+        self.text_EM_user_number =                  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[22]/a'
+        self.text_EM_user_result =                  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[23]/a'
+        self.text_EM_wholeDay_userChargingNumber =  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[24]/a'
+        self.text_GHEMS_control_status =            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[25]/a'
+        self.text_GHEMS_flag =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[26]/a'
+        self.text_GHEMS__history_control_status =   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[27]/a'
+        self.text_GHEMS_real_status =               '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[28]/a'
+        self.text_GHEMS_variable =                  '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[29]/a'
+        self.text_LHEMS_comfort_level =             '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[30]/a'
+        self.text_LHEMS_control_status =            '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[31]/a'
+        self.text_LHEMS_cost =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[32]/a'
+        self.text_LHEMS_dr_participation =          '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[33]/a'
+        self.text_LHEMS_flag =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[34]/a'
+        self.text_LHEMS__history_control_status =   '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[35]/a'
+        self.text_LHEMS_real_status =               '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[36]/a'
+        self.text_LHEMS_ucLoad =                    '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[37]/a'
+        self.text_load_list =                       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[38]/a'
+        self.text_price =                           '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[39]/a'
+        self.text_soalr_data =                      '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[40]/a'
+        self.text_soalr_day =                       '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[41]/a'
+        self.text_totalLoad_model =                 '//*[@id="pma_navigation_tree_content"]/ul/li[4]/div[3]/ul/li[4]/div[4]/ul/li[42]/a'
         # page export
         self.btn_export = '//*[@id="topmenu"]/li[6]/a'
         self.title_text_export = '//*[@id="header"]'
@@ -343,7 +342,7 @@ if __name__ == "__main__":
     ## screenshot_file: name of the file                         ##
     ## choose_DHEMS_DB: 'DHEMS group' Process                    ##
     ###############################################################
-    webpage = WEBDRIVER(url.DHEMS_web_baseParameter, savingFolder="9.comfortLevel\\")
+    webpage = WEBDRIVER(url.DHEMS_web_baseParameter, savingFolder="10.EM\\discharging\\")
     webpage.screenshot_file("LHEMS.jpg")
     webpage.screenshot_file("GHEMS_Price.jpg")
     webpage.screenshot_file("GHEMS_SOC.jpg")
@@ -368,4 +367,5 @@ if __name__ == "__main__":
     db.exportTable(xpath.text_EM_Parameter)
     db.exportTable(xpath.text_EM_user_number)
     db.exportTable(xpath.text_EM_user_result)
+    db.exportTable(xpath.text_EM_chargingOrDischarging_status)
     print(f"//--------------- {time()-start_time} ---------------\\")
