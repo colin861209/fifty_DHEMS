@@ -241,10 +241,10 @@ void optimization(vector<string> variable_name, vector<float> Pgrid_max_array, f
 		}
 
 		// EM's SOC min <= SOC j - 1 + ((P n c,max * r n c,j * Ts / E n cap) - (P n d,max * r n d,j * Ts / E n cap))
-		EM_previousSOCPlusPchargeTransToSOC_biggerThan_SOCmin(departure_timeblock, EM_now_SOC, battery_capacity, coefficient, mip, EM_can_charge_amount * (time_block - sample_time));
+		EM_previousSOCPlusPchargeMinusPdischargeTransToSOC_biggerThan_SOCmin(departure_timeblock, EM_now_SOC, battery_capacity, coefficient, mip, EM_can_charge_amount * (time_block - sample_time));
 		
 		// EM's SOC threshold, <= SOC j - 1 + sum((P n c,max * r n c,j * Ts) / E n cap - (P n d,max * r n d,j * Ts / E n cap))), each EM have only one constranit formula
-		EM_previousSOCPlusSummationPchargeTransToSOC_biggerThan_SOCthreshold(departure_timeblock, EM_now_SOC, start_timeblock, EM_start_SOC, battery_capacity, coefficient, mip, EM_can_charge_amount);	
+		EM_previousSOCPlusSummationPchargeMinusPdischargeTransToSOC_biggerThan_SOCthreshold(departure_timeblock, EM_now_SOC, start_timeblock, EM_start_SOC, battery_capacity, coefficient, mip, EM_can_charge_amount);	
 	}
 	
 	setting_GHEMS_ObjectiveFunction(price, mip);
