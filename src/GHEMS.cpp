@@ -22,8 +22,6 @@ vector<string> variable_name;
 int time_block = 0, variable = 0, divide = 0, sample_time = 0, point_num = 0, piecewise_num;
 float delta_T = 0.0;
 float Pgrid_max = 0.0, Psell_max = 0.0, Delta_battery = 0.0, Pfc_max = 0.0;
-// dr
-int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 // flag
 bool Pgrid_flag, mu_grid_flag, Psell_flag, Pfc_flag, SOC_change_flag;
 vector<float> Pgrid_max_array;
@@ -37,6 +35,7 @@ int main(int argc, const char **argv)
 	
 	ENERGYSTORAGESYSTEM ess;
 	PUBLICLOAD pl;
+	DEMANDRESPONSE dr;
 	ELECTRICMOTOR em;
 	// ELECTRICVEHICLE ev;
 
@@ -73,16 +72,16 @@ int main(int argc, const char **argv)
 	piecewise_num = point_num - 1;
 
 	// =-=-=-=-=-=-=- get demand response -=-=-=-=-=-=-= //
-	dr_mode = value_receive("BaseParameter", "parameter_name", "dr_mode");
-	messagePrint(__LINE__, "dr mode: ", 'I', dr_mode);
-	if (dr_mode != 0)
+	dr.mode = value_receive("BaseParameter", "parameter_name", "dr_mode");
+	messagePrint(__LINE__, "dr mode: ", 'I', dr.mode);
+	if (dr.mode != 0)
 	{
-		int *dr_info = demand_response_info(dr_mode);
-		dr_startTime = dr_info[0];
-		dr_endTime = dr_info[1];
-		dr_minDecrease_power = dr_info[2];
-		dr_feedback_price = dr_info[3];
-		dr_customer_baseLine = dr_info[4];
+		int *dr_info = demand_response_info(dr.mode);
+		dr.startTime = dr_info[0];
+		dr.endTime = dr_info[1];
+		dr.minDecrease_power = dr_info[2];
+		dr.feedback_price = dr_info[3];
+		dr.customer_baseLine = dr_info[4];
 	}
 
 	// Choose resource be use in GHEMS
@@ -197,11 +196,11 @@ int main(int argc, const char **argv)
 		insert_GHEMS_variable(ess);
 
 	// =-=-=-=-=-=-=- get total weighting from dr_alpha -=-=-=-=-=-=-= //
-	if (dr_mode != 0)
+	if (dr.mode != 0)
 	{
 		for (int i = 0; i < time_block - sample_time; i++)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_control_status` WHERE equip_name = 'dr_alpha' ", i + sample_time);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_control_status` WHERE equip_name = '%s' ", i + sample_time, dr.str_alpha.c_str());
 			float dr_weighting_sumOfAlpha = turn_value_to_float(0);
 			Pgrid_max_array.push_back(Pgrid_max / parameter_tmp[1] * dr_weighting_sumOfAlpha);
 		}
@@ -210,9 +209,9 @@ int main(int argc, const char **argv)
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = '%d-%02d-%02d' WHERE parameter_name = 'lastTime_execute' ", now_time.tm_year + 1900, now_time.tm_mon + 1, now_time.tm_mday);
 	sent_query();
 
-	optimization(ess, pl, em, variable_name, Pgrid_max_array, load_model, price);
-	calculateCostInfo(pl, price, Pgrid_flag, Psell_flag, ess.flag, Pfc_flag);
-	updateSingleHouseholdCost();
+	optimization(ess, dr, pl, em, variable_name, Pgrid_max_array, load_model, price);
+	calculateCostInfo(dr, pl, price, Pgrid_flag, Psell_flag, ess.flag, Pfc_flag);
+	updateSingleHouseholdCost(dr);
 	
 	if (em.flag)
 	{

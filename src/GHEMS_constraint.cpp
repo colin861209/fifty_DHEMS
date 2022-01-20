@@ -13,7 +13,7 @@
 #include "GHEMS_constraint.hpp"
 
 // =-=-=-=-=-=-=- public load -=-=-=-=-=-=-= //
-void summation_publicLoadRa_biggerThan_QaMinusD(PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void summation_publicLoadRa_biggerThan_QaMinusD(DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
@@ -35,20 +35,20 @@ void summation_publicLoadRa_biggerThan_QaMinusD(PUBLICLOAD pl, float **coefficie
                     coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, pl.str_publicLoad + to_string(i + 1))] = 1.0;
                 }
             }
-            if (dr_mode != 0)
+            if (dr.mode != 0)
             {
-                if (dr_endTime - sample_time >= 0)
+                if (dr.endTime - sample_time >= 0)
                 {
-                    if ((dr_startTime - sample_time) >= 0)
+                    if ((dr.startTime - sample_time) >= 0)
                     {
-                        for (int j = (dr_startTime - sample_time); j < (dr_endTime - sample_time); j++)
+                        for (int j = (dr.startTime - sample_time); j < (dr.endTime - sample_time); j++)
                         {
                             coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, pl.str_publicLoad + to_string(i + 1))] = 0.0;
                         }
                     }
-                    else if ((dr_startTime - sample_time) < 0)
+                    else if ((dr.startTime - sample_time) < 0)
                     {
-                        for (int j = 0; j < (dr_endTime - sample_time); j++)
+                        for (int j = 0; j < (dr.endTime - sample_time); j++)
                         {
                             coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, pl.str_publicLoad + to_string(i + 1))] = 0.0;
                         }
@@ -280,38 +280,38 @@ void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusP
 }
 
 // =-=-=-=-=-=-=- demand response -=-=-=-=-=-=-= //
-void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs(float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs(DEMANDRESPONSE dr, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
     float dr_sumOfCBL = 0.0;
-    if (dr_startTime - sample_time >= 0)
+    if (dr.startTime - sample_time >= 0)
     {
-        for (int i = (dr_startTime - sample_time); i < (dr_endTime - sample_time); i++)
+        for (int i = (dr.startTime - sample_time); i < (dr.endTime - sample_time); i++)
         {
             coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, "Pgrid")] = -1.0 * delta_T;
-            dr_sumOfCBL += dr_customer_baseLine * delta_T;
+            dr_sumOfCBL += dr.customer_baseLine * delta_T;
         }
     }
     else
     {
-        for (int i = 0; i < (dr_endTime - sample_time); i++)
+        for (int i = 0; i < (dr.endTime - sample_time); i++)
         {
             coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, "Pgrid")] = -1.0 * delta_T;
         }
-        for (int i = dr_startTime; i < sample_time; i++)
+        for (int i = dr.startTime; i < sample_time; i++)
         {
             snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM `GHEMS_control_status` WHERE equip_name = 'Pgrid'", i);
             float previous_grid_power = turn_value_to_float(0);
-            dr_sumOfCBL += (dr_customer_baseLine - previous_grid_power) * delta_T;
+            dr_sumOfCBL += (dr.customer_baseLine - previous_grid_power) * delta_T;
         }
-        for (int i = sample_time; i < dr_endTime; i++)
+        for (int i = sample_time; i < dr.endTime; i++)
         {
-            dr_sumOfCBL += dr_customer_baseLine * delta_T;
+            dr_sumOfCBL += dr.customer_baseLine * delta_T;
         }
     }
     glp_set_row_name(mip, bnd_row_num, "");
-    glp_set_row_bnds(mip, bnd_row_num, GLP_LO, dr_minDecrease_power - dr_sumOfCBL, 0.0);
+    glp_set_row_bnds(mip, bnd_row_num, GLP_LO, dr.minDecrease_power - dr_sumOfCBL, 0.0);
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
@@ -699,7 +699,7 @@ void summation_SOCNegative_biggerThan_targetDischargeSOC(float target_dischargeS
 }
 
 // =-=-=-=-=-=-=- objective function -=-=-=-=-=-=-= //
-void setting_GHEMS_ObjectiveFunction(ELECTRICMOTOR em, float *price, glp_prob *mip)
+void setting_GHEMS_ObjectiveFunction(DEMANDRESPONSE dr, ELECTRICMOTOR em, float *price, glp_prob *mip)
 {
     functionPrint(__func__);
 
@@ -717,20 +717,20 @@ void setting_GHEMS_ObjectiveFunction(ELECTRICMOTOR em, float *price, glp_prob *m
 			    glp_set_obj_coef(mip, (find_variableName_position(variable_name, em.str_discharging + to_string(n + 1)) + 1 + j * variable), -em.normal_charging_power * price[j + sample_time] * delta_T);
         }
 	}
-	if (dr_mode != 0)
+	if (dr.mode != 0)
 	{
-		if (sample_time - dr_startTime >= 0)
+		if (sample_time - dr.startTime >= 0)
 		{
-			for (int j = 0; j < dr_endTime - sample_time; j++)
+			for (int j = 0; j < dr.endTime - sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), (price[j + sample_time] + dr_feedback_price) * delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), (price[j + sample_time] + dr.feedback_price) * delta_T);
 			}
 		}
-		else if (sample_time - dr_startTime < 0)
+		else if (sample_time - dr.startTime < 0)
 		{
-			for (int j = dr_startTime - sample_time; j < dr_endTime - sample_time; j++)
+			for (int j = dr.startTime - sample_time; j < dr.endTime - sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), (price[j + sample_time] + dr_feedback_price) * delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), (price[j + sample_time] + dr.feedback_price) * delta_T);
 			}
 		}
 	}

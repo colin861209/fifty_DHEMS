@@ -20,13 +20,14 @@ vector<string> variable_name;
 // base parameter
 int time_block = 0, variable = 0, divide = 0, sample_time = 0, distributed_householdTotal = 0, interrupt_num, uninterrupt_num, varying_num, app_count, distributed_household_id, household_id, householdTotal;
 bool Pgrid_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag, comfortLevel_flag;
-int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 float delta_T = 0.0;
 float Pgrid_max = 0.0, Psell_max;
 
 int main(void)
 {
 	ENERGYSTORAGESYSTEM ess;
+	DEMANDRESPONSE dr;
+	
 	if (!connect_mysql("DHEMS_fiftyHousehold"))
 		messagePrint(__LINE__, "Failed to Connect MySQL");
 	else
@@ -74,16 +75,16 @@ int main(void)
 	app_count = interrupt_num + uninterrupt_num + varying_num;
 
 	// =-=-=-=-=-=-=- get demand response -=-=-=-=-=-=-= //
-	dr_mode = value_receive("BaseParameter", "parameter_name", "dr_mode");
-	messagePrint(__LINE__, "dr mode: ", 'I', dr_mode);
-	if (dr_mode != 0)
+	dr.mode = value_receive("BaseParameter", "parameter_name", "dr_mode");
+	messagePrint(__LINE__, "dr mode: ", 'I', dr.mode);
+	if (dr.mode != 0)
 	{
-		int *dr_info = demand_response_info(dr_mode);
-		dr_startTime = dr_info[0];
-		dr_endTime = dr_info[1];
-		dr_minDecrease_power = dr_info[2];
-		dr_feedback_price = dr_info[3];
-		dr_customer_baseLine = dr_info[4];
+		int *dr_info = demand_response_info(dr.mode);
+		dr.startTime = dr_info[0];
+		dr.endTime = dr_info[1];
+		dr.minDecrease_power = dr_info[2];
+		dr.feedback_price = dr_info[3];
+		dr.customer_baseLine = dr_info[4];
 	}
 	interruptLoad_flag = flag_receive("LHEMS_flag", "interrupt");
 	uninterruptLoad_flag = flag_receive("LHEMS_flag", "uninterrupt");
@@ -126,8 +127,8 @@ int main(void)
 		variable_name.push_back(ess.str_SOC);
 		variable_name.push_back(ess.str_Z);
 	}
-	if (dr_mode != 0)
-		variable_name.push_back("dr_alpha");
+	if (dr.mode != 0)
+		variable_name.push_back(dr.str_alpha);
 	if (uninterruptLoad_flag == 1)
 	{
 		for (int i = 0; i < uninterrupt_num; i++)
@@ -244,7 +245,7 @@ int main(void)
 		time_tmp.clear();
 	}
 
-	optimization(ess, variable_name, household_id, interrupt_start, interrupt_end, interrupt_ot, interrupt_reot, interrupt_p, uninterrupt_start, uninterrupt_end, uninterrupt_ot, uninterrupt_reot, uninterrupt_p, uninterrupt_flag, varying_start, varying_end, varying_ot, varying_reot, varying_flag, varying_t_pow, varying_p_pow, app_count, price, uncontrollable_load, distributed_group_num);
+	optimization(ess, dr, variable_name, household_id, interrupt_start, interrupt_end, interrupt_ot, interrupt_reot, interrupt_p, uninterrupt_start, uninterrupt_end, uninterrupt_ot, uninterrupt_reot, uninterrupt_p, uninterrupt_flag, varying_start, varying_end, varying_ot, varying_reot, varying_flag, varying_t_pow, varying_p_pow, app_count, price, uncontrollable_load, distributed_group_num);
 
 	update_loadModel(interrupt_p, uninterrupt_p, household_id, distributed_group_num);
 	calculateCostInfo(price);

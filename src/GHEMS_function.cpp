@@ -29,7 +29,7 @@ float Hydro_Price = 0.0;
 int coef_row_num = 0, bnd_row_num = 1;
 char column[400] = "A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A29,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95";
 
-void optimization(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, float *load_model, float *price)
+void optimization(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, float *load_model, float *price)
 {
 	functionPrint(__func__);
 
@@ -51,17 +51,17 @@ void optimization(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, vect
 			int decrease_ot = 0, start, end;
 			pl.start[i] = int(publicLoad[i][0]);
 			pl.end[i] = int(publicLoad[i][1]) - 1;
-			if (dr_mode != 0)
+			if (dr.mode != 0)
 			{
-				if (pl.end[i] >= dr_startTime)
+				if (pl.end[i] >= dr.startTime)
 				{
-					if (pl.start[i] <= dr_startTime)
-						start = dr_startTime;
+					if (pl.start[i] <= dr.startTime)
+						start = dr.startTime;
 					else
 						start = pl.start[i]	;
 					
-					if (pl.end[i] + 1 >= dr_endTime)
-						end = dr_endTime;
+					if (pl.end[i] + 1 >= dr.endTime)
+						end = dr.endTime;
 					else
 						end = pl.end[i] + 1;
 					
@@ -98,7 +98,7 @@ void optimization(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, vect
 	if (Psell_flag)	{ rowTotal += (time_block - sample_time) * 2;}
 	if (ess.flag) { rowTotal += (time_block - sample_time) * 4 + 1; }
 	rowTotal += (time_block - sample_time);
-	if (dr_mode != 0) { rowTotal += 1; }
+	if (dr.mode != 0) { rowTotal += 1; }
 	if (Pfc_flag) { rowTotal += (time_block - sample_time) * (7 + piecewise_num); }
 	if (em.flag) { rowTotal += (time_block - sample_time) *  em.can_charge_amount + em.can_charge_amount; }
 	if (em.can_discharge && em.flag) { rowTotal += (time_block - sample_time) * (3 * em.can_charge_amount); }
@@ -110,7 +110,7 @@ void optimization(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, vect
 	glp_add_rows(mip, rowTotal);
 	glp_add_cols(mip, colTotal);
 
-	setting_GLPK_columnBoundary(ess, pl, em, variable_name, Pgrid_max_array, mip);
+	setting_GLPK_columnBoundary(ess, dr, pl, em, variable_name, Pgrid_max_array, mip);
 
 	float **coefficient = NEW2D(rowTotal, colTotal, float);
 	for (int m = 0; m < rowTotal; m++)
@@ -121,13 +121,13 @@ void optimization(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, vect
 
 	if (pl.flag)
 	{
-		summation_publicLoadRa_biggerThan_QaMinusD(pl, coefficient, mip, pl.number);
+		summation_publicLoadRa_biggerThan_QaMinusD(dr, pl, coefficient, mip, pl.number);
 	}
 
 	if (Pgrid_flag)
 	{
 		// 0 < Pgrid j < μgrid j * Pgrid j, max
-		pgrid_smallerThan_muGridMultiplyByPgridMaxArray(dr_mode, Pgrid_max_array, coefficient, mip, time_block - sample_time);
+		pgrid_smallerThan_muGridMultiplyByPgridMaxArray(dr.mode, Pgrid_max_array, coefficient, mip, time_block - sample_time);
 	}
 	
 	if (Psell_flag)
@@ -158,9 +158,9 @@ void optimization(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, vect
 	pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(ess, pl, em, solar2, load_model, coefficient, mip, time_block - sample_time);
 
 	// dr constraint
-	if (dr_mode != 0)
+	if (dr.mode != 0)
 	{
-		targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs(coefficient, mip, 1);
+		targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs(dr, coefficient, mip, 1);
 	}
 
 	if (Pfc_flag)
@@ -244,7 +244,7 @@ void optimization(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, vect
 		EM_previousSOCPlusSummationPchargeMinusPdischargeTransToSOC_biggerThan_SOCthreshold(em, coefficient, mip, em.can_charge_amount);	
 	}
 	
-	setting_GHEMS_ObjectiveFunction(em, price, mip);
+	setting_GHEMS_ObjectiveFunction(dr, em, price, mip);
 
 	int *ia = new int[rowTotal * colTotal + 1];
 	int *ja = new int[rowTotal * colTotal + 1];
@@ -443,7 +443,7 @@ void optimization(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, vect
 	return;
 }
 
-void setting_GLPK_columnBoundary(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, glp_prob *mip)
+void setting_GLPK_columnBoundary(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, glp_prob *mip)
 {
 	functionPrint(__func__);
 	messagePrint(__LINE__, "Setting columns...", 'S', 0, 'Y');
@@ -459,7 +459,7 @@ void setting_GLPK_columnBoundary(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRI
 		}
 		if (Pgrid_flag == 1)
 		{
-			if (dr_mode == 0)
+			if (dr.mode == 0)
 				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + i * variable), GLP_DB, 0.0, Pgrid_max); //Pgrid
 			else
 				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + i * variable), GLP_DB, 0.0, Pgrid_max_array[i]); //Pgrid
@@ -766,7 +766,7 @@ void updateTableCost(float *totalLoad, float *totalLoad_price, float *real_grid_
 	// step1_sell = opt_sell_result;
 }
 
-void calculateCostInfo(PUBLICLOAD pl, float *price, bool Pgrid_flag, bool Psell_flag, bool Pess_flag, bool Pfc_flag)
+void calculateCostInfo(DEMANDRESPONSE dr, PUBLICLOAD pl, float *price, bool Pgrid_flag, bool Psell_flag, bool Pess_flag, bool Pfc_flag)
 {
 	functionPrint(__func__);
 
@@ -804,11 +804,11 @@ void calculateCostInfo(PUBLICLOAD pl, float *price, bool Pgrid_flag, bool Psell_
 			float grid_tmp = turn_value_to_float(0);
 			real_grid_pirce[i] = grid_tmp;
 			real_grid_pirceSum += real_grid_pirce[i];
-			if (dr_mode != 0)
+			if (dr.mode != 0)
 			{
-				if (i >= dr_startTime && i < dr_endTime)
+				if (i >= dr.startTime && i < dr.endTime)
 				{
-					demandResponse_feedback[i] = dr_feedback_price * (dr_customer_baseLine - grid_tmp) * delta_T;
+					demandResponse_feedback[i] = dr.feedback_price * (dr.customer_baseLine - grid_tmp) * delta_T;
 					demandResponse_feedbackSum += demandResponse_feedback[i];
 				}
 			}
@@ -863,11 +863,11 @@ void calculateCostInfo(PUBLICLOAD pl, float *price, bool Pgrid_flag, bool Psell_
 			float grid_tmp = turn_value_to_float(0);
 			real_grid_pirce[i] = grid_tmp * price[i] * delta_T;
 			real_grid_pirceSum += real_grid_pirce[i];
-			if (dr_mode != 0)
+			if (dr.mode != 0)
 			{
-				if (i >= dr_startTime && i < dr_endTime)
+				if (i >= dr.startTime && i < dr.endTime)
 				{
-					demandResponse_feedback[i] = dr_feedback_price * (dr_customer_baseLine - grid_tmp) * delta_T;
+					demandResponse_feedback[i] = dr.feedback_price * (dr.customer_baseLine - grid_tmp) * delta_T;
 					demandResponse_feedbackSum += demandResponse_feedback[i];
 				}
 			}
@@ -915,7 +915,7 @@ void calculateCostInfo(PUBLICLOAD pl, float *price, bool Pgrid_flag, bool Psell_
 	updateTableCost(totalLoad, totalLoad_price, real_grid_pirce, publicLoad, publicLoad_price, fuelCell_kW_price, Hydrogen_g_consumption, real_sell_pirce, demandResponse_feedback, totalLoad_sum, totalLoad_priceSum, real_grid_pirceSum, publicLoad_sum, publicLoad_priceSum, fuelCell_kW_priceSum, Hydrogen_g_consumptionSum, real_sell_pirceSum, totalLoad_taipowerPriceSum, demandResponse_feedbackSum);
 }
 
-void updateSingleHouseholdCost()
+void updateSingleHouseholdCost(DEMANDRESPONSE dr)
 {
 	functionPrint(__func__);
 
@@ -934,12 +934,12 @@ void updateSingleHouseholdCost()
 	float feedbackTotalPrice = 0.0;
 	int participateTotal = 0;
 	vector<int> single_participateTotal;
-	if (dr_mode != 0)
+	if (dr.mode != 0)
 	{
 		single_participateTotal.assign(householdTotal, 0);
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM `BaseParameter` WHERE parameter_name = 'demandResponse_feedbackPrice'");
 		feedbackTotalPrice = turn_value_to_float(0);
-		for (int i = dr_startTime; i < dr_endTime; i++)
+		for (int i = dr.startTime; i < dr.endTime; i++)
 		{
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_demand_response_participation`", i);
 			participateTotal += turn_value_to_int(0);
@@ -954,7 +954,7 @@ void updateSingleHouseholdCost()
 	for (int i = 0; i < householdTotal; i++)
 	{
 		float single_feedback_price = 0.0; 
-		if (dr_mode != 0)
+		if (dr.mode != 0)
 			single_feedback_price = feedbackTotalPrice*single_participateTotal[i]/participateTotal;
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT origin_grid_price FROM `LHEMS_cost` WHERE household_id = %d", i + 1);
 		float single_origin_grid_price = turn_value_to_float(0);

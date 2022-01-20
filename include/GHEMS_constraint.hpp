@@ -4,7 +4,7 @@
 extern int coef_row_num, bnd_row_num;
 extern float Hydro_Cons, Hydro_Price;
 
-void summation_publicLoadRa_biggerThan_QaMinusD(PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void summation_publicLoadRa_biggerThan_QaMinusD(DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void pgrid_smallerThan_muGridMultiplyByPgridMaxArray(int dr_mode, vector<float> Pgrid_max_array, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // sell
@@ -22,7 +22,7 @@ void pessPositiveMinusPessNegative_equalTo_Pess(ENERGYSTORAGESYSTEM ess, float *
 void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // demand response
-void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs(float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs(DEMANDRESPONSE dr, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // fuel cell 
 void pfcOnPlusPfcOff_equalTo_pfuelCell(float **coefficient, glp_prob *mip, int row_num_maxAddition);
@@ -47,5 +47,5 @@ void EM_Rdischarging_smallerThan_oneMinusMu(ELECTRICMOTOR em, float **coefficien
 void EM_previousSOCPlusPchargeMinusPdischargeTransToSOC_biggerThan_SOCmin(ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void EM_previousSOCPlusSummationPchargeMinusPdischargeTransToSOC_biggerThan_SOCthreshold(ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
-void setting_GHEMS_ObjectiveFunction(ELECTRICMOTOR em, float* price, glp_prob *mip);
+void setting_GHEMS_ObjectiveFunction(DEMANDRESPONSE dr, ELECTRICMOTOR em, float* price, glp_prob *mip);
 #endif

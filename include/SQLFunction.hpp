@@ -11,7 +11,6 @@ extern MYSQL_ROW mysql_row;
 extern int row_totalNum, col_totalNum;
 extern char sql_buffer[2000];
 extern vector<string> variable_name;
-extern int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 extern bool Pgrid_flag, mu_grid_flag, Psell_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag, comfortLevel_flag;
 
 typedef struct 
@@ -31,6 +30,17 @@ typedef struct
 	string str_SOC = "ESS_SOC";
 	string str_Z = "ESS_Z";
 } ENERGYSTORAGESYSTEM;
+
+typedef struct 
+{
+	int mode;
+	int startTime;
+	int endTime;
+	int minDecrease_power;
+	int feedback_price;
+	int customer_baseLine;
+	string str_alpha = "dr_alpha";
+} DEMANDRESPONSE;
 
 int connect_mysql(string DB_name);
 int fetch_row_value();

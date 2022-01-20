@@ -44,14 +44,14 @@ void summation_interruptLoadRa_biggerThan_Qa(int *interrupt_start, int *interrup
 }
 
 // =-=-=-=-=-=-=- demand response -=-=-=-=-=-=-= //
-void pgrid_smallerThan_alphaPgridMax(float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void pgrid_smallerThan_alphaPgridMax(DEMANDRESPONSE dr, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
 	functionPrint(__func__);
 
 	for (int i = 0; i < (time_block - sample_time); i++)
 	{
 		coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pgrid")] = 1.0;
-		coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "dr_alpha")] = -Pgrid_max;
+		coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, dr.str_alpha)] = -Pgrid_max;
 
 		glp_set_row_name(mip, bnd_row_num + i, "");
 		glp_set_row_bnds(mip, bnd_row_num + i, GLP_UP, 0.0, 0.0);
@@ -61,24 +61,24 @@ void pgrid_smallerThan_alphaPgridMax(float **coefficient, glp_prob *mip, int row
 	saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
-void alpha_between_oneminusDu_and_one(int *participate_array, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void alpha_between_oneminusDu_and_one(DEMANDRESPONSE dr, int *participate_array, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
 	functionPrint(__func__);
 
 	for (int i = 0; i < (time_block - sample_time); i++)
 	{
-		coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "dr_alpha")] = 1.0;
+		coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, dr.str_alpha)] = 1.0;
 
 		glp_set_row_name(mip, bnd_row_num + i, "");
 		glp_set_row_bnds(mip, bnd_row_num + i, GLP_FX, 1.0, 1.0);
-		if (sample_time + i < dr_endTime)
+		if (sample_time + i < dr.endTime)
 		{
-			if (sample_time + i >= dr_startTime)
+			if (sample_time + i >= dr.startTime)
 			{
-				if (1 - participate_array[sample_time + i - dr_startTime] == 0)
+				if (1 - participate_array[sample_time + i - dr.startTime] == 0)
 				{
 					glp_set_row_name(mip, bnd_row_num + i, "");
-					glp_set_row_bnds(mip, bnd_row_num + i, GLP_DB, (1 - participate_array[sample_time + i - dr_startTime]), 1.0);
+					glp_set_row_bnds(mip, bnd_row_num + i, GLP_DB, (1 - participate_array[sample_time + i - dr.startTime]), 1.0);
 					// glp_set_row_bnds(mip, bnd_row_num + i, GLP_DB, 0.0, 1.0);
 				}
 			}
@@ -553,7 +553,7 @@ void varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(int *varying_st
 }
 
 // =-=-=-=-=-=-=- objective function -=-=-=-=-=-=-= //
-void setting_LHEMS_objectiveFunction(float* price, int *participate_array, float **comfortLevelWeighting, glp_prob *mip)
+void setting_LHEMS_objectiveFunction(DEMANDRESPONSE dr, float* price, int *participate_array, float **comfortLevelWeighting, glp_prob *mip)
 {
 	functionPrint(__func__);
 	
@@ -578,20 +578,20 @@ void setting_LHEMS_objectiveFunction(float* price, int *participate_array, float
 			}
 		}
 	}
-	if (dr_mode != 0)
+	if (dr.mode != 0)
 	{
-		if (sample_time - dr_startTime >= 0)
+		if (sample_time - dr.startTime >= 0)
 		{
-			for (int j = 0; j < dr_endTime - sample_time; j++)
+			for (int j = 0; j < dr.endTime - sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), (price[j + sample_time] + participate_array[j + (sample_time - dr_startTime)] * dr_feedback_price) * delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), (price[j + sample_time] + participate_array[j + (sample_time - dr.startTime)] * dr.feedback_price) * delta_T);
 			}
 		}
-		else if (sample_time - dr_startTime < 0)
+		else if (sample_time - dr.startTime < 0)
 		{
-			for (int j = dr_startTime - sample_time; j < dr_endTime - sample_time; j++)
+			for (int j = dr.startTime - sample_time; j < dr.endTime - sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), (price[j + sample_time] + participate_array[j - (dr_startTime - sample_time)] * dr_feedback_price) * delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), (price[j + sample_time] + participate_array[j - (dr.startTime - sample_time)] * dr.feedback_price) * delta_T);
 			}
 		}
 	}
