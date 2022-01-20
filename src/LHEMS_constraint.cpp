@@ -553,7 +553,7 @@ void varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(int *varying_st
 }
 
 // =-=-=-=-=-=-=- objective function -=-=-=-=-=-=-= //
-void setting_LHEMS_objectiveFunction(DEMANDRESPONSE dr, float* price, int *participate_array, float **comfortLevelWeighting, glp_prob *mip)
+void setting_LHEMS_objectiveFunction(DEMANDRESPONSE dr, COMFORTLEVEL comlv, float* price, int *participate_array, glp_prob *mip)
 {
 	functionPrint(__func__);
 	
@@ -561,20 +561,20 @@ void setting_LHEMS_objectiveFunction(DEMANDRESPONSE dr, float* price, int *parti
 	{
 		glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + j * variable), price[j + sample_time] * delta_T);
 		
-		if (comfortLevel_flag)
+		if (comlv.flag)
 		{	
 			float comfort_c = 6.6;
 			for (int i = 0; i < interrupt_num; i++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "interrupt" + to_string(i + 1)) + 1 + j * variable), comfort_c * comfortLevelWeighting[i][(j + sample_time)] );
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "interrupt" + to_string(i + 1)) + 1 + j * variable), comfort_c * comlv.weighting[i][(j + sample_time)]);
 			}
 			for (int i = 0; i < uninterrupt_num; i++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "uninterrupt" + to_string(i + 1)) + 1 + j * variable), comfort_c * comfortLevelWeighting[i + interrupt_num][(j + sample_time)] );
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "uninterrupt" + to_string(i + 1)) + 1 + j * variable), comfort_c * comlv.weighting[i + interrupt_num][(j + sample_time)]);
 			}
 			for (int i = 0; i < varying_num; i++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "varying" + to_string(i + 1)) + 1 + j * variable), comfort_c * comfortLevelWeighting[i + interrupt_num + uninterrupt_num][(j + sample_time)] );
+				glp_set_obj_coef(mip, (find_variableName_position(variable_name, "varying" + to_string(i + 1)) + 1 + j * variable), comfort_c * comlv.weighting[i + interrupt_num + uninterrupt_num][(j + sample_time)]);
 			}
 		}
 	}

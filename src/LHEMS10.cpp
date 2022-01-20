@@ -19,7 +19,7 @@ vector<string> variable_name;
 #define distributed_group_num 10
 // base parameter
 int time_block = 0, variable = 0, divide = 0, sample_time = 0, distributed_householdTotal = 0, interrupt_num, uninterrupt_num, varying_num, app_count, distributed_household_id, household_id, householdTotal;
-bool Pgrid_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag, comfortLevel_flag;
+bool Pgrid_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag;
 float delta_T = 0.0;
 float Pgrid_max = 0.0, Psell_max;
 
@@ -27,7 +27,7 @@ int main(void)
 {
 	ENERGYSTORAGESYSTEM ess;
 	DEMANDRESPONSE dr;
-	
+	COMFORTLEVEL comlv;
 	if (!connect_mysql("DHEMS_fiftyHousehold"))
 		messagePrint(__LINE__, "Failed to Connect MySQL");
 	else
@@ -41,7 +41,7 @@ int main(void)
 	for (int i = 9; i <= 15; i++)
 		base_par[i - 6] = value_receive("BaseParameter", "parameter_id", i, 'F');
 
-	comfortLevel_flag = value_receive("BaseParameter", "parameter_name", "comfortLevel_flag");
+	comlv.flag = value_receive("BaseParameter", "parameter_name", "comfortLevel_flag");
 	time_block = base_par[0];
 	// householdTotal / distributed_householdTotal	總用戶數 / 各組總用戶
 	// household_id	/ distributed_household_id		當前實際用戶 / 各組當前用戶
@@ -245,7 +245,7 @@ int main(void)
 		time_tmp.clear();
 	}
 
-	optimization(ess, dr, variable_name, household_id, interrupt_start, interrupt_end, interrupt_ot, interrupt_reot, interrupt_p, uninterrupt_start, uninterrupt_end, uninterrupt_ot, uninterrupt_reot, uninterrupt_p, uninterrupt_flag, varying_start, varying_end, varying_ot, varying_reot, varying_flag, varying_t_pow, varying_p_pow, app_count, price, uncontrollable_load, distributed_group_num);
+	optimization(ess, dr, comlv, variable_name, household_id, interrupt_start, interrupt_end, interrupt_ot, interrupt_reot, interrupt_p, uninterrupt_start, uninterrupt_end, uninterrupt_ot, uninterrupt_reot, uninterrupt_p, uninterrupt_flag, varying_start, varying_end, varying_ot, varying_reot, varying_flag, varying_t_pow, varying_p_pow, app_count, price, uncontrollable_load, distributed_group_num);
 
 	update_loadModel(interrupt_p, uninterrupt_p, household_id, distributed_group_num);
 	calculateCostInfo(price);

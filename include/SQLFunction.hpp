@@ -11,7 +11,7 @@ extern MYSQL_ROW mysql_row;
 extern int row_totalNum, col_totalNum;
 extern char sql_buffer[2000];
 extern vector<string> variable_name;
-extern bool Pgrid_flag, mu_grid_flag, Psell_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag, comfortLevel_flag;
+extern bool Pgrid_flag, mu_grid_flag, Psell_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag;
 
 typedef struct 
 {

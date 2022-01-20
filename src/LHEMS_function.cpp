@@ -15,22 +15,19 @@
 int coef_row_num = 0, bnd_row_num = 1;
 char column[400] = "A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A29,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95";
 
-void optimization(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, vector<string> variable_name, int household_id, int *interrupt_start, int *interrupt_end, int *interrupt_ot, int *interrupt_reot, float *interrupt_p, int *uninterrupt_start, int *uninterrupt_end, int *uninterrupt_ot, int *uninterrupt_reot, float *uninterrupt_p, bool *uninterrupt_flag, int *varying_start, int *varying_end, int *varying_ot, int *varying_reot, bool *varying_flag, int **varying_t_pow, float **varying_p_pow, int app_count, float *price, float *uncontrollable_load, int distributed_group_num)
+void optimization(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, COMFORTLEVEL comlv, vector<string> variable_name, int household_id, int *interrupt_start, int *interrupt_end, int *interrupt_ot, int *interrupt_reot, float *interrupt_p, int *uninterrupt_start, int *uninterrupt_end, int *uninterrupt_ot, int *uninterrupt_reot, float *uninterrupt_p, bool *uninterrupt_flag, int *varying_start, int *varying_end, int *varying_ot, int *varying_reot, bool *varying_flag, int **varying_t_pow, float **varying_p_pow, int app_count, float *price, float *uncontrollable_load, int distributed_group_num)
 {
 	functionPrint(__func__);
 
-	float **comfortLevelWeighting;
-	if (comfortLevel_flag)
-	{
-		int comfortLevel = 4;
-		int total_timeInterval = 3;
+	if (comlv.flag)
+	{		
 		vector<vector<vector<int>>> comfortLevel_startEnd;
 		// [0~3] = level, [][0~1] = start or end, [][][0~44] = 3 times * 15 appliances
-		for (int i = 0; i < comfortLevel; i++)
+		for (int i = 0; i < comlv.comfortLevel; i++)
 		{
-			comfortLevel_startEnd.push_back(get_comfortLevel_timeInterval(household_id, app_count, total_timeInterval, i + 1));
+			comfortLevel_startEnd.push_back(get_comfortLevel_timeInterval(household_id, app_count, comlv.total_timeInterval, i + 1));
 		}
-		comfortLevelWeighting = calculate_comfortLevel_weighting(comfortLevel_startEnd, comfortLevel, total_timeInterval, app_count);
+		comlv.weighting = calculate_comfortLevel_weighting(comfortLevel_startEnd, comlv.comfortLevel, comlv.total_timeInterval, app_count);
 	}
 
 	countUninterruptAndVaryingLoads_Flag(uninterrupt_flag, varying_flag, household_id);
@@ -126,7 +123,7 @@ void optimization(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, vector<string> var
 		varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(varying_start, varying_end, varying_reot, varying_flag, varying_t_d, varying_p_d, buff, coefficient, mip, time_block - sample_time);
 	}
 
-	setting_LHEMS_objectiveFunction(dr, price, participate_array, comfortLevelWeighting, mip);
+	setting_LHEMS_objectiveFunction(dr, comlv, price, participate_array, mip);
 
 	int *ia = new int[rowTotal * colTotal + 1];
 	int *ja = new int[rowTotal * colTotal + 1];
