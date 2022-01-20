@@ -12,7 +12,25 @@ extern int row_totalNum, col_totalNum;
 extern char sql_buffer[2000];
 extern vector<string> variable_name;
 extern int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
-extern bool Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag, comfortLevel_flag;
+extern bool Pgrid_flag, mu_grid_flag, Psell_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag, comfortLevel_flag;
+
+typedef struct 
+{
+	bool flag;
+	float voltage;
+	float capacity;
+	float INIT_SOC;
+	float MIN_SOC;
+	float MAX_SOC;
+	float threshold_SOC;
+	float MIN_power;
+	float MAX_power;
+	string str_Pess = "Pess";
+	string str_Pcharge = "Pcharge";
+	string str_Pdischarge = "Pdischarge";
+	string str_SOC = "ESS_SOC";
+	string str_Z = "ESS_Z";
+} ENERGYSTORAGESYSTEM;
 
 int connect_mysql(string DB_name);
 int fetch_row_value();

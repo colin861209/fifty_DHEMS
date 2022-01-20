@@ -29,7 +29,7 @@ float Hydro_Price = 0.0;
 int coef_row_num = 0, bnd_row_num = 1;
 char column[400] = "A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A29,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95";
 
-void optimization(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, float *load_model, float *price)
+void optimization(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, float *load_model, float *price)
 {
 	functionPrint(__func__);
 
@@ -96,7 +96,7 @@ void optimization(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name,
 	if (pl.flag) { rowTotal += pl.number; }
 	if (Pgrid_flag) { rowTotal += (time_block - sample_time); }
 	if (Psell_flag)	{ rowTotal += (time_block - sample_time) * 2;}
-	if (Pess_flag) { rowTotal += (time_block - sample_time) * 4 + 1; }
+	if (ess.flag) { rowTotal += (time_block - sample_time) * 4 + 1; }
 	rowTotal += (time_block - sample_time);
 	if (dr_mode != 0) { rowTotal += 1; }
 	if (Pfc_flag) { rowTotal += (time_block - sample_time) * (7 + piecewise_num); }
@@ -110,7 +110,7 @@ void optimization(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name,
 	glp_add_rows(mip, rowTotal);
 	glp_add_cols(mip, colTotal);
 
-	setting_GLPK_columnBoundary(pl, em, variable_name, Pgrid_max_array, mip);
+	setting_GLPK_columnBoundary(ess, pl, em, variable_name, Pgrid_max_array, mip);
 
 	float **coefficient = NEW2D(rowTotal, colTotal, float);
 	for (int m = 0; m < rowTotal; m++)
@@ -139,23 +139,23 @@ void optimization(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name,
 		
 	}
 
-	if (Pess_flag)
+	if (ess.flag)
 	{	
 		// SOC j - 1 + sum((Pess * Ts) / (Cess * Vess)) >= SOC threshold, only one constranit formula
-		previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(coefficient, mip, 1);
+		previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(ess, coefficient, mip, 1);
 		// SOC j = SOC j - 1 + (Pess j * Ts) / (Cess * Vess)
-		previousSOCPlusPessTransToSOC_equalTo_currentSOC(coefficient, mip, time_block - sample_time);
+		previousSOCPlusPessTransToSOC_equalTo_currentSOC(ess, coefficient, mip, time_block - sample_time);
 		// (Charge limit) Pess + <= z * Pcharge max
-		pessPositive_smallerThan_zMultiplyByPchargeMax(coefficient, mip, time_block - sample_time);
+		pessPositive_smallerThan_zMultiplyByPchargeMax(ess, coefficient, mip, time_block - sample_time);
 		// (Discharge limit) Pess - <= (1 - z) * Pdischarge max
-		pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(coefficient, mip, time_block - sample_time);
+		pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(ess, coefficient, mip, time_block - sample_time);
 		// (Battery power) (Pess +) - (Pess -) = Pess j
-		pessPositiveMinusPessNegative_equalTo_Pess(coefficient, mip, time_block - sample_time);
+		pessPositiveMinusPessNegative_equalTo_Pess(ess, coefficient, mip, time_block - sample_time);
 		
 	}
 
 	// Pgrid j + Pfc j + Ppv j - Pess j - Psell j = sum(Pu,a j) + Pc,a + sum(Pev, n j)
-	pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(pl, em, solar2, load_model, coefficient, mip, time_block - sample_time);
+	pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(ess, pl, em, solar2, load_model, coefficient, mip, time_block - sample_time);
 
 	// dr constraint
 	if (dr_mode != 0)
@@ -218,11 +218,11 @@ void optimization(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name,
 		// (SOC +) - (SOC -) = SOC change
 		SOCPositiveMinusSOCNegative_equalTo_SOCchange(coefficient, mip, time_block - sample_time);
 		// SOC + <= Z' * (Pcharge max * Ts)/(Cess * Vess)
-		SOCPositive_smallerThan_SOCZMultiplyByPchargeMaxTransToSOC(coefficient, mip, time_block - sample_time);
+		SOCPositive_smallerThan_SOCZMultiplyByPchargeMaxTransToSOC(ess, coefficient, mip, time_block - sample_time);
 		// SOC - <= (1 - Z') * (Pdischarge max * Ts)/(Cess * Vess)
-		SOCNegative_smallerThan_oneMinusSOCZMultiplyByPdischargeMaxTransToSOC(coefficient, mip, time_block - sample_time);
+		SOCNegative_smallerThan_oneMinusSOCZMultiplyByPdischargeMaxTransToSOC(ess, coefficient, mip, time_block - sample_time);
 		// SOC change = (Pess * Ts)/(Cess * Vess)
-		SOCchange_equalTo_PessTransToSOC(coefficient, mip, time_block - sample_time);
+		SOCchange_equalTo_PessTransToSOC(ess, coefficient, mip, time_block - sample_time);
 		// sum(SOC -) >= 0.8
 		summation_SOCNegative_biggerThan_targetDischargeSOC(0.8, already_dischargeSOC, coefficient, mip, 1);
 	}
@@ -299,11 +299,11 @@ void optimization(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name,
 	printf("\n");
 	printf("sol = %f; \n", z);
 
-	if (z == 0.0 && glp_mip_col_val(mip, find_variableName_position(variable_name, "SOC") + 1) == 0.0)
+	if (z == 0.0 && glp_mip_col_val(mip, find_variableName_position(variable_name, ess.str_SOC) + 1) == 0.0)
 	{
 		display_coefAndBnds_rowNum();
 		printf("Error > sol is 0, No Solution, give up the solution\n");
-		printf("%.2f\n", glp_mip_col_val(mip, find_variableName_position(variable_name, "SOC") + 1));
+		printf("%.2f\n", glp_mip_col_val(mip, find_variableName_position(variable_name, ess.str_SOC) + 1));
 		// CLEAN:
 		if (em.can_discharge)
 		{
@@ -443,7 +443,7 @@ void optimization(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name,
 	return;
 }
 
-void setting_GLPK_columnBoundary(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, glp_prob *mip)
+void setting_GLPK_columnBoundary(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, glp_prob *mip)
 {
 	functionPrint(__func__);
 	messagePrint(__LINE__, "Setting columns...", 'S', 0, 'Y');
@@ -476,25 +476,25 @@ void setting_GLPK_columnBoundary(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string>
 			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Psell") + 1 + i * variable), GLP_DB, -0.00001, Psell_max);
 			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Psell") + 1 + i * variable), GLP_CV);
 		}
-		if (Pess_flag == 1)
+		if (ess.flag == 1)
 		{
-			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Pess") + 1 + i * variable), GLP_DB, -Pbat_min, Pbat_max); // Pess
-			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Pess") + 1 + i * variable), GLP_CV);
-			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Pcharge") + 1 + i * variable), GLP_FR, 0.0, Pbat_max); // Pess +
-			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Pcharge") + 1 + i * variable), GLP_CV);
-			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Pdischarge") + 1 + i * variable), GLP_FR, 0.0, Pbat_min); // Pess -
-			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Pdischarge") + 1 + i * variable), GLP_CV);
-			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC") + 1 + i * variable), GLP_DB, SOC_min, SOC_max); //SOC
-			glp_set_col_kind(mip, (find_variableName_position(variable_name, "SOC") + 1 + i * variable), GLP_CV);
-			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Z") + 1 + i * variable), GLP_DB, 0.0, 1.0); //Z
-			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Z") + 1 + i * variable), GLP_BV);
+			glp_set_col_bnds(mip, (find_variableName_position(variable_name, ess.str_Pess) + 1 + i * variable), GLP_DB, -ess.MIN_power, ess.MAX_power); // Pess
+			glp_set_col_kind(mip, (find_variableName_position(variable_name, ess.str_Pess) + 1 + i * variable), GLP_CV);
+			glp_set_col_bnds(mip, (find_variableName_position(variable_name, ess.str_Pcharge) + 1 + i * variable), GLP_FR, 0.0, ess.MAX_power); // Pess +
+			glp_set_col_kind(mip, (find_variableName_position(variable_name, ess.str_Pcharge) + 1 + i * variable), GLP_CV);
+			glp_set_col_bnds(mip, (find_variableName_position(variable_name, ess.str_Pdischarge) + 1 + i * variable), GLP_FR, 0.0, ess.MIN_power); // Pess -
+			glp_set_col_kind(mip, (find_variableName_position(variable_name, ess.str_Pdischarge) + 1 + i * variable), GLP_CV);
+			glp_set_col_bnds(mip, (find_variableName_position(variable_name, ess.str_SOC) + 1 + i * variable), GLP_DB, ess.MIN_SOC, ess.MAX_SOC); //SOC
+			glp_set_col_kind(mip, (find_variableName_position(variable_name, ess.str_SOC) + 1 + i * variable), GLP_CV);
+			glp_set_col_bnds(mip, (find_variableName_position(variable_name, ess.str_Z) + 1 + i * variable), GLP_DB, 0.0, 1.0); //Z
+			glp_set_col_kind(mip, (find_variableName_position(variable_name, ess.str_Z) + 1 + i * variable), GLP_BV);
 			if (SOC_change_flag)
 			{
-				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_change") + 1 + i * variable), GLP_DB, (-Pbat_min * delta_T) / (Cbat * Vsys), (Pbat_max * delta_T) / (Cbat * Vsys));
+				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_change") + 1 + i * variable), GLP_DB, (-ess.MIN_power * delta_T) / (ess.capacity * ess.voltage), (ess.MAX_power * delta_T) / (ess.capacity * ess.voltage));
 				glp_set_col_kind(mip, (find_variableName_position(variable_name, "SOC_change") + 1 + i * variable), GLP_CV);
-				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_increase") + 1 + i * variable), GLP_DB, 0.0, (Pbat_max * delta_T) / (Cbat * Vsys));
+				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_increase") + 1 + i * variable), GLP_DB, 0.0, (ess.MAX_power * delta_T) / (ess.capacity * ess.voltage));
 				glp_set_col_kind(mip, (find_variableName_position(variable_name, "SOC_increase") + 1 + i * variable), GLP_CV);
-				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_decrease") + 1 + i * variable), GLP_DB, 0.0, (Pbat_min * delta_T) / (Cbat * Vsys));
+				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_decrease") + 1 + i * variable), GLP_DB, 0.0, (ess.MIN_power * delta_T) / (ess.capacity * ess.voltage));
 				glp_set_col_kind(mip, (find_variableName_position(variable_name, "SOC_decrease") + 1 + i * variable), GLP_CV);
 				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_Z") + 1 + i * variable), GLP_DB, 0.0, 1.0);
 				glp_set_col_kind(mip, (find_variableName_position(variable_name, "SOC_Z") + 1 + i * variable), GLP_BV);
@@ -549,7 +549,7 @@ void setting_GLPK_columnBoundary(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string>
 	}
 }
 
-int determine_realTimeOrOneDayMode_andGetSOC(ELECTRICMOTOR em, int real_time, vector<string> variable_name)
+int determine_realTimeOrOneDayMode_andGetSOC(ENERGYSTORAGESYSTEM &ess, ELECTRICMOTOR em, int real_time, vector<string> variable_name)
 {
 	// 'Realtime mode' if same day & real time = 1;
 	// 'One day mode' =>
@@ -564,11 +564,11 @@ int determine_realTimeOrOneDayMode_andGetSOC(ELECTRICMOTOR em, int real_time, ve
 		sent_query();
 
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM BaseParameter WHERE parameter_name = 'now_SOC' "); //get now_SOC
-		SOC_ini = turn_value_to_float(0);
-		if (SOC_ini > 100)
-			SOC_ini = 99.8;
+		ess.INIT_SOC = turn_value_to_float(0);
+		if (ess.INIT_SOC > 100)
+			ess.INIT_SOC = 99.8;
 
-		messagePrint(__LINE__, "NOW REAL SOC = ", 'F', SOC_ini, 'Y');
+		messagePrint(__LINE__, "NOW REAL SOC = ", 'F', ess.INIT_SOC, 'Y');
 		messagePrint(__LINE__, "Should same as previous SOC or 99.8 (previous SOC > 100)", 'S', 0, 'Y');
 	}
 	else
@@ -618,8 +618,8 @@ int determine_realTimeOrOneDayMode_andGetSOC(ELECTRICMOTOR em, int real_time, ve
 		}
 
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM BaseParameter WHERE parameter_name = 'ini_SOC' "); //get ini_SOC
-		SOC_ini = turn_value_to_float(0);
-		messagePrint(__LINE__, "ini_SOC : ", 'F', SOC_ini, 'Y');
+		ess.INIT_SOC = turn_value_to_float(0);
+		messagePrint(__LINE__, "ini_SOC : ", 'F', ess.INIT_SOC, 'Y');
 
 		sample_time = 0;
 		real_time = 1; //if you don't want do real_time,please commend it.
@@ -967,19 +967,19 @@ void updateSingleHouseholdCost()
 	}	
 }
 
-void insert_GHEMS_variable()
+void insert_GHEMS_variable(ENERGYSTORAGESYSTEM ess)
 {
 	functionPrint(__func__);
-	messagePrint(__LINE__, "Vsys = ", 'F', Vsys, 'Y');
-	messagePrint(__LINE__, "Cbat = ", 'F', Cbat, 'Y');
-	messagePrint(__LINE__, "Pbat_min = ", 'F', Pbat_min, 'Y');
-	messagePrint(__LINE__, "Pbat_max = ", 'F', Pbat_max, 'Y');
+	messagePrint(__LINE__, "Vsys = ", 'F', ess.voltage, 'Y');
+	messagePrint(__LINE__, "Cbat = ", 'F', ess.capacity, 'Y');
+	messagePrint(__LINE__, "Pbat_min = ", 'F', ess.MIN_power, 'Y');
+	messagePrint(__LINE__, "Pbat_max = ", 'F', ess.MAX_power, 'Y');
 	messagePrint(__LINE__, "Pgrid_max = ", 'F', Pgrid_max, 'Y');
 	messagePrint(__LINE__, "Psell_max = ", 'F', Psell_max, 'Y');
 	messagePrint(__LINE__, "Pfc_max = ", 'F', Pfc_max, 'Y');
 
 	string ghems_variable = "`Vsys`, `Cbat`, `Pbat_min`, `Pbat_max`, `Pgrid_max`, `Psell_max`, `Pfc_max`, `datetime`";
-	snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `GHEMS_variable` (%s) VALUES ( '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', CURRENT_TIMESTAMP)", ghems_variable.c_str(), Vsys, Cbat, Pbat_min, Pbat_max, Pgrid_max, Psell_max, Pfc_max);
+	snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `GHEMS_variable` (%s) VALUES ( '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', CURRENT_TIMESTAMP)", ghems_variable.c_str(), ess.voltage, ess.capacity, ess.MIN_power, ess.MAX_power, Pgrid_max, Psell_max, Pfc_max);
 	sent_query();
 }
 

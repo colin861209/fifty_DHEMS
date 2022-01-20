@@ -122,20 +122,20 @@ void psell_smallerThan_PfuelCellPlusPsolar(bool Pfc_flag, float *solar2, float *
 }
 
 // =-=-=-=-=-=-=- battery -=-=-=-=-=-=-= //
-void previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
     for (int i = 0; i < (time_block - sample_time); i++)
     {
-        coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, "Pess")] = 1.0;
+        coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, ess.str_Pess)] = 1.0;
     }
     glp_set_row_name(mip, bnd_row_num, "");
     if (sample_time == 0)
-        glp_set_row_bnds(mip, bnd_row_num, GLP_LO, ((SOC_thres - SOC_ini) * Cbat * Vsys) / delta_T, 0.0);
+        glp_set_row_bnds(mip, bnd_row_num, GLP_LO, ((ess.threshold_SOC - ess.INIT_SOC) * ess.capacity * ess.voltage) / delta_T, 0.0);
 
     else
-        glp_set_row_bnds(mip, bnd_row_num, GLP_DB, ((SOC_thres - SOC_ini) * Cbat * Vsys) / delta_T, ((0.99 - SOC_ini) * Cbat * Vsys) / delta_T);
+        glp_set_row_bnds(mip, bnd_row_num, GLP_DB, ((ess.threshold_SOC - ess.INIT_SOC) * ess.capacity * ess.voltage) / delta_T, ((0.99 - ess.INIT_SOC) * ess.capacity * ess.voltage) / delta_T);
     // avoid the row max is bigger than SOC max
 
     coef_row_num += row_num_maxAddition;
@@ -143,7 +143,7 @@ void previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(float **coef
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
-void previousSOCPlusPessTransToSOC_equalTo_currentSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void previousSOCPlusPessTransToSOC_equalTo_currentSOC(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
@@ -151,26 +151,26 @@ void previousSOCPlusPessTransToSOC_equalTo_currentSOC(float **coefficient, glp_p
     {
         for (int j = 0; j <= i; j++)
         {
-            coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, "Pess")] = -1.0;
+            coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, ess.str_Pess)] = -1.0;
         }
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC")] = Cbat * Vsys / delta_T;
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_SOC)] = ess.capacity * ess.voltage / delta_T;
 
         glp_set_row_name(mip, (bnd_row_num + i), "");
-        glp_set_row_bnds(mip, (bnd_row_num + i), GLP_FX, (SOC_ini * Cbat * Vsys / delta_T), (SOC_ini * Cbat * Vsys / delta_T));
+        glp_set_row_bnds(mip, (bnd_row_num + i), GLP_FX, (ess.INIT_SOC * ess.capacity * ess.voltage / delta_T), (ess.INIT_SOC * ess.capacity * ess.voltage / delta_T));
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
-void pessPositive_smallerThan_zMultiplyByPchargeMax(float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void pessPositive_smallerThan_zMultiplyByPchargeMax(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
     for (int i = 0; i < (time_block - sample_time); i++)
     {
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pcharge")] = 1.0;
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Z")] = -Pbat_max;
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_Pcharge)] = 1.0;
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_Z)] = -ess.MAX_power;
 
         glp_set_row_name(mip, (bnd_row_num + i), "");
         glp_set_row_bnds(mip, (bnd_row_num + i), GLP_UP, 0.0, 0.0);
@@ -180,32 +180,32 @@ void pessPositive_smallerThan_zMultiplyByPchargeMax(float **coefficient, glp_pro
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
-void pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
     for (int i = 0; i < (time_block - sample_time); i++)
     {
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pdischarge")] = 1.0;
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Z")] = Pbat_min;
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_Pdischarge)] = 1.0;
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_Z)] = ess.MIN_power;
 
         glp_set_row_name(mip, (bnd_row_num + i), "");
-        glp_set_row_bnds(mip, (bnd_row_num + i), GLP_UP, 0.0, Pbat_min);
+        glp_set_row_bnds(mip, (bnd_row_num + i), GLP_UP, 0.0, ess.MIN_power);
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
-void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void pessPositiveMinusPessNegative_equalTo_Pess(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
     for (int i = 0; i < (time_block - sample_time); i++)
     {
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pess")] = 1.0;
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pcharge")] = -1.0;
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pdischarge")] = 1.0;
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_Pess)] = 1.0;
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_Pcharge)] = -1.0;
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_Pdischarge)] = 1.0;
 
         glp_set_row_name(mip, (bnd_row_num + i), "");
         glp_set_row_bnds(mip, (bnd_row_num + i), GLP_FX, 0.0, 0.0);
@@ -216,7 +216,7 @@ void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *m
 }
 
 // =-=-=-=-=-=-=- balanced equation -=-=-=-=-=-=-= //
-void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(PUBLICLOAD pl, ELECTRICMOTOR em, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
     
@@ -261,8 +261,8 @@ void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusP
     {
         if (Pgrid_flag)
             coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pgrid")] = -1.0;
-        if (Pess_flag)
-            coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pess")] = 1.0;
+        if (ess.flag)
+            coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_Pess)] = 1.0;
         if (Pfc_flag)
             coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pfc")] = -1.0;
         if (Psell_flag)
@@ -631,14 +631,14 @@ void SOCPositiveMinusSOCNegative_equalTo_SOCchange(float **coefficient, glp_prob
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
-void SOCPositive_smallerThan_SOCZMultiplyByPchargeMaxTransToSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void SOCPositive_smallerThan_SOCZMultiplyByPchargeMaxTransToSOC(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
     for (int i = 0; i < (time_block - sample_time); i++)
     {
         coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_increase")] = 1.0;
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_Z")] = -((Pbat_max * delta_T) / (Cbat * Vsys));
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_Z")] = -((ess.MAX_power * delta_T) / (ess.capacity * ess.voltage));
 
         glp_set_row_name(mip, (bnd_row_num + i), "");
         glp_set_row_bnds(mip, (bnd_row_num + i), GLP_UP, 0.0, 0.0);
@@ -648,31 +648,31 @@ void SOCPositive_smallerThan_SOCZMultiplyByPchargeMaxTransToSOC(float **coeffici
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
-void SOCNegative_smallerThan_oneMinusSOCZMultiplyByPdischargeMaxTransToSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void SOCNegative_smallerThan_oneMinusSOCZMultiplyByPdischargeMaxTransToSOC(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
     for (int i = 0; i < (time_block - sample_time); i++)
     {
         coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_decrease")] = 1.0;
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_Z")] = ((Pbat_min * delta_T) / (Cbat * Vsys));
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_Z")] = ((ess.MIN_power * delta_T) / (ess.capacity * ess.voltage));
 
         glp_set_row_name(mip, (bnd_row_num + i), "");
-        glp_set_row_bnds(mip, (bnd_row_num + i), GLP_UP, 0.0, (Pbat_min * delta_T) / (Cbat * Vsys));
+        glp_set_row_bnds(mip, (bnd_row_num + i), GLP_UP, 0.0, (ess.MIN_power * delta_T) / (ess.capacity * ess.voltage));
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
-void SOCchange_equalTo_PessTransToSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void SOCchange_equalTo_PessTransToSOC(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
     for (int i = 0; i < (time_block - sample_time); i++)
     {
         coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_change")] = 1.0;
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pess")] = -delta_T / (Cbat * Vsys);
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_Pess)] = -delta_T / (ess.capacity * ess.voltage);
 
         glp_set_row_name(mip, (bnd_row_num + i), "");
         glp_set_row_bnds(mip, (bnd_row_num + i), GLP_FX, 0.0, 0.0);

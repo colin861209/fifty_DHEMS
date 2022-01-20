@@ -21,11 +21,11 @@ vector<string> variable_name;
 // common parameter
 int time_block = 0, variable = 0, divide = 0, sample_time = 0, point_num = 0, piecewise_num;
 float delta_T = 0.0;
-float Cbat = 0.0, Vsys = 0.0, SOC_ini = 0.0, SOC_min = 0.0, SOC_max = 0.0, SOC_thres = 0.0, Pbat_min = 0.0, Pbat_max = 0.0, Pgrid_max = 0.0, Psell_max = 0.0, Delta_battery = 0.0, Pfc_max = 0.0;
+float Pgrid_max = 0.0, Psell_max = 0.0, Delta_battery = 0.0, Pfc_max = 0.0;
 // dr
 int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 // flag
-bool Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, SOC_change_flag;
+bool Pgrid_flag, mu_grid_flag, Psell_flag, Pfc_flag, SOC_change_flag;
 vector<float> Pgrid_max_array;
 
 int main(int argc, const char **argv)
@@ -35,6 +35,7 @@ int main(int argc, const char **argv)
 	struct tm now_time = *localtime(&t);
 	int real_time = 0;
 	
+	ENERGYSTORAGESYSTEM ess;
 	PUBLICLOAD pl;
 	ELECTRICMOTOR em;
 	// ELECTRICVEHICLE ev;
@@ -54,13 +55,13 @@ int main(int argc, const char **argv)
 
 	// =-=-=-=-=-=-=- we suppose that enerage appliance in community should same as the single appliance times household amount -=-=-=-=-=-=-= //
 	time_block = parameter_tmp[0];
-	Vsys = parameter_tmp[2] * parameter_tmp[1];
-	Cbat = parameter_tmp[3];
-	SOC_min = parameter_tmp[4];
-	SOC_max = parameter_tmp[5];
-	SOC_thres = parameter_tmp[6];
-	Pbat_min = parameter_tmp[7] * parameter_tmp[1];
-	Pbat_max = parameter_tmp[8] * parameter_tmp[1];
+	ess.voltage = parameter_tmp[2] * parameter_tmp[1];
+	ess.capacity = parameter_tmp[3];
+	ess.MIN_SOC = parameter_tmp[4];
+	ess.MAX_SOC = parameter_tmp[5];
+	ess.threshold_SOC = parameter_tmp[6];
+	ess.MIN_power = parameter_tmp[7] * parameter_tmp[1];
+	ess.MAX_power = parameter_tmp[8] * parameter_tmp[1];
 	Pgrid_max = parameter_tmp[9] * parameter_tmp[1];
 	Psell_max = parameter_tmp[10] * parameter_tmp[1];
 	Pfc_max = parameter_tmp[11] * parameter_tmp[1];
@@ -89,7 +90,7 @@ int main(int argc, const char **argv)
 	Pgrid_flag = flag_receive("GHEMS_flag", "Pgrid");
 	mu_grid_flag = flag_receive("GHEMS_flag", "mu_grid");
 	Psell_flag = flag_receive("GHEMS_flag", "Psell");
-	Pess_flag = flag_receive("GHEMS_flag", "Pess");
+	ess.flag = flag_receive("GHEMS_flag", ess.str_Pess);
 	Pfc_flag = flag_receive("GHEMS_flag", "Pfc");
 	SOC_change_flag = flag_receive("GHEMS_flag", "SOC_change");
 	
@@ -113,7 +114,7 @@ int main(int argc, const char **argv)
 	// determine realtime mode should after getting above related parameter
 	sample_time = value_receive("BaseParameter", "parameter_name", "Global_next_simulate_timeblock");
 	// =-=-=-=-=-=-=- return 1 after determine mode and get SOC -=-=-=-=-=-=-= //
-	real_time = determine_realTimeOrOneDayMode_andGetSOC(em, real_time, variable_name);
+	real_time = determine_realTimeOrOneDayMode_andGetSOC(ess, em, real_time, variable_name);
 	if ((sample_time + 1) == 97)
 	{
 		messagePrint(__LINE__, "Time block to the end !!");
@@ -142,13 +143,13 @@ int main(int argc, const char **argv)
 		variable_name.push_back("mu_grid");
 	if (Psell_flag == 1)
 		variable_name.push_back("Psell");
-	if (Pess_flag == 1)
+	if (ess.flag == 1)
 	{
-		variable_name.push_back("Pess");
-		variable_name.push_back("Pcharge");
-		variable_name.push_back("Pdischarge");
-		variable_name.push_back("SOC");
-		variable_name.push_back("Z");
+		variable_name.push_back(ess.str_Pess);
+		variable_name.push_back(ess.str_Pcharge);
+		variable_name.push_back(ess.str_Pdischarge);
+		variable_name.push_back(ess.str_SOC);
+		variable_name.push_back(ess.str_Z);
 		if (SOC_change_flag)
 		{
 			variable_name.push_back("SOC_change");
@@ -193,7 +194,7 @@ int main(int argc, const char **argv)
 	float *load_model = get_totalLoad_power(uncontrollable_load_flag);
 
 	if (sample_time == 0)
-		insert_GHEMS_variable();
+		insert_GHEMS_variable(ess);
 
 	// =-=-=-=-=-=-=- get total weighting from dr_alpha -=-=-=-=-=-=-= //
 	if (dr_mode != 0)
@@ -209,8 +210,8 @@ int main(int argc, const char **argv)
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = '%d-%02d-%02d' WHERE parameter_name = 'lastTime_execute' ", now_time.tm_year + 1900, now_time.tm_mon + 1, now_time.tm_mday);
 	sent_query();
 
-	optimization(pl, em, variable_name, Pgrid_max_array, load_model, price);
-	calculateCostInfo(pl, price, Pgrid_flag, Psell_flag, Pess_flag, Pfc_flag);
+	optimization(ess, pl, em, variable_name, Pgrid_max_array, load_model, price);
+	calculateCostInfo(pl, price, Pgrid_flag, Psell_flag, ess.flag, Pfc_flag);
 	updateSingleHouseholdCost();
 	
 	if (em.flag)
@@ -218,7 +219,7 @@ int main(int argc, const char **argv)
 		update_fullSOC_or_overtime_EM_inPole(em, sample_time);
 	}
 	
-	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET value = (SELECT A%d FROM GHEMS_control_status where equip_name = 'SOC') WHERE parameter_name = 'now_SOC'", sample_time);
+	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET value = (SELECT A%d FROM GHEMS_control_status where equip_name = '%s') WHERE parameter_name = 'now_SOC'", sample_time, ess.str_SOC.c_str());
 	sent_query();
 
 	printf("LINE %d: sample_time = %d\n", __LINE__, sample_time);

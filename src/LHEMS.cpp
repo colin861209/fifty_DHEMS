@@ -19,13 +19,14 @@ vector<string> variable_name;
 #define distributed_group_num 1
 // base parameter
 int time_block = 0, variable = 0, divide = 0, sample_time = 0, distributed_householdTotal = 0, interrupt_num, uninterrupt_num, varying_num, app_count, distributed_household_id, household_id, householdTotal;
-bool Pgrid_flag, Pess_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag, comfortLevel_flag;
+bool Pgrid_flag, Pfc_flag, interruptLoad_flag, uninterruptLoad_flag, varyingLoad_flag, comfortLevel_flag;
 int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 float delta_T = 0.0;
-float Cbat = 0.0, Vsys = 0.0, SOC_ini = 0.0, SOC_min = 0.0, SOC_max = 0.0, SOC_thres = 0.0, Pbat_min = 0.0, Pbat_max = 0.0, Pgrid_max = 0.0, Psell_max;
+float Pgrid_max = 0.0, Psell_max;
 
 int main(void)
 {
+	ENERGYSTORAGESYSTEM ess;
 	if (!connect_mysql("DHEMS_fiftyHousehold"))
 		messagePrint(__LINE__, "Failed to Connect MySQL");
 	else
@@ -45,13 +46,13 @@ int main(void)
 	// household_id	/ distributed_household_id		當前實際用戶 / 各組當前用戶
 	householdTotal = base_par[1];
 	distributed_householdTotal = base_par[1] / base_par[2];
-	Vsys = base_par[3];
-	Cbat = base_par[4];
-	SOC_min = base_par[5];
-	SOC_max = base_par[6];
-	SOC_thres = base_par[7];
-	Pbat_min = base_par[8];
-	Pbat_max = base_par[9];
+	ess.voltage = base_par[3];
+	ess.capacity = base_par[4];
+	ess.MIN_SOC = base_par[5];
+	ess.MAX_SOC = base_par[6];
+	ess.threshold_SOC = base_par[7];
+	ess.MIN_power = base_par[8];
+	ess.MAX_power = base_par[9];
 	divide = (time_block / 24);
 	delta_T = 1.0 / (float)divide;
 
@@ -88,9 +89,9 @@ int main(void)
 	uninterruptLoad_flag = flag_receive("LHEMS_flag", "uninterrupt");
 	varyingLoad_flag = flag_receive("LHEMS_flag", "varying");
 	Pgrid_flag = flag_receive("LHEMS_flag", "Pgrid");
-	Pess_flag = flag_receive("LHEMS_flag", "Pess");
+	ess.flag = flag_receive("LHEMS_flag", ess.str_Pess);
 
-	real_time = determine_realTimeOrOneDayMode_andGetSOC(real_time, variable_name, distributed_group_num);
+	real_time = determine_realTimeOrOneDayMode_andGetSOC(ess, real_time, variable_name, distributed_group_num);
 	if ((sample_time + 1) == 97)
 	{
 		messagePrint(__LINE__, "Time block to the end !!");
@@ -117,13 +118,13 @@ int main(void)
 	}
 	if (Pgrid_flag == 1)
 		variable_name.push_back("Pgrid");
-	if (Pess_flag == 1)
+	if (ess.flag == 1)
 	{
-		variable_name.push_back("Pess");
-		variable_name.push_back("Pcharge");
-		variable_name.push_back("Pdischarge");
-		variable_name.push_back("SOC");
-		variable_name.push_back("Z");
+		variable_name.push_back(ess.str_Pess);
+		variable_name.push_back(ess.str_Pcharge);
+		variable_name.push_back(ess.str_Pdischarge);
+		variable_name.push_back(ess.str_SOC);
+		variable_name.push_back(ess.str_Z);
 	}
 	if (dr_mode != 0)
 		variable_name.push_back("dr_alpha");
@@ -243,7 +244,7 @@ int main(void)
 		time_tmp.clear();
 	}
 
-	optimization(variable_name, household_id, interrupt_start, interrupt_end, interrupt_ot, interrupt_reot, interrupt_p, uninterrupt_start, uninterrupt_end, uninterrupt_ot, uninterrupt_reot, uninterrupt_p, uninterrupt_flag, varying_start, varying_end, varying_ot, varying_reot, varying_flag, varying_t_pow, varying_p_pow, app_count, price, uncontrollable_load, distributed_group_num);
+	optimization(ess, variable_name, household_id, interrupt_start, interrupt_end, interrupt_ot, interrupt_reot, interrupt_p, uninterrupt_start, uninterrupt_end, uninterrupt_ot, uninterrupt_reot, uninterrupt_p, uninterrupt_flag, varying_start, varying_end, varying_ot, varying_reot, varying_flag, varying_t_pow, varying_p_pow, app_count, price, uncontrollable_load, distributed_group_num);
 
 	update_loadModel(interrupt_p, uninterrupt_p, household_id, distributed_group_num);
 	calculateCostInfo(price);

@@ -12,14 +12,14 @@ void psell_smallerThan_oneMinusMuGridMultiplyByPsellMax(float **coefficient, glp
 void psell_smallerThan_PfuelCellPlusPsolar(bool Pfc_flag, float *solar2, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // battery
-void previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void previousSOCPlusPessTransToSOC_equalTo_currentSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void pessPositive_smallerThan_zMultiplyByPchargeMax(float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void previousSOCPlusPessTransToSOC_equalTo_currentSOC(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void pessPositive_smallerThan_zMultiplyByPchargeMax(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void pessPositiveMinusPessNegative_equalTo_Pess(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // balance function
-void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(PUBLICLOAD pl, ELECTRICMOTOR em, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // demand response
 void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs(float **coefficient, glp_prob *mip, int row_num_maxAddition);
@@ -36,9 +36,9 @@ void lambdaPfc_smallerThan_zpfc(float **coefficient, glp_prob *mip, int row_num_
 
 // SOC change 
 void SOCPositiveMinusSOCNegative_equalTo_SOCchange(float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void SOCPositive_smallerThan_SOCZMultiplyByPchargeMaxTransToSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void SOCNegative_smallerThan_oneMinusSOCZMultiplyByPdischargeMaxTransToSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void SOCchange_equalTo_PessTransToSOC(float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void SOCPositive_smallerThan_SOCZMultiplyByPchargeMaxTransToSOC(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void SOCNegative_smallerThan_oneMinusSOCZMultiplyByPdischargeMaxTransToSOC(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void SOCchange_equalTo_PessTransToSOC(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void summation_SOCNegative_biggerThan_targetDischargeSOC(float target_dischargeSOC, float already_dischargeSOC, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // EM
