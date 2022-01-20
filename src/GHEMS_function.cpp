@@ -29,7 +29,7 @@ float Hydro_Price = 0.0;
 int coef_row_num = 0, bnd_row_num = 1;
 char column[400] = "A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A29,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95";
 
-void optimization(ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, float *load_model, float *price)
+void optimization(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, float *load_model, float *price)
 {
 	functionPrint(__func__);
 
@@ -38,42 +38,41 @@ void optimization(ELECTRICMOTOR em, vector<string> variable_name, vector<float> 
 	string weather = turn_value_to_string(0);
 	float *solar2 = getOrUpdate_SolarInfo_ThroughSampleTime(weather.c_str());
 
-	int *public_start = new int[publicLoad_num];
-	int *public_end = new int[publicLoad_num];
-	int *public_ot = new int[publicLoad_num];
-	int *public_reot = new int[publicLoad_num];
-	float *public_p = new float[publicLoad_num];
-	if (publicLoad_flag)
+	if (pl.flag)
 	{
-		float **publicLoad = getPublicLoad(publicLoad_flag, publicLoad_num);
-		for (int i = 0; i < publicLoad_num; i++)
+		pl.start.assign(pl.number, 0);
+		pl.end.assign(pl.number, 0);
+		pl.operation_time.assign(pl.number, 0);
+		pl.remain_operation_time.assign(pl.number, 0);
+		pl.power.assign(pl.number, 0);
+		float **publicLoad = getPublicLoad(pl.flag, pl.number);
+		for (int i = 0; i < pl.number; i++)
 		{
 			int decrease_ot = 0, start, end;
-			public_start[i] = int(publicLoad[i][0]);
-			public_end[i] = int(publicLoad[i][1]) - 1;
+			pl.start[i] = int(publicLoad[i][0]);
+			pl.end[i] = int(publicLoad[i][1]) - 1;
 			if (dr_mode != 0)
 			{
-				if (public_end[i] >= dr_startTime)
+				if (pl.end[i] >= dr_startTime)
 				{
-					if (public_start[i] <= dr_startTime)
+					if (pl.start[i] <= dr_startTime)
 						start = dr_startTime;
 					else
-						start = public_start[i]	;
+						start = pl.start[i]	;
 					
-					if (public_end[i] + 1 >= dr_endTime)
+					if (pl.end[i] + 1 >= dr_endTime)
 						end = dr_endTime;
 					else
-						end = public_end[i] + 1;
+						end = pl.end[i] + 1;
 					
 					decrease_ot = end - start;
 				}
 			}
-			public_ot[i] = int(publicLoad[i][2]) - decrease_ot;
-			public_reot[i] = 0;
-			public_p[i] = publicLoad[i][3];
+			pl.operation_time[i] = int(publicLoad[i][2]) - decrease_ot;
+			pl.power[i] = publicLoad[i][3];
 		}
-		int *buff = countPublicLoads_AlreadyOpenedTimes(publicLoad_num);
-		public_reot = count_publicLoads_RemainOperateTime(publicLoad_num, public_ot, buff);
+		int *buff = countPublicLoads_AlreadyOpenedTimes(pl.number);
+		pl.remain_operation_time = count_publicLoads_RemainOperateTime(pl.number, pl.operation_time, buff);
 	}
 	
 	if (em.flag)
@@ -94,7 +93,7 @@ void optimization(ELECTRICMOTOR em, vector<string> variable_name, vector<float> 
 
 	// sum by 'row_num_maxAddition' in every constraint below
 	int rowTotal = 0;
-	if (publicLoad_flag) { rowTotal += publicLoad_num; }
+	if (pl.flag) { rowTotal += pl.number; }
 	if (Pgrid_flag) { rowTotal += (time_block - sample_time); }
 	if (Psell_flag)	{ rowTotal += (time_block - sample_time) * 2;}
 	if (Pess_flag) { rowTotal += (time_block - sample_time) * 4 + 1; }
@@ -111,7 +110,7 @@ void optimization(ELECTRICMOTOR em, vector<string> variable_name, vector<float> 
 	glp_add_rows(mip, rowTotal);
 	glp_add_cols(mip, colTotal);
 
-	setting_GLPK_columnBoundary(em, variable_name, Pgrid_max_array, mip);
+	setting_GLPK_columnBoundary(pl, em, variable_name, Pgrid_max_array, mip);
 
 	float **coefficient = NEW2D(rowTotal, colTotal, float);
 	for (int m = 0; m < rowTotal; m++)
@@ -120,9 +119,9 @@ void optimization(ELECTRICMOTOR em, vector<string> variable_name, vector<float> 
 			coefficient[m][n] = 0.0;
 	}
 
-	if (publicLoad_flag)
+	if (pl.flag)
 	{
-		summation_publicLoadRa_biggerThan_QaMinusD(public_start, public_end, public_reot, coefficient, mip, publicLoad_num);
+		summation_publicLoadRa_biggerThan_QaMinusD(pl, coefficient, mip, pl.number);
 	}
 
 	if (Pgrid_flag)
@@ -156,7 +155,7 @@ void optimization(ELECTRICMOTOR em, vector<string> variable_name, vector<float> 
 	}
 
 	// Pgrid j + Pfc j + Ppv j - Pess j - Psell j = sum(Pu,a j) + Pc,a + sum(Pev, n j)
-	pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(em, public_start, public_end, public_p, solar2, load_model, coefficient, mip, time_block - sample_time);
+	pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(pl, em, solar2, load_model, coefficient, mip, time_block - sample_time);
 
 	// dr constraint
 	if (dr_mode != 0)
@@ -444,18 +443,18 @@ void optimization(ELECTRICMOTOR em, vector<string> variable_name, vector<float> 
 	return;
 }
 
-void setting_GLPK_columnBoundary(ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, glp_prob *mip)
+void setting_GLPK_columnBoundary(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, glp_prob *mip)
 {
 	functionPrint(__func__);
 	messagePrint(__LINE__, "Setting columns...", 'S', 0, 'Y');
 	for (int i = 0; i < (time_block - sample_time); i++)
 	{
-		if (publicLoad_flag == 1)
+		if (pl.flag == 1)
 		{
-			for (int j = 1; j <= publicLoad_num; j++)
+			for (int j = 1; j <= pl.number; j++)
 			{
-				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "publicLoad" + to_string(j)) + 1 + i * variable), GLP_DB, 0.0, 1.0);
-				glp_set_col_kind(mip, (find_variableName_position(variable_name, "publicLoad" + to_string(j)) + 1 + i * variable), GLP_BV);
+				glp_set_col_bnds(mip, (find_variableName_position(variable_name, pl.str_publicLoad + to_string(j)) + 1 + i * variable), GLP_DB, 0.0, 1.0);
+				glp_set_col_kind(mip, (find_variableName_position(variable_name, pl.str_publicLoad + to_string(j)) + 1 + i * variable), GLP_BV);
 			}
 		}
 		if (Pgrid_flag == 1)
@@ -767,7 +766,7 @@ void updateTableCost(float *totalLoad, float *totalLoad_price, float *real_grid_
 	// step1_sell = opt_sell_result;
 }
 
-void calculateCostInfo(float *price, bool publicLoad_flag, bool Pgrid_flag, bool Psell_flag, bool Pess_flag, bool Pfc_flag)
+void calculateCostInfo(PUBLICLOAD pl, float *price, bool Pgrid_flag, bool Psell_flag, bool Pess_flag, bool Pfc_flag)
 {
 	functionPrint(__func__);
 
@@ -780,7 +779,7 @@ void calculateCostInfo(float *price, bool publicLoad_flag, bool Pgrid_flag, bool
 
 	for (int i = 0; i < sample_time; i++)
 	{
-		if (publicLoad_flag)
+		if (pl.flag)
 		{
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM cost WHERE cost_name = '%s'", i, "public_load_power");
 			publicLoad[i] = turn_value_to_float(0);
@@ -835,14 +834,14 @@ void calculateCostInfo(float *price, bool publicLoad_flag, bool Pgrid_flag, bool
 	for (int i = sample_time; i < time_block; i++)
 	{
 		// =-=-=-=-=-=-=- calculate total load spend how much money if only use grid power -=-=-=-=-=-=-= //
-		if (publicLoad_flag)
+		if (pl.flag)
 		{
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT totalLoad FROM totalLoad_model WHERE time_block = %d ", i);
 			totalLoad[i] = turn_value_to_float(0);
 
-			for (int j = 0; j < publicLoad_num; j++)
+			for (int j = 0; j < pl.number; j++)
 			{
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, ("publicLoad"+to_string(j+1)).c_str());
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_publicLoad+to_string(j+1)).c_str());
 				int status_tmp = turn_value_to_int(0);
 				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = 5 LIMIT %d, %d", j, j + 1);
 				float power_tmp = turn_value_to_float(0);
@@ -1064,10 +1063,11 @@ int *countPublicLoads_AlreadyOpenedTimes(int publicLoad_num)
 	return buff;
 }
 
-int *count_publicLoads_RemainOperateTime(int public_num, int *public_ot, int *buff)
+vector<int> count_publicLoads_RemainOperateTime(int public_num, vector<int> public_ot, int *buff)
 {
 	functionPrint(__func__);
-	int *public_reot = new int[public_num];
+	vector<int> public_reot;
+	public_reot.assign(public_num, 0);
 	for (int i = 0; i < public_num; i++)
 	{
 		if ((public_ot[i] - buff[i]) == public_ot[i])

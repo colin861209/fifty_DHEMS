@@ -13,26 +13,26 @@
 #include "GHEMS_constraint.hpp"
 
 // =-=-=-=-=-=-=- public load -=-=-=-=-=-=-= //
-void summation_publicLoadRa_biggerThan_QaMinusD(int *public_start, int *public_end, int *public_reot, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void summation_publicLoadRa_biggerThan_QaMinusD(PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
-    for (int i = 0; i < publicLoad_num; i++)
+    for (int i = 0; i < pl.number; i++)
     {
-        if ((public_end[i] - sample_time) >= 0)
+        if ((pl.end[i] - sample_time) >= 0)
         {
-            if ((public_start[i] - sample_time) >= 0)
+            if ((pl.start[i] - sample_time) >= 0)
             {
-                for (int j = (public_start[i] - sample_time); j <= (public_end[i] - sample_time); j++)
+                for (int j = (pl.start[i] - sample_time); j <= (pl.end[i] - sample_time); j++)
                 {
-                    coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, "publicLoad" + to_string(i + 1))] = 1.0;
+                    coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, pl.str_publicLoad + to_string(i + 1))] = 1.0;
                 }
             }
-            else if ((public_start[i] - sample_time) < 0)
+            else if ((pl.start[i] - sample_time) < 0)
             {
-                for (int j = 0; j <= (public_end[i] - sample_time); j++)
+                for (int j = 0; j <= (pl.end[i] - sample_time); j++)
                 {
-                    coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, "publicLoad" + to_string(i + 1))] = 1.0;
+                    coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, pl.str_publicLoad + to_string(i + 1))] = 1.0;
                 }
             }
             if (dr_mode != 0)
@@ -43,21 +43,21 @@ void summation_publicLoadRa_biggerThan_QaMinusD(int *public_start, int *public_e
                     {
                         for (int j = (dr_startTime - sample_time); j < (dr_endTime - sample_time); j++)
                         {
-                            coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, "publicLoad" + to_string(i + 1))] = 0.0;
+                            coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, pl.str_publicLoad + to_string(i + 1))] = 0.0;
                         }
                     }
                     else if ((dr_startTime - sample_time) < 0)
                     {
                         for (int j = 0; j < (dr_endTime - sample_time); j++)
                         {
-                            coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, "publicLoad" + to_string(i + 1))] = 0.0;
+                            coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, pl.str_publicLoad + to_string(i + 1))] = 0.0;
                         }
                     }
                 }
             }
         }        
         glp_set_row_name(mip, bnd_row_num + i, "");
-        glp_set_row_bnds(mip, bnd_row_num + i, GLP_LO, ((float)public_reot[i]), 0.0);
+        glp_set_row_bnds(mip, bnd_row_num + i, GLP_LO, ((float)pl.remain_operation_time[i]), 0.0);
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
@@ -216,28 +216,28 @@ void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *m
 }
 
 // =-=-=-=-=-=-=- balanced equation -=-=-=-=-=-=-= //
-void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(ELECTRICMOTOR em, int *public_start, int *public_end, float *public_p, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(PUBLICLOAD pl, ELECTRICMOTOR em, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
     
-    if (publicLoad_flag)
+    if (pl.flag)
     {
-        for (int h = 0; h < publicLoad_num; h++)
+        for (int h = 0; h < pl.number; h++)
         {
-            if ((public_end[h] - sample_time) >= 0)
+            if ((pl.end[h] - sample_time) >= 0)
             {
-                if ((public_start[h] - sample_time) >= 0)
+                if ((pl.start[h] - sample_time) >= 0)
                 {
-                    for (int i = (public_start[h] - sample_time); i <= (public_end[h] - sample_time); i++)
+                    for (int i = (pl.start[h] - sample_time); i <= (pl.end[h] - sample_time); i++)
                     {
-                        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "publicLoad" + to_string(h + 1))] = public_p[h];
+                        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, pl.str_publicLoad + to_string(h + 1))] = pl.power[h];
                     }
                 }
-                else if ((public_start[h] - sample_time) < 0)
+                else if ((pl.start[h] - sample_time) < 0)
                 {
-                    for (int i = 0; i <= (public_end[h] - sample_time); i++)
+                    for (int i = 0; i <= (pl.end[h] - sample_time); i++)
                     {
-                        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "publicLoad" + to_string(h + 1))] = public_p[h];
+                        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, pl.str_publicLoad + to_string(h + 1))] = pl.power[h];
                     }
                 }
             }

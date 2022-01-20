@@ -4,7 +4,7 @@
 extern int coef_row_num, bnd_row_num;
 extern float Hydro_Cons, Hydro_Price;
 
-void summation_publicLoadRa_biggerThan_QaMinusD(int *public_start, int *public_end, int *public_reot, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void summation_publicLoadRa_biggerThan_QaMinusD(PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void pgrid_smallerThan_muGridMultiplyByPgridMaxArray(int dr_mode, vector<float> Pgrid_max_array, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // sell
@@ -19,7 +19,7 @@ void pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(float **coefficie
 void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // balance function
-void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(ELECTRICMOTOR em, int *public_start, int *public_end, float *public_p, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(PUBLICLOAD pl, ELECTRICMOTOR em, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // demand response
 void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs(float **coefficient, glp_prob *mip, int row_num_maxAddition);

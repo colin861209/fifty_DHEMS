@@ -6,12 +6,24 @@
 using namespace std;
 
 // common parameter
-extern int time_block, variable, divide, sample_time, point_num, piecewise_num, publicLoad_num;
+extern int time_block, variable, divide, sample_time, point_num, piecewise_num;
 extern float delta_T;
 extern float Cbat, Vsys, SOC_ini, SOC_min, SOC_max, SOC_thres, Pbat_min, Pbat_max, Pgrid_max, Psell_max, Delta_battery, Pfc_max;
 
 // flag
-extern bool SOC_change_flag, publicLoad_flag;
+extern bool SOC_change_flag;
+
+typedef struct 
+{
+	bool flag;
+	int number;
+	vector<int> start;
+	vector<int> end;
+	vector<int> operation_time;
+	vector<int> remain_operation_time;
+	vector<float> power;
+	string str_publicLoad = "publicLoad";
+} PUBLICLOAD;
 
 typedef struct 
 {
@@ -54,16 +66,16 @@ typedef struct
 int determine_realTimeOrOneDayMode_andGetSOC(ELECTRICMOTOR em, int real_time, vector<string> variable_name);
 float *getOrUpdate_SolarInfo_ThroughSampleTime(const char *weather);
 void updateTableCost(float *totalLoad, float *totalLoad_price, float *real_grid_pirce, float *publicLoad, float *publicLoad_price, float *fuelCell_kW_price, float *Hydrogen_g_consumption, float *real_sell_pirce, float *demandResponse_feedback, float totalLoad_sum, float totalLoad_priceSum, float real_grid_pirceSum, float publicLoad_sum, float publicLoad_priceSum, float fuelCell_kW_priceSum, float Hydrogen_g_consumptionSum, float real_sell_pirceSum, float totalLoad_taipowerPriceSum, float demandResponse_feedbackSum);
-void optimization(ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, float *load_model, float *price);
-void setting_GLPK_columnBoundary(ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, glp_prob *mip);
-void calculateCostInfo(float *price, bool publicLoad_flag, bool Pgrid_flag, bool Psell_flag, bool Pess_flag, bool Pfc_flag);
+void optimization(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, float *load_model, float *price);
+void setting_GLPK_columnBoundary(PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, glp_prob *mip);
+void calculateCostInfo(PUBLICLOAD pl, float *price, bool Pgrid_flag, bool Psell_flag, bool Pess_flag, bool Pfc_flag);
 void updateSingleHouseholdCost();
 void insert_GHEMS_variable();
 float getPrevious_battery_dischargeSOC(int sample_time, string target_equip_name);
 float *get_allDay_price(string col_name);
 float *get_totalLoad_power(bool uncontrollable_load_flag);
 int *countPublicLoads_AlreadyOpenedTimes(int publicLoad_num);
-int *count_publicLoads_RemainOperateTime(int public_num, int *public_ot, int *buff);
+vector<int> count_publicLoads_RemainOperateTime(int public_num, vector<int> public_ot, int *buff);
 void update_fullSOC_or_overtime_EM_inPole(ELECTRICMOTOR em, int sample_time);
 void record_vehicle_result(string table, float SOC, int sample_time, int number);
 void empty_charging_pole(int pole_id);

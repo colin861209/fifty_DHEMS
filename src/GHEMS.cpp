@@ -25,8 +25,7 @@ float Cbat = 0.0, Vsys = 0.0, SOC_ini = 0.0, SOC_min = 0.0, SOC_max = 0.0, SOC_t
 // dr
 int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 // flag
-bool publicLoad_flag, Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, SOC_change_flag;
-int publicLoad_num = 0;
+bool Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, SOC_change_flag;
 vector<float> Pgrid_max_array;
 
 int main(int argc, const char **argv)
@@ -36,6 +35,7 @@ int main(int argc, const char **argv)
 	struct tm now_time = *localtime(&t);
 	int real_time = 0;
 	
+	PUBLICLOAD pl;
 	ELECTRICMOTOR em;
 	// ELECTRICVEHICLE ev;
 
@@ -85,7 +85,7 @@ int main(int argc, const char **argv)
 	}
 
 	// Choose resource be use in GHEMS
-	publicLoad_flag = flag_receive("GHEMS_flag", "publicLoad");
+	pl.flag = flag_receive("GHEMS_flag", pl.str_publicLoad);
 	Pgrid_flag = flag_receive("GHEMS_flag", "Pgrid");
 	mu_grid_flag = flag_receive("GHEMS_flag", "mu_grid");
 	Psell_flag = flag_receive("GHEMS_flag", "Psell");
@@ -129,12 +129,12 @@ int main(int argc, const char **argv)
 		em.can_charge_amount = enter_newEMInfo_inPole(em, sample_time);
 	}
 
-	if (publicLoad_flag == 1)
+	if (pl.flag == 1)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = 5");
-		publicLoad_num = turn_value_to_int(0);
-		for (int i = 0; i < publicLoad_num; i++)
-			variable_name.push_back("publicLoad" + to_string(i + 1));
+		pl.number = turn_value_to_int(0);
+		for (int i = 0; i < pl.number; i++)
+			variable_name.push_back(pl.str_publicLoad + to_string(i + 1));
 	}
 	if (Pgrid_flag == 1)
 		variable_name.push_back("Pgrid");
@@ -209,8 +209,8 @@ int main(int argc, const char **argv)
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = '%d-%02d-%02d' WHERE parameter_name = 'lastTime_execute' ", now_time.tm_year + 1900, now_time.tm_mon + 1, now_time.tm_mday);
 	sent_query();
 
-	optimization(em, variable_name, Pgrid_max_array, load_model, price);
-	calculateCostInfo(price, publicLoad_flag, Pgrid_flag, Psell_flag, Pess_flag, Pfc_flag);
+	optimization(pl, em, variable_name, Pgrid_max_array, load_model, price);
+	calculateCostInfo(pl, price, Pgrid_flag, Psell_flag, Pess_flag, Pfc_flag);
 	updateSingleHouseholdCost();
 	
 	if (em.flag)
