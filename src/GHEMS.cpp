@@ -22,24 +22,22 @@ vector<string> variable_name;
 int time_block = 0, variable = 0, divide = 0, sample_time = 0, point_num = 0, piecewise_num;
 float delta_T = 0.0;
 float Cbat = 0.0, Vsys = 0.0, SOC_ini = 0.0, SOC_min = 0.0, SOC_max = 0.0, SOC_thres = 0.0, Pbat_min = 0.0, Pbat_max = 0.0, Pgrid_max = 0.0, Psell_max = 0.0, Delta_battery = 0.0, Pfc_max = 0.0;
-// EM parameter
-int total_charging_pole = 0, normal_charging_pole = 0, fast_charging_pole = 0, super_fast_charging_pole = 0, EM_can_charge_amount = 0;
-float EM_MAX_SOC = 0.0, EM_MIN_SOC = 0.0, EM_threshold_SOC = 0.0, normal_charging_power = 0.0;
 // dr
 int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
 // flag
-bool publicLoad_flag, Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, SOC_change_flag, EM_flag, EM_generate_result_flag, EM_can_discharge;
+bool publicLoad_flag, Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, SOC_change_flag;
 int publicLoad_num = 0;
 vector<float> Pgrid_max_array;
 
 int main(int argc, const char **argv)
 {
-	// Hydro_Price = stof(argv[1]);
-	// weather = argv[2];
 
 	time_t t = time(NULL);
 	struct tm now_time = *localtime(&t);
 	int real_time = 0;
+	
+	ELECTRICMOTOR em;
+	// ELECTRICVEHICLE ev;
 
 	if (!connect_mysql("DHEMS_fiftyHousehold"))
 		messagePrint(__LINE__, "Failed to Connect MySQL");
@@ -97,25 +95,25 @@ int main(int argc, const char **argv)
 	
 	// =-=-=-=-=-=-=- get parameter values from EM_parameter in need -=-=-=-=-=-=-= //
 	// NOTE: 2022/01/03 Discuss with professor comfirm not using fast/super fast charging users, so not fully complete all the process
-	EM_flag = value_receive("BaseParameter", "parameter_name", "ElectricMotor");
-	if (EM_flag)
+	em.flag = value_receive("BaseParameter", "parameter_name", "ElectricMotor");
+	if (em.flag)
 	{
-		total_charging_pole = value_receive("EM_Parameter", "parameter_name", "Total_Charging_Pole");
-		normal_charging_pole = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_Pole");
-		fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Fast_Charging_Pole");
-		super_fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Super_Fast_Charging_Pole");
-		normal_charging_power = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_power", 'F');
-		EM_MAX_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Upper_SOC", 'F');
-		EM_threshold_SOC = value_receive("EM_Parameter", "parameter_name", "EM_threshold_SOC", 'F');
-		EM_MIN_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Lower_SOC", 'F');
-		EM_can_discharge = value_receive("EM_Parameter", "parameter_name", "Motor_can_discharge");
-		EM_generate_result_flag = value_receive("BaseParameter", "parameter_name", "EM_generate_random_user_result");
+		em.total_charging_pole = value_receive("EM_Parameter", "parameter_name", "Total_Charging_Pole");
+		em.normal_charging_pole = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_Pole");
+		em.fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Fast_Charging_Pole");
+		em.super_fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Super_Fast_Charging_Pole");
+		em.normal_charging_power = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_power", 'F');
+		em.MAX_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Upper_SOC", 'F');
+		em.threshold_SOC = value_receive("EM_Parameter", "parameter_name", "EM_threshold_SOC", 'F');
+		em.MIN_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Lower_SOC", 'F');
+		em.can_discharge = value_receive("EM_Parameter", "parameter_name", "Motor_can_discharge");
+		em.generate_result_flag = value_receive("BaseParameter", "parameter_name", "EM_generate_random_user_result");
 	}
 
 	// determine realtime mode should after getting above related parameter
 	sample_time = value_receive("BaseParameter", "parameter_name", "Global_next_simulate_timeblock");
 	// =-=-=-=-=-=-=- return 1 after determine mode and get SOC -=-=-=-=-=-=-= //
-	real_time = determine_realTimeOrOneDayMode_andGetSOC(real_time, variable_name);
+	real_time = determine_realTimeOrOneDayMode_andGetSOC(em, real_time, variable_name);
 	if ((sample_time + 1) == 97)
 	{
 		messagePrint(__LINE__, "Time block to the end !!");
@@ -125,10 +123,10 @@ int main(int argc, const char **argv)
 	messagePrint(__LINE__, "sample time from database = ", 'I', sample_time);
 
 	// =-=-=-=-=-=-=- create EM users -=-=-=-=-=-=-= //
-	if (EM_flag)
+	if (em.flag)
 	{
 		// return how many motors can charge (means flag 'sure' = 1)
-		EM_can_charge_amount = enter_newEMInfo_inPole(sample_time);
+		em.can_charge_amount = enter_newEMInfo_inPole(em, sample_time);
 	}
 
 	if (publicLoad_flag == 1)
@@ -171,16 +169,16 @@ int main(int argc, const char **argv)
 		for (int i = 0; i < piecewise_num; i++)
 			variable_name.push_back("lambda_Pfc" + to_string(i + 1));
 	}
-	if (EM_flag)
+	if (em.flag)
 	{
-		for (int i = 0; i < EM_can_charge_amount; i++)
-			variable_name.push_back("EM_charging" + to_string(i + 1));
-		if (EM_can_discharge)
+		for (int i = 0; i < em.can_charge_amount; i++)
+			variable_name.push_back(em.str_charging + to_string(i + 1));
+		if (em.can_discharge)
 		{
-			for (int i = 0; i < EM_can_charge_amount; i++)
-				variable_name.push_back("EM_discharging" + to_string(i + 1));
-			for (int i = 0; i < EM_can_charge_amount; i++)
-				variable_name.push_back("EM_mu" + to_string(i + 1));
+			for (int i = 0; i < em.can_charge_amount; i++)
+				variable_name.push_back(em.str_discharging + to_string(i + 1));
+			for (int i = 0; i < em.can_charge_amount; i++)
+				variable_name.push_back(em.str_mu + to_string(i + 1));
 		}
 	}
 	variable = variable_name.size();
@@ -211,13 +209,13 @@ int main(int argc, const char **argv)
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = '%d-%02d-%02d' WHERE parameter_name = 'lastTime_execute' ", now_time.tm_year + 1900, now_time.tm_mon + 1, now_time.tm_mday);
 	sent_query();
 
-	optimization(variable_name, Pgrid_max_array, load_model, price);
+	optimization(em, variable_name, Pgrid_max_array, load_model, price);
 	calculateCostInfo(price, publicLoad_flag, Pgrid_flag, Psell_flag, Pess_flag, Pfc_flag);
 	updateSingleHouseholdCost();
 	
-	if (EM_flag)
+	if (em.flag)
 	{
-		update_fullSOC_or_overtime_EM_inPole(sample_time);
+		update_fullSOC_or_overtime_EM_inPole(em, sample_time);
 	}
 	
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET value = (SELECT A%d FROM GHEMS_control_status where equip_name = 'SOC') WHERE parameter_name = 'now_SOC'", sample_time);

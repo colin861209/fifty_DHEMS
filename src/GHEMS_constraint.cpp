@@ -216,7 +216,7 @@ void pessPositiveMinusPessNegative_equalTo_Pess(float **coefficient, glp_prob *m
 }
 
 // =-=-=-=-=-=-=- balanced equation -=-=-=-=-=-=-= //
-void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(int *public_start, int *public_end, float *public_p, float *solar2, float *load_model, vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(ELECTRICMOTOR em, int *public_start, int *public_end, float *public_p, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
     
@@ -244,15 +244,15 @@ void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusP
         }
     }
 
-    if (EM_flag)
+    if (em.flag)
     {
-        for (int n = 0; n < EM_can_charge_amount; n++)
+        for (int n = 0; n < em.can_charge_amount; n++)
         {
-            for (int i = 0; i < departure_timeblock[n] - sample_time; i++)
+            for (int i = 0; i < em.departure_timeblock[n] - sample_time; i++)
             {
-                coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = normal_charging_power;
-                if (EM_can_discharge)
-                    coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1))] = -normal_charging_power;
+                coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, em.str_charging + to_string(n + 1))] = em.normal_charging_power;
+                if (em.can_discharge)
+                    coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, em.str_discharging + to_string(n + 1))] = -em.normal_charging_power;
             }
         }
     }
@@ -318,18 +318,18 @@ void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultipl
 }
 
 // =-=-=-=-=-=-=- EM -=-=-=-=-=-=-= //
-void EM_Rcharging_smallerThan_mu(vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void EM_Rcharging_smallerThan_mu(ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
     
     for (int i = 0; i < (time_block - sample_time); i++)
     {
-    	for (int n = 0; n < EM_can_charge_amount; n++)
+    	for (int n = 0; n < em.can_charge_amount; n++)
     	{
-    		if(i < departure_timeblock[n] - sample_time)
+    		if(i < em.departure_timeblock[n] - sample_time)
     		{
-                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = -1;
-                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, "EM_mu" + to_string(n + 1))] = 1;
+                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, em.str_charging + to_string(n + 1))] = -1;
+                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, em.str_mu + to_string(n + 1))] = 1;
 
                 glp_set_row_name(mip, (bnd_row_num + (time_block - sample_time) * n + i), "");
                 glp_set_row_bnds(mip, (bnd_row_num + (time_block - sample_time) * n + i), GLP_LO, 0.0, 0.0);
@@ -341,18 +341,18 @@ void EM_Rcharging_smallerThan_mu(vector<int> departure_timeblock, float **coeffi
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
-void EM_Rdischarging_smallerThan_oneMinusMu(vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void EM_Rdischarging_smallerThan_oneMinusMu(ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
     
     for (int i = 0; i < (time_block - sample_time); i++)
     {
-    	for (int n = 0; n < EM_can_charge_amount; n++)
+    	for (int n = 0; n < em.can_charge_amount; n++)
     	{
-    		if(i < departure_timeblock[n] - sample_time)
+    		if(i < em.departure_timeblock[n] - sample_time)
     		{
-                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1))] = 1;
-                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, "EM_mu" + to_string(n + 1))] = 1;
+                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, em.str_discharging + to_string(n + 1))] = 1;
+                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, em.str_mu + to_string(n + 1))] = 1;
 
                 glp_set_row_name(mip, (bnd_row_num + (time_block - sample_time) * n + i), "");
                 glp_set_row_bnds(mip, (bnd_row_num + (time_block - sample_time) * n + i), GLP_UP, 0.0, 1.0);
@@ -364,18 +364,18 @@ void EM_Rdischarging_smallerThan_oneMinusMu(vector<int> departure_timeblock, flo
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
-void EM_RchargeMinusRdischarge_biggerThan_zero(vector<int> departure_timeblock, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void EM_RchargeMinusRdischarge_biggerThan_zero(ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
     for (int i = 0; i < (time_block - sample_time); i++)
     {
-        for (int n = 0; n < EM_can_charge_amount; n++)
+        for (int n = 0; n < em.can_charge_amount; n++)
         {
-            if(i < departure_timeblock[n] - sample_time)
+            if(i < em.departure_timeblock[n] - sample_time)
     		{
-                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = 1;
-                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1))] = -1;
+                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, em.str_charging + to_string(n + 1))] = 1;
+                coefficient[coef_row_num + (time_block - sample_time) * n + i][i * variable + find_variableName_position(variable_name, em.str_discharging + to_string(n + 1))] = -1;
 
                 glp_set_row_name(mip, (bnd_row_num + (time_block - sample_time) * n + i), "");
                 glp_set_row_bnds(mip, (bnd_row_num + (time_block - sample_time) * n + i), GLP_LO, 0.0, 0.0);
@@ -384,25 +384,25 @@ void EM_RchargeMinusRdischarge_biggerThan_zero(vector<int> departure_timeblock, 
     }
 }
 
-void EM_previousSOCPlusPchargeMinusPdischargeTransToSOC_biggerThan_SOCmin(vector<int> departure_timeblock, vector<float> EM_now_SOC, vector<float> battery_capacity, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void EM_previousSOCPlusPchargeMinusPdischargeTransToSOC_biggerThan_SOCmin(ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
     
-    for (int n = 0; n < EM_can_charge_amount ; n++)
+    for (int n = 0; n < em.can_charge_amount ; n++)
     {
         for (int i = 0; i < (time_block - sample_time); i++)
         {
-            if (i < departure_timeblock[n] - sample_time)
+            if (i < em.departure_timeblock[n] - sample_time)
             {
                 for (int j = 0; j <= i ; j++)
                 {
-                    coefficient[coef_row_num + (time_block - sample_time) * n + i][j * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = 1;
-                    if (EM_can_discharge)
-                        coefficient[coef_row_num + (time_block - sample_time) * n + i][j * variable + find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1))] = -1;
+                    coefficient[coef_row_num + (time_block - sample_time) * n + i][j * variable + find_variableName_position(variable_name, em.str_charging + to_string(n + 1))] = 1;
+                    if (em.can_discharge)
+                        coefficient[coef_row_num + (time_block - sample_time) * n + i][j * variable + find_variableName_position(variable_name, em.str_discharging + to_string(n + 1))] = -1;
                 }
             }
             glp_set_row_name(mip, (bnd_row_num + (time_block - sample_time) * n + i), "");
-            glp_set_row_bnds(mip, (bnd_row_num + (time_block - sample_time) * n + i), GLP_LO, (EM_MIN_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T), 0.0);
+            glp_set_row_bnds(mip, (bnd_row_num + (time_block - sample_time) * n + i), GLP_LO, (em.MIN_SOC - em.now_SOC[n]) * em.battery_capacity[n] / (em.normal_charging_power * delta_T), 0.0);
         }
     }
     coef_row_num += row_num_maxAddition;
@@ -410,27 +410,27 @@ void EM_previousSOCPlusPchargeMinusPdischargeTransToSOC_biggerThan_SOCmin(vector
     saving_coefAndBnds_rowNum(coef_row_num, row_num_maxAddition, bnd_row_num, row_num_maxAddition);
 }
 
-void EM_previousSOCPlusSummationPchargeMinusPdischargeTransToSOC_biggerThan_SOCthreshold(vector<int> departure_timeblock, vector<float> EM_now_SOC, vector<int> start_timeblock, vector<float> EM_start_SOC, vector<float> battery_capacity, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void EM_previousSOCPlusSummationPchargeMinusPdischargeTransToSOC_biggerThan_SOCthreshold(ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
     
-    for (int n = 0; n < EM_can_charge_amount ; n++)
+    for (int n = 0; n < em.can_charge_amount ; n++)
     {
-        for (int i = 0; i < (departure_timeblock[n] - sample_time); i++)
+        for (int i = 0; i < (em.departure_timeblock[n] - sample_time); i++)
         {
-            coefficient[coef_row_num + n][i * variable + find_variableName_position(variable_name, "EM_charging" + to_string(n + 1))] = 1;
-            if (EM_can_discharge)
-                coefficient[coef_row_num + n][i * variable + find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1))] = -1;
+            coefficient[coef_row_num + n][i * variable + find_variableName_position(variable_name, em.str_charging + to_string(n + 1))] = 1;
+            if (em.can_discharge)
+                coefficient[coef_row_num + n][i * variable + find_variableName_position(variable_name, em.str_discharging + to_string(n + 1))] = -1;
         }
         
-        float leastTimeblock_toChargeSOCThreshold = ceil((EM_threshold_SOC - EM_start_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T));
-        if (departure_timeblock[n] - start_timeblock[n] >= leastTimeblock_toChargeSOCThreshold)
+        float leastTimeblock_toChargeSOCThreshold = ceil((em.threshold_SOC - em.start_SOC[n]) * em.battery_capacity[n] / (em.normal_charging_power * delta_T));
+        if (em.departure_timeblock[n] - em.start_timeblock[n] >= leastTimeblock_toChargeSOCThreshold)
         {
-            if (EM_can_discharge)
+            if (em.can_discharge)
             {   
                 // Error handling: all users force charging except already got threshold users,
                 // avoid use ceil due to return become 2 got error, but in fact 1 is enough to reach the threshold
-                if (departure_timeblock[n] - sample_time == 1 && EM_now_SOC[n] < EM_threshold_SOC)
+                if (em.departure_timeblock[n] - sample_time == 1 && em.now_SOC[n] < em.threshold_SOC)
                 {
                     
                     glp_set_row_name(mip, (bnd_row_num + n), "");
@@ -439,20 +439,20 @@ void EM_previousSOCPlusSummationPchargeMinusPdischargeTransToSOC_biggerThan_SOCt
                 else
                 {
                     glp_set_row_name(mip, (bnd_row_num + n), "");
-                    glp_set_row_bnds(mip, (bnd_row_num + n), GLP_LO, ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)), 0.0);
+                    glp_set_row_bnds(mip, (bnd_row_num + n), GLP_LO, ceil((em.threshold_SOC - em.now_SOC[n]) * em.battery_capacity[n] / (em.normal_charging_power * delta_T)), 0.0);
                 }
             }
             else
             {
                 glp_set_row_name(mip, (bnd_row_num + n), "");
-                glp_set_row_bnds(mip, (bnd_row_num + n), GLP_LO, ceil((EM_threshold_SOC - EM_now_SOC[n]) * battery_capacity[n] / (normal_charging_power * delta_T)), 0.0);
+                glp_set_row_bnds(mip, (bnd_row_num + n), GLP_LO, ceil((em.threshold_SOC - em.now_SOC[n]) * em.battery_capacity[n] / (em.normal_charging_power * delta_T)), 0.0);
             }
         }
         else
         {
             // avoid EM user setting too less time and EM can't charge to threshold although charging every time
             glp_set_row_name(mip, (bnd_row_num + n), "");
-            glp_set_row_bnds(mip, (bnd_row_num + n), GLP_LO, float(departure_timeblock[n] - sample_time), 0.0);
+            glp_set_row_bnds(mip, (bnd_row_num + n), GLP_LO, float(em.departure_timeblock[n] - sample_time), 0.0);
         }
     }
     coef_row_num += row_num_maxAddition;
@@ -699,7 +699,7 @@ void summation_SOCNegative_biggerThan_targetDischargeSOC(float target_dischargeS
 }
 
 // =-=-=-=-=-=-=- objective function -=-=-=-=-=-=-= //
-void setting_GHEMS_ObjectiveFunction(float *price, glp_prob *mip)
+void setting_GHEMS_ObjectiveFunction(ELECTRICMOTOR em, float *price, glp_prob *mip)
 {
     functionPrint(__func__);
 
@@ -711,10 +711,10 @@ void setting_GHEMS_ObjectiveFunction(float *price, glp_prob *mip)
 			glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Psell") + 1 + j * variable), price[j + sample_time] * delta_T * (-1));
 		if (Pfc_flag)
 			glp_set_obj_coef(mip, (find_variableName_position(variable_name, "Pfct") + 1 + j * variable), Hydro_Price / Hydro_Cons * delta_T); //FC cost
-        if (EM_flag && EM_can_discharge)
+        if (em.flag && em.can_discharge)
         {
-            for (int n = 0; n < EM_can_charge_amount; n++)         
-			    glp_set_obj_coef(mip, (find_variableName_position(variable_name, "EM_discharging" + to_string(n + 1)) + 1 + j * variable), -normal_charging_power * price[j + sample_time] * delta_T);
+            for (int n = 0; n < em.can_charge_amount; n++)         
+			    glp_set_obj_coef(mip, (find_variableName_position(variable_name, em.str_discharging + to_string(n + 1)) + 1 + j * variable), -em.normal_charging_power * price[j + sample_time] * delta_T);
         }
 	}
 	if (dr_mode != 0)
