@@ -60,3 +60,14 @@
   + Public cost
   + Real cost after optimize
   + Saving efficiency
+
+---
+### 2022/01/18
+
++ Commit Link [cdc1b19](https://github.com/colin861209/fifty_DHEMS/commit/cdc1b19d96b8fb87f4db4ab798e2a73379c15554)
++ Feature: **EM** `Charge & Discharge` case
+  + Insert newEM and update SOC in `GHEMS.cpp`
+  + Collect all EM which sure to charge or discharge and optimized the result in `GHEMS_function.cpp`
+  + In `GHEMS_Constraint.cpp`
+  1.  Each time block can't less than min SOC in function `EM_previousSOCPlusPchargeTransToSOC_biggerThan_SOCmin`
+  2.  Departure SOC bigger than threshold SOC in function `EM_previousSOCPlusSummationPchargeTransToSOC_biggerThan_SOCthreshold`

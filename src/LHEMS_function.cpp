@@ -15,22 +15,19 @@
 int coef_row_num = 0, bnd_row_num = 1;
 char column[400] = "A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A29,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95";
 
-void optimization(vector<string> variable_name, int household_id, int *interrupt_start, int *interrupt_end, int *interrupt_ot, int *interrupt_reot, float *interrupt_p, int *uninterrupt_start, int *uninterrupt_end, int *uninterrupt_ot, int *uninterrupt_reot, float *uninterrupt_p, bool *uninterrupt_flag, int *varying_start, int *varying_end, int *varying_ot, int *varying_reot, bool *varying_flag, int **varying_t_pow, float **varying_p_pow, int app_count, float *price, float *uncontrollable_load, int distributed_group_num)
+void optimization(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, COMFORTLEVEL comlv, vector<string> variable_name, int household_id, int *interrupt_start, int *interrupt_end, int *interrupt_ot, int *interrupt_reot, float *interrupt_p, int *uninterrupt_start, int *uninterrupt_end, int *uninterrupt_ot, int *uninterrupt_reot, float *uninterrupt_p, bool *uninterrupt_flag, int *varying_start, int *varying_end, int *varying_ot, int *varying_reot, bool *varying_flag, int **varying_t_pow, float **varying_p_pow, int app_count, float *price, float *uncontrollable_load, int distributed_group_num)
 {
 	functionPrint(__func__);
 
-	float **comfortLevelWeighting;
-	if (comfortLevel_flag)
-	{
-		int comfortLevel = 4;
-		int total_timeInterval = 3;
+	if (comlv.flag)
+	{		
 		vector<vector<vector<int>>> comfortLevel_startEnd;
 		// [0~3] = level, [][0~1] = start or end, [][][0~44] = 3 times * 15 appliances
-		for (int i = 0; i < comfortLevel; i++)
+		for (int i = 0; i < comlv.comfortLevel; i++)
 		{
-			comfortLevel_startEnd.push_back(get_comfortLevel_timeInterval(household_id, app_count, total_timeInterval, i + 1));
+			comfortLevel_startEnd.push_back(get_comfortLevel_timeInterval(household_id, app_count, comlv.total_timeInterval, i + 1));
 		}
-		comfortLevelWeighting = calculate_comfortLevel_weighting(comfortLevel_startEnd, comfortLevel, total_timeInterval, app_count);
+		comlv.weighting = calculate_comfortLevel_weighting(comfortLevel_startEnd, comlv.comfortLevel, comlv.total_timeInterval, app_count);
 	}
 
 	countUninterruptAndVaryingLoads_Flag(uninterrupt_flag, varying_flag, household_id);
@@ -52,10 +49,10 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 
 	// float *weighting_array;
 	int *participate_array;
-	if (dr_mode != 0)
+	if (dr.mode != 0)
 	{
-		// weighting_array = household_alpha_upperBnds(distributed_group_num);
-		participate_array = household_participation(household_id, "LHEMS_demand_response_participation");
+		// weighting_array = household_alpha_upperBnds(dr, distributed_group_num);
+		participate_array = household_participation(dr, household_id, "LHEMS_demand_response_participation");
 	}
 
 	int rowTotal = (time_block - sample_time) * 200 + 1;
@@ -69,7 +66,7 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 	glp_add_rows(mip, rowTotal);
 	glp_add_cols(mip, colTotal);
 
-	setting_LHEMS_columnBoundary(variable_name, mip, varying_p_max);
+	setting_LHEMS_columnBoundary(ess, dr, variable_name, mip, varying_p_max);
 
 	float **coefficient = NEW2D(rowTotal, colTotal, float);
 	for (int m = 0; m < rowTotal; m++)
@@ -83,29 +80,29 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 		summation_interruptLoadRa_biggerThan_Qa(interrupt_start, interrupt_end, interrupt_reot, coefficient, mip, interrupt_num);
 	}
 
-	if (dr_mode != 0)
+	if (dr.mode != 0)
 	{
 		// 0 < Pgrid j < αu j *Pgrid max
-		pgrid_smallerThan_alphaPgridMax(coefficient, mip, time_block - sample_time);
+		pgrid_smallerThan_alphaPgridMax(dr, coefficient, mip, time_block - sample_time);
 		// (1 - Du j) < alpha < 1 in operate time, else alpha is 1
-		alpha_between_oneminusDu_and_one(participate_array, coefficient, mip, time_block - sample_time);
+		alpha_between_oneminusDu_and_one(dr, participate_array, coefficient, mip, time_block - sample_time);
 	}
 
 	// (Balanced function) Pgrid j - Pess j = sum(Pa j) + Puc j
-	pgridMinusPess_equalTo_ploadPlusPuncontrollLoad(interrupt_start, interrupt_end, interrupt_p, uninterrupt_start, uninterrupt_end, uninterrupt_p, varying_start, varying_end, uncontrollable_load, coefficient, mip, time_block - sample_time);
+	pgridMinusPess_equalTo_ploadPlusPuncontrollLoad(ess, interrupt_start, interrupt_end, interrupt_p, uninterrupt_start, uninterrupt_end, uninterrupt_p, varying_start, varying_end, uncontrollable_load, coefficient, mip, time_block - sample_time);
 
-	if (Pess_flag)
+	if (ess.flag)
 	{
 		// SOC j - 1 + sum((Pess * Ts) / (Cess * Vess)) >= SOC threshold, only one constranit formula
-		previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(coefficient, mip, 1);
+		previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(ess, coefficient, mip, 1);
 		// SOC j = SOC j - 1 + (Pess j * Ts) / (Cess * Vess)
-		previousSOCPlusPessTransToSOC_equalTo_currentSOC(coefficient, mip, time_block - sample_time);
+		previousSOCPlusPessTransToSOC_equalTo_currentSOC(ess, coefficient, mip, time_block - sample_time);
 		// (Charge limit) Pess + <= z * Pcharge max
-		pessPositive_smallerThan_zMultiplyByPchargeMax(coefficient, mip, time_block - sample_time);
+		pessPositive_smallerThan_zMultiplyByPchargeMax(ess, coefficient, mip, time_block - sample_time);
 		// (Discharge limit) Pess - <= (1 - z) * Pdischarge max
-		pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(coefficient, mip, time_block - sample_time);
+		pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(ess, coefficient, mip, time_block - sample_time);
 		// (Battery power) (Pess +) - (Pess -) = Pess j
-		pessPositiveMinusPessNegative_equalTo_Pess(coefficient, mip, time_block - sample_time);
+		pessPositiveMinusPessNegative_equalTo_Pess(ess, coefficient, mip, time_block - sample_time);
 	}
 
 	if (uninterruptLoad_flag)
@@ -126,7 +123,7 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 		varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(varying_start, varying_end, varying_reot, varying_flag, varying_t_d, varying_p_d, buff, coefficient, mip, time_block - sample_time);
 	}
 
-	setting_LHEMS_objectiveFunction(price, participate_array, comfortLevelWeighting, mip);
+	setting_LHEMS_objectiveFunction(dr, comlv, price, participate_array, mip);
 
 	int *ia = new int[rowTotal * colTotal + 1];
 	int *ja = new int[rowTotal * colTotal + 1];
@@ -180,9 +177,9 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 	printf("\n");
 	printf("LINE %d: timeblock %d household id %d sol = %f; \n", __LINE__, sample_time, household_id, z);
 
-	if (Pess_flag)
+	if (ess.flag)
 	{
-		if (z == 0.0 && glp_mip_col_val(mip, find_variableName_position(variable_name, "SOC") + 1) == 0.0)
+		if (z == 0.0 && glp_mip_col_val(mip, find_variableName_position(variable_name, ess.str_SOC) + 1) == 0.0)
 		{
 			display_coefAndBnds_rowNum();
 			printf("Error > sol is 0, No Solution, give up the solution\n");
@@ -260,7 +257,7 @@ void optimization(vector<string> variable_name, int household_id, int *interrupt
 	return;
 }
 
-void setting_LHEMS_columnBoundary(vector<string> variable_name, glp_prob *mip, float *varying_p_max)
+void setting_LHEMS_columnBoundary(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, vector<string> variable_name, glp_prob *mip, float *varying_p_max)
 {
 	functionPrint(__func__);
 	messagePrint(__LINE__, "Setting columns...", 'S', 0, 'Y');
@@ -296,23 +293,23 @@ void setting_LHEMS_columnBoundary(vector<string> variable_name, glp_prob *mip, f
 			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + i * variable), GLP_DB, 0.0, Pgrid_max);
 			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Pgrid") + 1 + i * variable), GLP_CV);
 		}
-		if (Pess_flag)
+		if (ess.flag)
 		{
-			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Pess") + 1 + i * variable), GLP_DB, -Pbat_min, Pbat_max);
-			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Pess") + 1 + i * variable), GLP_CV);
-			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Pcharge") + 1 + i * variable), GLP_FR, 0.0, Pbat_max);
-			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Pcharge") + 1 + i * variable), GLP_CV);
-			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Pdischarge") + 1 + i * variable), GLP_FR, 0.0, Pbat_min);
-			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Pdischarge") + 1 + i * variable), GLP_CV);
-			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC") + 1 + i * variable), GLP_DB, SOC_min, SOC_max);
-			glp_set_col_kind(mip, (find_variableName_position(variable_name, "SOC") + 1 + i * variable), GLP_CV);
-			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Z") + 1 + i * variable), GLP_DB, 0.0, 1.0);
-			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Z") + 1 + i * variable), GLP_BV);
+			glp_set_col_bnds(mip, (find_variableName_position(variable_name, ess.str_Pess) + 1 + i * variable), GLP_DB, -ess.MIN_power, ess.MAX_power);
+			glp_set_col_kind(mip, (find_variableName_position(variable_name, ess.str_Pess) + 1 + i * variable), GLP_CV);
+			glp_set_col_bnds(mip, (find_variableName_position(variable_name, ess.str_Pcharge) + 1 + i * variable), GLP_FR, 0.0, ess.MAX_power);
+			glp_set_col_kind(mip, (find_variableName_position(variable_name, ess.str_Pcharge) + 1 + i * variable), GLP_CV);
+			glp_set_col_bnds(mip, (find_variableName_position(variable_name, ess.str_Pdischarge) + 1 + i * variable), GLP_FR, 0.0, ess.MIN_power);
+			glp_set_col_kind(mip, (find_variableName_position(variable_name, ess.str_Pdischarge) + 1 + i * variable), GLP_CV);
+			glp_set_col_bnds(mip, (find_variableName_position(variable_name, ess.str_SOC) + 1 + i * variable), GLP_DB, ess.MIN_SOC, ess.MAX_SOC);
+			glp_set_col_kind(mip, (find_variableName_position(variable_name, ess.str_SOC) + 1 + i * variable), GLP_CV);
+			glp_set_col_bnds(mip, (find_variableName_position(variable_name, ess.str_Z) + 1 + i * variable), GLP_DB, 0.0, 1.0);
+			glp_set_col_kind(mip, (find_variableName_position(variable_name, ess.str_Z) + 1 + i * variable), GLP_BV);
 		}
-		if (dr_mode != 0)
+		if (dr.mode != 0)
 		{
-			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "dr_alpha") + 1 + i * variable), GLP_DB, 0.0, 1.0);
-			glp_set_col_kind(mip, (find_variableName_position(variable_name, "dr_alpha") + 1 + i * variable), GLP_CV);
+			glp_set_col_bnds(mip, (find_variableName_position(variable_name, dr.str_alpha) + 1 + i * variable), GLP_DB, 0.0, 1.0);
+			glp_set_col_kind(mip, (find_variableName_position(variable_name, dr.str_alpha) + 1 + i * variable), GLP_CV);
 		}
 		if (uninterruptLoad_flag)
 		{
@@ -338,7 +335,7 @@ void setting_LHEMS_columnBoundary(vector<string> variable_name, glp_prob *mip, f
 	}
 }
 
-int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> variable_name, int distributed_group_num)
+int determine_realTimeOrOneDayMode_andGetSOC(ENERGYSTORAGESYSTEM &ess, int real_time, vector<string> variable_name, int distributed_group_num)
 {
 	// 'Realtime mode' if same day & real time = 1;
 	// 'One day mode' =>
@@ -356,11 +353,11 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 		}
 
 		// get previous SOC value
-		if (Pess_flag)
+		if (ess.flag)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", sample_time - 1, "SOC", household_id);
-			SOC_ini = turn_value_to_float(0);
-			messagePrint(__LINE__, "SOC = ", 'F', SOC_ini, 'Y');
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", sample_time - 1, ess.str_SOC.c_str(), household_id);
+			ess.INIT_SOC = turn_value_to_float(0);
+			messagePrint(__LINE__, "SOC = ", 'F', ess.INIT_SOC, 'Y');
 		}
 	}
 	else
@@ -381,11 +378,11 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 			messagePrint(__LINE__, "Truncate LHEMS control status: Group ", 'I', distributed_group_num, 'Y');
 		}
 
-		if (Pess_flag)
+		if (ess.flag)
 		{
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM BaseParameter WHERE parameter_name = 'ini_SOC'");
-			SOC_ini = turn_value_to_float(0);
-			messagePrint(__LINE__, "ini_SOC : ", 'F', SOC_ini, 'Y');
+			ess.INIT_SOC = turn_value_to_float(0);
+			messagePrint(__LINE__, "ini_SOC : ", 'F', ess.INIT_SOC, 'Y');
 		}
 
 		if (distributed_household_id == distributed_householdTotal)
@@ -775,11 +772,11 @@ float *rand_operationTime(int distributed_group_num)
 	return result;
 }
 
-float *household_alpha_upperBnds(int distributed_group_num)
+float *household_alpha_upperBnds(DEMANDRESPONSE dr, int distributed_group_num)
 {
 	functionPrint(__func__);
 
-	float *result = new float[dr_endTime - dr_startTime];
+	float *result = new float[dr.endTime - dr.startTime];
 	string sql_table = "LHEMS_history_control_status";
 
 	if (sample_time == 0)
@@ -792,7 +789,7 @@ float *household_alpha_upperBnds(int distributed_group_num)
 	}
 
 	// =-=-=-=-=-=-=- calculate weighting then turn to alpha -=-=-=-=-=-=-= //
-	for (int i = dr_startTime; i < dr_endTime; i++)
+	for (int i = dr.startTime; i < dr.endTime; i++)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `%s` WHERE `equip_name` = 'Pgrid'", i, sql_table.c_str());
 		float total_load = turn_value_to_float(0);
@@ -801,66 +798,66 @@ float *household_alpha_upperBnds(int distributed_group_num)
 		{
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `%s` WHERE `equip_name` = 'Pgrid' && `household_id` = %d", i, sql_table.c_str(), household_id);
 			float each_household_load = turn_value_to_float(0);
-			result[i - dr_startTime] = each_household_load / total_load;
+			result[i - dr.startTime] = each_household_load / total_load;
 		}
 		else
 		{
-			result[i - dr_startTime] = 0.0;
+			result[i - dr.startTime] = 0.0;
 		}
 
-		printf("\thousehold %d timeblock %d weighting %.3f\n", household_id, i, result[i - dr_startTime]);
-		result[i - dr_startTime] = (Pgrid_max - result[i - dr_startTime] * dr_minDecrease_power) / Pgrid_max;
+		printf("\thousehold %d timeblock %d weighting %.3f\n", household_id, i, result[i - dr.startTime]);
+		result[i - dr.startTime] = (Pgrid_max - result[i - dr.startTime] * dr.minDecrease_power) / Pgrid_max;
 	}
 	if (sample_time != 0)
 	{
-		if (sample_time - dr_endTime < 0)
+		if (sample_time - dr.endTime < 0)
 		{
-			if (sample_time <= dr_startTime)
+			if (sample_time <= dr.startTime)
 			{
-				for (int i = 0; i < dr_endTime - dr_startTime; i++)
+				for (int i = 0; i < dr.endTime - dr.startTime; i++)
 				{
-					printf("\tUpdate household %d timeblock %d alpha %.3f\n", household_id, i + dr_startTime, result[i]);
-					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `demand_response_alpha` SET A%d = %.3f WHERE household_id = %d AND dr_timeblock = %d", sample_time, result[i], household_id, i + dr_startTime);
+					printf("\tUpdate household %d timeblock %d alpha %.3f\n", household_id, i + dr.startTime, result[i]);
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `demand_response_alpha` SET A%d = %.3f WHERE household_id = %d AND dr_timeblock = %d", sample_time, result[i], household_id, i + dr.startTime);
 					sent_query();
 				}
 			}
-			else if (sample_time > dr_startTime)
+			else if (sample_time > dr.startTime)
 			{
-				for (int i = 0; i < dr_endTime - sample_time; i++)
+				for (int i = 0; i < dr.endTime - sample_time; i++)
 				{
-					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `demand_response_alpha` SET A%d = %.3f WHERE household_id = %d AND dr_timeblock = %d", sample_time, result[i + sample_time - dr_startTime], household_id, i + sample_time);
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `demand_response_alpha` SET A%d = %.3f WHERE household_id = %d AND dr_timeblock = %d", sample_time, result[i + sample_time - dr.startTime], household_id, i + sample_time);
 					sent_query();
-					printf("\tUpdate household %d timeblock %d alpha %.3f\n", household_id, i + sample_time, result[i + sample_time - dr_startTime]);
+					printf("\tUpdate household %d timeblock %d alpha %.3f\n", household_id, i + sample_time, result[i + sample_time - dr.startTime]);
 				}
 			}
 		}
 	}
 	else
 	{
-		for (int i = 0; i < dr_endTime - dr_startTime; i++)
+		for (int i = 0; i < dr.endTime - dr.startTime; i++)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO demand_response_alpha (A0, dr_timeblock, household_id) VALUES('%.3f', %d, '%d');", result[i], i + dr_startTime, household_id);
+			snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO demand_response_alpha (A0, dr_timeblock, household_id) VALUES('%.3f', %d, '%d');", result[i], i + dr.startTime, household_id);
 			sent_query();
-			printf("\tInsert household %d timeblock %d alpha %.3f\n", household_id, i + dr_startTime, result[i]);
+			printf("\tInsert household %d timeblock %d alpha %.3f\n", household_id, i + dr.startTime, result[i]);
 		}
 	}
 
 	return result;
 }
 
-int *household_participation(int household_id, string table)
+int *household_participation(DEMANDRESPONSE dr, int household_id, string table)
 {
 	functionPrint(__func__);
 
-	int *result = new int[dr_endTime - dr_startTime];
+	int *result = new int[dr.endTime - dr.startTime];
 
 	// =-=-=-=-=-=-=- calculate weighting then turn to alpha -=-=-=-=-=-=-= //
-	for (int i = dr_startTime; i < dr_endTime; i++)
+	for (int i = dr.startTime; i < dr.endTime; i++)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `%s` WHERE `household_id` = %d", i, table.c_str(), household_id);
-		result[i - dr_startTime] = turn_value_to_int(0);
+		result[i - dr.startTime] = turn_value_to_int(0);
 
-		printf("\thousehold %d timeblock %d status %d\n", household_id, i, result[i - dr_startTime]);
+		printf("\thousehold %d timeblock %d status %d\n", household_id, i, result[i - dr.startTime]);
 	}
 
 	return result;

@@ -21,25 +21,23 @@ vector<string> variable_name;
 // common parameter
 int time_block = 0, variable = 0, divide = 0, sample_time = 0, point_num = 0, piecewise_num;
 float delta_T = 0.0;
-float Cbat = 0.0, Vsys = 0.0, SOC_ini = 0.0, SOC_min = 0.0, SOC_max = 0.0, SOC_thres = 0.0, Pbat_min = 0.0, Pbat_max = 0.0, Pgrid_max = 0.0, Psell_max = 0.0, Delta_battery = 0.0, Pfc_max = 0.0;
-// EM parameter
-int total_charging_pole = 0, normal_charging_pole = 0, fast_charging_pole = 0, super_fast_charging_pole = 0, EM_can_charge_amount = 0;
-float EM_MAX_SOC = 0.0, EM_MIN_SOC = 0.0, EM_threshold_SOC = 0.0, normal_charging_power = 0.0;
-// dr
-int dr_mode, dr_startTime, dr_endTime, dr_minDecrease_power, dr_feedback_price, dr_customer_baseLine;
+float Pgrid_max = 0.0, Psell_max = 0.0, Delta_battery = 0.0, Pfc_max = 0.0;
 // flag
-bool publicLoad_flag, Pgrid_flag, mu_grid_flag, Psell_flag, Pess_flag, Pfc_flag, SOC_change_flag, EM_flag, EM_generate_result_flag, EM_can_discharge;
-int publicLoad_num = 0;
+bool Pgrid_flag, mu_grid_flag, Psell_flag, Pfc_flag, SOC_change_flag;
 vector<float> Pgrid_max_array;
 
 int main(int argc, const char **argv)
 {
-	// Hydro_Price = stof(argv[1]);
-	// weather = argv[2];
 
 	time_t t = time(NULL);
 	struct tm now_time = *localtime(&t);
 	int real_time = 0;
+	
+	ENERGYSTORAGESYSTEM ess;
+	PUBLICLOAD pl;
+	DEMANDRESPONSE dr;
+	ELECTRICMOTOR em;
+	// ELECTRICVEHICLE ev;
 
 	if (!connect_mysql("DHEMS_fiftyHousehold"))
 		messagePrint(__LINE__, "Failed to Connect MySQL");
@@ -56,13 +54,13 @@ int main(int argc, const char **argv)
 
 	// =-=-=-=-=-=-=- we suppose that enerage appliance in community should same as the single appliance times household amount -=-=-=-=-=-=-= //
 	time_block = parameter_tmp[0];
-	Vsys = parameter_tmp[2] * parameter_tmp[1];
-	Cbat = parameter_tmp[3];
-	SOC_min = parameter_tmp[4];
-	SOC_max = parameter_tmp[5];
-	SOC_thres = parameter_tmp[6];
-	Pbat_min = parameter_tmp[7] * parameter_tmp[1];
-	Pbat_max = parameter_tmp[8] * parameter_tmp[1];
+	ess.voltage = parameter_tmp[2] * parameter_tmp[1];
+	ess.capacity = parameter_tmp[3];
+	ess.MIN_SOC = parameter_tmp[4];
+	ess.MAX_SOC = parameter_tmp[5];
+	ess.threshold_SOC = parameter_tmp[6];
+	ess.MIN_power = parameter_tmp[7] * parameter_tmp[1];
+	ess.MAX_power = parameter_tmp[8] * parameter_tmp[1];
 	Pgrid_max = parameter_tmp[9] * parameter_tmp[1];
 	Psell_max = parameter_tmp[10] * parameter_tmp[1];
 	Pfc_max = parameter_tmp[11] * parameter_tmp[1];
@@ -74,48 +72,48 @@ int main(int argc, const char **argv)
 	piecewise_num = point_num - 1;
 
 	// =-=-=-=-=-=-=- get demand response -=-=-=-=-=-=-= //
-	dr_mode = value_receive("BaseParameter", "parameter_name", "dr_mode");
-	messagePrint(__LINE__, "dr mode: ", 'I', dr_mode);
-	if (dr_mode != 0)
+	dr.mode = value_receive("BaseParameter", "parameter_name", "dr_mode");
+	messagePrint(__LINE__, "dr mode: ", 'I', dr.mode);
+	if (dr.mode != 0)
 	{
-		int *dr_info = demand_response_info(dr_mode);
-		dr_startTime = dr_info[0];
-		dr_endTime = dr_info[1];
-		dr_minDecrease_power = dr_info[2];
-		dr_feedback_price = dr_info[3];
-		dr_customer_baseLine = dr_info[4];
+		int *dr_info = demand_response_info(dr.mode);
+		dr.startTime = dr_info[0];
+		dr.endTime = dr_info[1];
+		dr.minDecrease_power = dr_info[2];
+		dr.feedback_price = dr_info[3];
+		dr.customer_baseLine = dr_info[4];
 	}
 
 	// Choose resource be use in GHEMS
-	publicLoad_flag = flag_receive("GHEMS_flag", "publicLoad");
+	pl.flag = flag_receive("GHEMS_flag", pl.str_publicLoad);
 	Pgrid_flag = flag_receive("GHEMS_flag", "Pgrid");
 	mu_grid_flag = flag_receive("GHEMS_flag", "mu_grid");
 	Psell_flag = flag_receive("GHEMS_flag", "Psell");
-	Pess_flag = flag_receive("GHEMS_flag", "Pess");
+	ess.flag = flag_receive("GHEMS_flag", ess.str_Pess);
 	Pfc_flag = flag_receive("GHEMS_flag", "Pfc");
 	SOC_change_flag = flag_receive("GHEMS_flag", "SOC_change");
 	
 	// =-=-=-=-=-=-=- get parameter values from EM_parameter in need -=-=-=-=-=-=-= //
 	// NOTE: 2022/01/03 Discuss with professor comfirm not using fast/super fast charging users, so not fully complete all the process
-	EM_flag = value_receive("BaseParameter", "parameter_name", "ElectricMotor");
-	if (EM_flag)
+	em.flag = value_receive("BaseParameter", "parameter_name", "ElectricMotor");
+	if (em.flag)
 	{
-		total_charging_pole = value_receive("EM_Parameter", "parameter_name", "Total_Charging_Pole");
-		normal_charging_pole = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_Pole");
-		fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Fast_Charging_Pole");
-		super_fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Super_Fast_Charging_Pole");
-		normal_charging_power = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_power", 'F');
-		EM_MAX_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Upper_SOC", 'F');
-		EM_threshold_SOC = value_receive("EM_Parameter", "parameter_name", "EM_threshold_SOC", 'F');
-		EM_MIN_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Lower_SOC", 'F');
-		EM_can_discharge = value_receive("EM_Parameter", "parameter_name", "Motor_can_discharge");
-		EM_generate_result_flag = value_receive("BaseParameter", "parameter_name", "EM_generate_random_user_result");
+		em.total_charging_pole = value_receive("EM_Parameter", "parameter_name", "Total_Charging_Pole");
+		em.normal_charging_pole = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_Pole");
+		em.fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Fast_Charging_Pole");
+		em.super_fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Super_Fast_Charging_Pole");
+		em.normal_charging_power = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_power", 'F');
+		em.MAX_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Upper_SOC", 'F');
+		em.threshold_SOC = value_receive("EM_Parameter", "parameter_name", "EM_threshold_SOC", 'F');
+		em.MIN_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Lower_SOC", 'F');
+		em.can_discharge = value_receive("EM_Parameter", "parameter_name", "Motor_can_discharge");
+		em.generate_result_flag = value_receive("BaseParameter", "parameter_name", "EM_generate_random_user_result");
 	}
 
 	// determine realtime mode should after getting above related parameter
 	sample_time = value_receive("BaseParameter", "parameter_name", "Global_next_simulate_timeblock");
 	// =-=-=-=-=-=-=- return 1 after determine mode and get SOC -=-=-=-=-=-=-= //
-	real_time = determine_realTimeOrOneDayMode_andGetSOC(real_time, variable_name);
+	real_time = determine_realTimeOrOneDayMode_andGetSOC(ess, em, real_time, variable_name);
 	if ((sample_time + 1) == 97)
 	{
 		messagePrint(__LINE__, "Time block to the end !!");
@@ -125,18 +123,18 @@ int main(int argc, const char **argv)
 	messagePrint(__LINE__, "sample time from database = ", 'I', sample_time);
 
 	// =-=-=-=-=-=-=- create EM users -=-=-=-=-=-=-= //
-	if (EM_flag)
+	if (em.flag)
 	{
 		// return how many motors can charge (means flag 'sure' = 1)
-		EM_can_charge_amount = enter_newEMInfo_inPole(sample_time);
+		em.can_charge_amount = enter_newEMInfo_inPole(em, sample_time);
 	}
 
-	if (publicLoad_flag == 1)
+	if (pl.flag == 1)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = 5");
-		publicLoad_num = turn_value_to_int(0);
-		for (int i = 0; i < publicLoad_num; i++)
-			variable_name.push_back("publicLoad" + to_string(i + 1));
+		pl.number = turn_value_to_int(0);
+		for (int i = 0; i < pl.number; i++)
+			variable_name.push_back(pl.str_publicLoad + to_string(i + 1));
 	}
 	if (Pgrid_flag == 1)
 		variable_name.push_back("Pgrid");
@@ -144,13 +142,13 @@ int main(int argc, const char **argv)
 		variable_name.push_back("mu_grid");
 	if (Psell_flag == 1)
 		variable_name.push_back("Psell");
-	if (Pess_flag == 1)
+	if (ess.flag == 1)
 	{
-		variable_name.push_back("Pess");
-		variable_name.push_back("Pcharge");
-		variable_name.push_back("Pdischarge");
-		variable_name.push_back("SOC");
-		variable_name.push_back("Z");
+		variable_name.push_back(ess.str_Pess);
+		variable_name.push_back(ess.str_Pcharge);
+		variable_name.push_back(ess.str_Pdischarge);
+		variable_name.push_back(ess.str_SOC);
+		variable_name.push_back(ess.str_Z);
 		if (SOC_change_flag)
 		{
 			variable_name.push_back("SOC_change");
@@ -171,16 +169,16 @@ int main(int argc, const char **argv)
 		for (int i = 0; i < piecewise_num; i++)
 			variable_name.push_back("lambda_Pfc" + to_string(i + 1));
 	}
-	if (EM_flag)
+	if (em.flag)
 	{
-		for (int i = 0; i < EM_can_charge_amount; i++)
-			variable_name.push_back("EM_charging" + to_string(i + 1));
-		if (EM_can_discharge)
+		for (int i = 0; i < em.can_charge_amount; i++)
+			variable_name.push_back(em.str_charging + to_string(i + 1));
+		if (em.can_discharge)
 		{
-			for (int i = 0; i < EM_can_charge_amount; i++)
-				variable_name.push_back("EM_discharging" + to_string(i + 1));
-			for (int i = 0; i < EM_can_charge_amount; i++)
-				variable_name.push_back("EM_mu" + to_string(i + 1));
+			for (int i = 0; i < em.can_charge_amount; i++)
+				variable_name.push_back(em.str_discharging + to_string(i + 1));
+			for (int i = 0; i < em.can_charge_amount; i++)
+				variable_name.push_back(em.str_mu + to_string(i + 1));
 		}
 	}
 	variable = variable_name.size();
@@ -195,14 +193,14 @@ int main(int argc, const char **argv)
 	float *load_model = get_totalLoad_power(uncontrollable_load_flag);
 
 	if (sample_time == 0)
-		insert_GHEMS_variable();
+		insert_GHEMS_variable(ess);
 
 	// =-=-=-=-=-=-=- get total weighting from dr_alpha -=-=-=-=-=-=-= //
-	if (dr_mode != 0)
+	if (dr.mode != 0)
 	{
 		for (int i = 0; i < time_block - sample_time; i++)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_control_status` WHERE equip_name = 'dr_alpha' ", i + sample_time);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_control_status` WHERE equip_name = '%s' ", i + sample_time, dr.str_alpha.c_str());
 			float dr_weighting_sumOfAlpha = turn_value_to_float(0);
 			Pgrid_max_array.push_back(Pgrid_max / parameter_tmp[1] * dr_weighting_sumOfAlpha);
 		}
@@ -211,16 +209,16 @@ int main(int argc, const char **argv)
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = '%d-%02d-%02d' WHERE parameter_name = 'lastTime_execute' ", now_time.tm_year + 1900, now_time.tm_mon + 1, now_time.tm_mday);
 	sent_query();
 
-	optimization(variable_name, Pgrid_max_array, load_model, price);
-	calculateCostInfo(price, publicLoad_flag, Pgrid_flag, Psell_flag, Pess_flag, Pfc_flag);
-	updateSingleHouseholdCost();
+	optimization(ess, dr, pl, em, variable_name, Pgrid_max_array, load_model, price);
+	calculateCostInfo(dr, pl, price, Pgrid_flag, Psell_flag, ess.flag, Pfc_flag);
+	updateSingleHouseholdCost(dr);
 	
-	if (EM_flag)
+	if (em.flag)
 	{
-		update_fullSOC_or_overtime_EM_inPole(sample_time);
+		update_fullSOC_or_overtime_EM_inPole(em, sample_time);
 	}
 	
-	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET value = (SELECT A%d FROM GHEMS_control_status where equip_name = 'SOC') WHERE parameter_name = 'now_SOC'", sample_time);
+	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET value = (SELECT A%d FROM GHEMS_control_status where equip_name = '%s') WHERE parameter_name = 'now_SOC'", sample_time, ess.str_SOC.c_str());
 	sent_query();
 
 	printf("LINE %d: sample_time = %d\n", __LINE__, sample_time);
