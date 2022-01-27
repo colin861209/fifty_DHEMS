@@ -32,8 +32,6 @@ typedef struct
 	bool can_discharge;
 	int total_charging_pole;
 	int normal_charging_pole;
-	int fast_charging_pole;
-	int super_fast_charging_pole;
 	int can_charge_amount;
 	float normal_charging_power;
 	float MAX_SOC;
@@ -78,10 +76,10 @@ int *countPublicLoads_AlreadyOpenedTimes(int publicLoad_num);
 vector<int> count_publicLoads_RemainOperateTime(int public_num, vector<int> public_ot, int *buff);
 void update_fullSOC_or_overtime_EM_inPole(ELECTRICMOTOR em, int sample_time);
 void record_vehicle_result(string table, float SOC, int sample_time, int number);
-void empty_charging_pole(int pole_id);
+void empty_charging_pole(string table, int pole_id);
 int enter_newEMInfo_inPole(ELECTRICMOTOR em, int sample_time);
 void generate_vehicle_result(ELECTRICMOTOR em, string table, int EM_amount, int time_mean, int time_variance, int soc_mean, int soc_variance, int wait_mean, int wait_variance, int start_number, vector<int> user, vector<float> capacity, vector<int> type_id, vector<int> empty_pole, int sample_time);
 void fetch_vehicle_result(string table, int EM_amount, int start_number, vector<int> empty_pole, int sample_time);
-void enter_charging_pole(int number, int wait, float SOC, float BAT_capacity, int start_timeblock, int departure_timeblock, int pole_id);
+void enter_charging_pole(string pole_table, string cdstatus_table, int number, int wait, float SOC, float BAT_capacity, int start_timeblock, int departure_timeblock, int pole_id);
 void insert_vehicle_result(string table, int Pole_ID, int number, int type, float BAT_CAP, int start_timeblock, float start_SOC, int original_departure_timeblock, int wait);
 #endif

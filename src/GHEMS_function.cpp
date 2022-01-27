@@ -586,7 +586,7 @@ int determine_realTimeOrOneDayMode_andGetSOC(ENERGYSTORAGESYSTEM &ess, ELECTRICM
 			sent_query();
 
 			// Reset columns which record related ev power after optimization
-			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_user_number` SET `total_power` = '0', `normal_power` = '0', `discharge_normal_power` = '0', `fast_power` = '0', `super_fast_power` = '0';");
+			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_user_number` SET `total_power` = '0', `normal_power` = '0', `discharge_normal_power` = '0';");
 			sent_query();
 
 			// make sure EM pole is no users using
@@ -601,18 +601,10 @@ int determine_realTimeOrOneDayMode_andGetSOC(ENERGYSTORAGESYSTEM &ess, ELECTRICM
 			{
 				snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE `EM_user_result`");
 				sent_query();
-				snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE `EM_fast_user_result`");
-				sent_query();
-				snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE `EM_super_fast_user_result`");
-				sent_query();
 			}
 			else
 			{
 				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_user_result` SET `Departure_SOC` = NULL, `Real_departure_timeblock` = NULL");
-				sent_query();
-				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_fast_user_result` SET `Departure_SOC` = NULL, `Real_departure_timeblock` = NULL");
-				sent_query();
-				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_super_fast_user_result` SET `Departure_SOC` = NULL, `Real_departure_timeblock` = NULL");
 				sent_query();
 			}
 		}
@@ -1091,12 +1083,12 @@ void update_fullSOC_or_overtime_EM_inPole(ELECTRICMOTOR em, int sample_time)
 {
 	functionPrint(__func__);
 
-	float total_power = 0.0, normal_power = 0.0, fast_power = 0.0, super_fast_power = 0.0, discharge_normal_power;
+	float normal_power = 0.0, discharge_normal_power = 0.0;
 	
 	for (int i = 0; i < em.total_charging_pole; i++)
 	{
 		// check each pole is allowed charging or discharging, update SOC
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `EM_Pole`.`Pole_ID`, `EM_Pole`.`number`, `EM_Pole`.`sure`, `EM_Pole`.`charging_status`, `EM_Pole`.`discharge_status`, `EM_Pole`.`full`, `EM_Pole`.`wait`, `EM_Pole`.`SOC`, `EM_Pole`.`BAT_CAP`, `EM_Pole`.`V_battery`, `EM_Pole`.`I_battery`, `EM_Pole`.`Departure_timeblock`,  `EM_motor_type`.`voltage` FROM `EM_Pole` LEFT JOIN `EM_user_result` ON `EM_Pole`.`number`=`EM_user_result`.`number` LEFT JOIN `EM_motor_type` ON `EM_user_result`.`type`=`EM_motor_type`.`id` WHERE EM_Pole.id = '%d'", i + 1);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `EM_Pole`.`Pole_ID`, `EM_Pole`.`number`, `EM_Pole`.`sure`, `EM_Pole`.`charging_status`, `EM_Pole`.`discharge_status`, `EM_Pole`.`full`, `EM_Pole`.`wait`, `EM_Pole`.`SOC`, `EM_Pole`.`BAT_CAP`, `EM_Pole`.`P_charging_pole`, `EM_Pole`.`Departure_timeblock`,  `EM_motor_type`.`voltage` FROM `EM_Pole` LEFT JOIN `EM_user_result` ON `EM_Pole`.`number`=`EM_user_result`.`number` LEFT JOIN `EM_motor_type` ON `EM_user_result`.`type`=`EM_motor_type`.`id` WHERE EM_Pole.id = '%d'", i + 1);
 		fetch_row_value();
 		int pole_id = turn_int(0);
 		int number = turn_int(1);
@@ -1106,21 +1098,16 @@ void update_fullSOC_or_overtime_EM_inPole(ELECTRICMOTOR em, int sample_time)
 		bool SOC_full = turn_int(5);
 		int wait = turn_int(6);
 		float SOC = turn_float(7);
-		float charging_pole_power = (turn_float(9) * turn_float(10)) / 1000;
-		float departure_timeblock = turn_float(11);
-		float BAT_capacity = (turn_float(8) * turn_float(12)) / 1000;
+		float charging_pole_power = turn_float(9);
+		float departure_timeblock = turn_float(10);
+		float BAT_capacity = (turn_float(8) * turn_float(11)) / 1000;
 		
 		if (allow_chargeOrDischarge)
 		{
 			// charging now, vehicle SOC increase
 			if (charging_status)
 			{
-				if (i < em.normal_charging_pole)
-					normal_power += charging_pole_power;
-				else if (i >= em.normal_charging_pole && i < em.fast_charging_pole)
-					fast_power += charging_pole_power;
-				else if (i >= em.fast_charging_pole && i < em.super_fast_charging_pole)
-					super_fast_power += charging_pole_power;
+				normal_power += charging_pole_power;
 				
 				SOC += (charging_pole_power * 0.25) / BAT_capacity;
 				if (SOC >= em.MAX_SOC)
@@ -1134,16 +1121,6 @@ void update_fullSOC_or_overtime_EM_inPole(ELECTRICMOTOR em, int sample_time)
 							snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `sure` = 0, `charging_status` = '0', `full` = 1, `SOC` = %.3f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
 						sent_query();
 					}
-					else if (i >= em.normal_charging_pole && i < em.normal_charging_pole+em.fast_charging_pole)
-					{
-						snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `sure` = 0, `charging_status` = '0', `full` = 1, `SOC` = %.3f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
-						sent_query();
-					}
-					else if (i >= em.normal_charging_pole+em.fast_charging_pole && i < em.normal_charging_pole+em.fast_charging_pole+em.super_fast_charging_pole)
-					{
-						snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `sure` = 0, `charging_status` = '0', `full` = 1, `SOC` = %.3f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
-						sent_query();
-					}
 				}
 				else
 				{
@@ -1154,8 +1131,7 @@ void update_fullSOC_or_overtime_EM_inPole(ELECTRICMOTOR em, int sample_time)
 			// normal pole discharging now, vehicle SOC decrease
 			else if (discharging_status)
 			{
-				if (i < em.normal_charging_pole)
-					discharge_normal_power -= charging_pole_power;
+				discharge_normal_power -= charging_pole_power;
 
 				SOC -= (charging_pole_power * 0.25) / BAT_capacity;
 				if (SOC <= em.MIN_SOC)
@@ -1188,19 +1164,8 @@ void update_fullSOC_or_overtime_EM_inPole(ELECTRICMOTOR em, int sample_time)
 				if (wait == 0)
 				{
 					// clean pole and record result
-					empty_charging_pole(pole_id);
-					if (i < em.normal_charging_pole)
-					{
-						record_vehicle_result("EM_user_result", SOC, sample_time, number);
-					}
-					else if (i >= em.normal_charging_pole && i < em.normal_charging_pole+em.fast_charging_pole)
-					{
-						record_vehicle_result("EM_fast_user_result", SOC, sample_time, number);
-					}
-					else if (i >= em.normal_charging_pole+em.fast_charging_pole && i < em.normal_charging_pole+em.fast_charging_pole+em.super_fast_charging_pole)
-					{
-						record_vehicle_result("EM_super_fast_user_result", SOC, sample_time, number);
-					}
+					empty_charging_pole("EM_Pole", pole_id);
+					record_vehicle_result("EM_user_result", SOC, sample_time, number);
 				}
 				else
 				{
@@ -1216,24 +1181,12 @@ void update_fullSOC_or_overtime_EM_inPole(ELECTRICMOTOR em, int sample_time)
 			int number = turn_value_to_int(0);
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `SOC` FROM `EM_Pole` WHERE `id` = '%d'", i + 1);
 			float SOC = turn_value_to_float(0);
-			empty_charging_pole(pole_id);
-			if (i < em.normal_charging_pole)
-			{
-				record_vehicle_result("EM_user_result", SOC, sample_time, number);
-			}
-			else if (i >= em.normal_charging_pole && i < em.normal_charging_pole+em.fast_charging_pole)
-			{
-				record_vehicle_result("EM_fast_user_result", SOC, sample_time, number);
-			}
-			else if (i >= em.normal_charging_pole+em.fast_charging_pole && i < em.normal_charging_pole+em.fast_charging_pole+em.super_fast_charging_pole)
-			{
-				record_vehicle_result("EM_super_fast_user_result", SOC, sample_time, number);
-			}
+			empty_charging_pole("EM_Pole", pole_id);
+			record_vehicle_result("EM_user_result", SOC, sample_time, number);
 		}
 	}
 
-	total_power = normal_power + fast_power + super_fast_power;
-	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_user_number` SET `total_power` = %.2f, `normal_power` = '%.2f',`discharge_normal_power` = '%.2f', `fast_power` = '%.2f', `super_fast_power` = '%.2f' WHERE `timeblock` = '%d'", total_power, normal_power, discharge_normal_power, fast_power, super_fast_power, sample_time);
+	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_user_number` SET `total_power` = %.2f, `normal_power` = '%.2f',`discharge_normal_power` = '%.2f' WHERE `timeblock` = '%d'", normal_power, normal_power, discharge_normal_power, sample_time);
 	sent_query();
 }
 
@@ -1245,9 +1198,9 @@ void record_vehicle_result(string table, float SOC, int sample_time, int number)
 }
 
 // Contained in 'update_fullSOC_or_overtime_EM_inPole'
-void empty_charging_pole(int pole_id)
+void empty_charging_pole(string table, int pole_id)
 {
-	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `number` = NULL, `sure` = '0', `charging_status` = '0', `discharge_status` = '0', `full` = '0' , `wait` = 0, `SOC` = NULL, `BAT_CAP` = NULL , `Start_timeblock` = NULL , `Departure_timeblock` = NULL WHERE `Pole_ID` = %d;", pole_id);
+	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `%s` SET `number` = NULL, `sure` = '0', `charging_status` = '0', `discharge_status` = '0', `full` = '0' , `wait` = 0, `SOC` = NULL, `BAT_CAP` = NULL , `Start_timeblock` = NULL , `Departure_timeblock` = NULL WHERE `Pole_ID` = %d;", table.c_str(), pole_id);
 	sent_query();	
 }
 
@@ -1255,8 +1208,8 @@ int enter_newEMInfo_inPole(ELECTRICMOTOR em, int sample_time)
 {
 	functionPrint(__func__);
 
-	// count normal/fast/super fast not using charging pole id
-	vector<int> empty_normal_pole, usingNow_normal_pole, empty_fast_pole, usingNow_fast_pole, empty_superFast_pole, usingNow_superFast_pole;
+	// count normal not using charging pole id
+	vector<int> empty_normal_pole, usingNow_normal_pole;
 	for (int i = 0; i < em.total_charging_pole; i++)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `Pole_ID` FROM `EM_Pole` WHERE `id` = '%d'", i + 1);
@@ -1265,27 +1218,11 @@ int enter_newEMInfo_inPole(ELECTRICMOTOR em, int sample_time)
 		bool allow_chargeOrDischarge = turn_value_to_int(0);
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `full` FROM `EM_Pole` WHERE `id` = '%d'", i + 1);
 		bool SOC_full = turn_value_to_int(0);
-		if (i < em.normal_charging_pole)
-		{
-			if (allow_chargeOrDischarge || SOC_full)
-				usingNow_normal_pole.push_back(pole_id);
-			else
-				empty_normal_pole.push_back(pole_id);
-		}
-		else if (i >= em.normal_charging_pole && i < em.normal_charging_pole+em.fast_charging_pole)
-		{
-			if (allow_chargeOrDischarge || SOC_full)
-				usingNow_fast_pole.push_back(pole_id);
-			else
-				empty_fast_pole.push_back(pole_id);
-		}
-		else if (i >= em.normal_charging_pole+em.fast_charging_pole && i < em.normal_charging_pole+em.fast_charging_pole+em.super_fast_charging_pole)
-		{
-			if (allow_chargeOrDischarge || SOC_full)
-				usingNow_superFast_pole.push_back(pole_id);
-			else
-				empty_superFast_pole.push_back(pole_id);
-		}
+
+		if (allow_chargeOrDischarge || SOC_full)
+			usingNow_normal_pole.push_back(pole_id);
+		else
+			empty_normal_pole.push_back(pole_id);
 	}
 	
 	// get current timeblock will enter how many new EM and number
@@ -1293,19 +1230,9 @@ int enter_newEMInfo_inPole(ELECTRICMOTOR em, int sample_time)
 	int normal_EM_amount = turn_value_to_int(0);
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(user_number) FROM `EM_user_number` WHERE `timeblock` < '%d'", sample_time);
 	int normal_start_number = turn_value_to_int(0);
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `fast_user_number` FROM `EM_user_number` WHERE `timeblock` = '%d'", sample_time);
-	int fast_EM_amount = turn_value_to_int(0);
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(fast_user_number) FROM `EM_user_number` WHERE `timeblock` < '%d'", sample_time);
-	int fast_start_number = turn_value_to_int(0);
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `super_fast_user_number` FROM `EM_user_number` WHERE `timeblock` = '%d'", sample_time);
-	int super_fast_EM_amount = turn_value_to_int(0);
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(super_fast_user_number) FROM `EM_user_number` WHERE `timeblock` < '%d'", sample_time);
-	int super_fast_start_number = turn_value_to_int(0);
 	
 	// When sample_time=0 start_number will return -999, so set start number = 0
 	if (normal_start_number == -999) {normal_start_number = 0;}
-	if (fast_start_number == -999) {fast_start_number = 0;}
-	if (super_fast_start_number == -999) {super_fast_start_number = 0;}
 	// get which type and how many user will get in parking lot in this timeblock
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(capacity) FROM `EM_motor_type`");
 	int type_count = turn_value_to_int(0);
@@ -1316,22 +1243,9 @@ int enter_newEMInfo_inPole(ELECTRICMOTOR em, int sample_time)
 		switch (i)
 		{
 		case 0:
-		case 3:
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `type_%d` FROM `EM_wholeDay_userChargingNumber` WHERE `timeblock` = '%d';", i, sample_time);
-			super_fast_user.push_back(turn_value_to_int(0));
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `capacity` FROM `EM_motor_type` WHERE id = %d", i);
-			super_fast_capacity.push_back(turn_value_to_float(0));
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `id` FROM `EM_motor_type` WHERE id = %d", i);
-			super_fast_type_id.push_back(turn_value_to_int(0));
-			break;
 		case 1:
+		case 3:
 		case 4:
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `type_%d` FROM `EM_wholeDay_userChargingNumber` WHERE `timeblock` = '%d';", i, sample_time);
-			fast_user.push_back(turn_value_to_int(0));
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `capacity` FROM `EM_motor_type` WHERE `id` = %d", i);
-			fast_capacity.push_back(turn_value_to_float(0));
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `id` FROM `EM_motor_type` WHERE `id` = %d", i);
-			fast_type_id.push_back(turn_value_to_int(0));
 			break;
 		default:
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `type_%d` FROM `EM_wholeDay_userChargingNumber` WHERE `timeblock` = '%d';", i, sample_time);
@@ -1354,31 +1268,13 @@ int enter_newEMInfo_inPole(ELECTRICMOTOR em, int sample_time)
 		int normal_wait_mean = value_receive("EM_Parameter_of_randomResult", "parameter_name", "normal_wait_mean");
 		int normal_wait_variance = value_receive("EM_Parameter_of_randomResult", "parameter_name", "normal_wait_variance");
 		
-		int fast_soc_mean = value_receive("EM_Parameter_of_randomResult", "parameter_name", "fast_soc_mean");
-		int fast_soc_variance = value_receive("EM_Parameter_of_randomResult", "parameter_name", "fast_soc_variance");
-		int fast_time_mean = value_receive("EM_Parameter_of_randomResult", "parameter_name", "fast_time_mean");
-		int fast_time_variance = value_receive("EM_Parameter_of_randomResult", "parameter_name", "fast_time_variance");
-		int fast_wait_mean = value_receive("EM_Parameter_of_randomResult", "parameter_name", "fast_wait_mean");
-		int fast_wait_variance = value_receive("EM_Parameter_of_randomResult", "parameter_name", "fast_wait_variance");
-
-		int super_fast_soc_mean = value_receive("EM_Parameter_of_randomResult", "parameter_name", "super_fast_soc_mean");
-		int super_fast_soc_variance = value_receive("EM_Parameter_of_randomResult", "parameter_name", "super_fast_soc_variance");
-		int super_fast_time_mean = value_receive("EM_Parameter_of_randomResult", "parameter_name", "super_fast_time_mean");
-		int super_fast_time_variance = value_receive("EM_Parameter_of_randomResult", "parameter_name", "super_fast_time_variance");
-		int super_fast_wait_mean = value_receive("EM_Parameter_of_randomResult", "parameter_name", "super_fast_wait_mean");
-		int super_fast_wait_variance = value_receive("EM_Parameter_of_randomResult", "parameter_name", "super_fast_wait_variance");
-		
 		// insert normal/fast/super fast user reuslt, EM content include: motor type, battery capacity, start timeblock, departure timeblock, SOC, stay time
 		generate_vehicle_result(em, "EM_user_result", normal_EM_amount, normal_time_mean, normal_time_variance, normal_soc_mean, normal_soc_variance, normal_wait_mean, normal_wait_variance, normal_start_number, normal_user, normal_capacity, normal_type_id, empty_normal_pole, sample_time);
-		generate_vehicle_result(em, "EM_fast_user_result", fast_EM_amount, fast_time_mean, fast_time_variance, fast_soc_mean, fast_soc_variance, fast_wait_mean, fast_wait_variance, fast_start_number, fast_user, fast_capacity, fast_type_id, empty_fast_pole, sample_time);
-		generate_vehicle_result(em, "EM_super_fast_user_result", super_fast_EM_amount, super_fast_time_mean, super_fast_time_variance, super_fast_soc_mean, super_fast_soc_variance, super_fast_wait_mean, super_fast_wait_variance, super_fast_start_number, super_fast_user, super_fast_capacity, super_fast_type_id, empty_superFast_pole, sample_time);		
 	}
 	else
 	{
 		messagePrint(__LINE__, "Fetch vehicle result", 'S', 0, 'Y');
 		fetch_vehicle_result("EM_user_result", normal_EM_amount, normal_start_number, empty_normal_pole, sample_time);
-		fetch_vehicle_result("EM_fast_user_result", fast_EM_amount, fast_start_number, empty_fast_pole, sample_time);
-		fetch_vehicle_result("EM_super_fast_user_result", super_fast_EM_amount, super_fast_start_number, empty_superFast_pole, sample_time);
 	}
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `EM_Pole` WHERE `sure` = 1");
 	return turn_value_to_int(0);
@@ -1411,16 +1307,6 @@ void generate_vehicle_result(ELECTRICMOTOR em, string table, int EM_amount, int 
 				if (/*x == 4 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
 				if (/*x == 5 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
 			}
-			else if (table == "EM_fast_user_result")
-			{
-				if (/*x == 0 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
-				if (/*x == 1 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
-			}
-			else if (table == "EM_super_fast_user_result")
-			{
-				if (/*x == 0 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
-				if (/*x == 1 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
-			}
 
 			decide_type:
 			int start_timeblock = sample_time;
@@ -1435,14 +1321,9 @@ void generate_vehicle_result(ELECTRICMOTOR em, string table, int EM_amount, int 
 			if (departure_timeblock > 95) {departure_timeblock = 95;}
 			if (rand_wait < 0) {rand_wait = 1;}
 
-			enter_charging_pole(start_number+i+1, rand_wait, rand_SOC, BAT_capacity, start_timeblock, departure_timeblock, empty_pole[i]);
+			enter_charging_pole("EM_Pole", "EM_chargingOrDischarging_status", start_number+i+1, rand_wait, rand_SOC, BAT_capacity, start_timeblock, departure_timeblock, empty_pole[i]);
 			insert_vehicle_result(table, empty_pole[i], start_number+i+1, type_num, BAT_capacity, start_timeblock, rand_SOC, departure_timeblock, rand_wait);
 			
-			if (BAT_capacity != 0 && table == "EM_super_fast_user_result")
-			{
-				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `charging_status` = '1' WHERE `Pole_ID` = '%d'", empty_pole[i]);
-				sent_query();
-			}
 			empty_pole_amount--;
 		}
 		else
@@ -1472,26 +1353,21 @@ void fetch_vehicle_result(string table, int EM_amount, int start_number, vector<
 			int departure_timeblock = turn_value_to_int(0);
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `wait` FROM %s WHERE `start_timeblock` = '%d' AND `number` = '%d'", table.c_str(), sample_time, start_number+i+1);
 			int wait = turn_value_to_int(0);
-			enter_charging_pole(start_number+i+1, wait, SOC, BAT_capacity, start_timeblock, departure_timeblock, empty_pole[i]);
-						
-			if (BAT_capacity != 0 && table == "EM_super_fast_user_result")
-			{
-				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `charging_status` = 1 WHERE `Pole_ID` = '%d'", empty_pole[i]);
-				sent_query();
-			}
+			enter_charging_pole("EM_Pole", "EM_chargingOrDischarging_status", start_number+i+1, wait, SOC, BAT_capacity, start_timeblock, departure_timeblock, empty_pole[i]);
+
 			empty_pole_amount--;
 		}
 	}
 }
 
 // Contained in 'enter_newEMInfo_inPole'
-void enter_charging_pole(int number, int wait, float SOC, float BAT_capacity, int start_timeblock, int departure_timeblock, int pole_id)
+void enter_charging_pole(string pole_table, string cdstatus_table, int number, int wait, float SOC, float BAT_capacity, int start_timeblock, int departure_timeblock, int pole_id)
 {
 	if (BAT_capacity != 0)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `number` = '%d', `sure` = '1', `wait` = '%d', `SOC` = '%.2f', `BAT_CAP` = '%.2f', `Start_timeblock` = '%d', `Departure_timeblock` = '%d' WHERE `Pole_ID` = %d;", number, wait, SOC, BAT_capacity, start_timeblock, departure_timeblock, pole_id);
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `%s` SET `number` = '%d', `sure` = '1', `wait` = '%d', `SOC` = '%.2f', `BAT_CAP` = '%.2f', `Start_timeblock` = '%d', `Departure_timeblock` = '%d' WHERE `Pole_ID` = %d;", pole_table.c_str(), number, wait, SOC, BAT_capacity, start_timeblock, departure_timeblock, pole_id);
 		sent_query();
-		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `EM_chargingOrDischarging_status` (`user_number`) VALUES ('%d')", number);
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `%s` (`user_number`) VALUES ('%d')", cdstatus_table.c_str(), number);
 		sent_query();
 	}
 }
