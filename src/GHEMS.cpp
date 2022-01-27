@@ -95,13 +95,12 @@ int main(int argc, const char **argv)
 	
 	// =-=-=-=-=-=-=- get parameter values from EM_parameter in need -=-=-=-=-=-=-= //
 	// NOTE: 2022/01/03 Discuss with professor comfirm not using fast/super fast charging users, so not fully complete all the process
+	// 2022/01/27 DELETE fast/super fast info
 	em.flag = value_receive("BaseParameter", "parameter_name", "ElectricMotor");
 	if (em.flag)
 	{
 		em.total_charging_pole = value_receive("EM_Parameter", "parameter_name", "Total_Charging_Pole");
 		em.normal_charging_pole = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_Pole");
-		em.fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Fast_Charging_Pole");
-		em.super_fast_charging_pole = value_receive("EM_Parameter", "parameter_name", "Super_Fast_Charging_Pole");
 		em.normal_charging_power = value_receive("EM_Parameter", "parameter_name", "Normal_Charging_power", 'F');
 		em.MAX_SOC = value_receive("EM_Parameter", "parameter_name", "EM_Upper_SOC", 'F');
 		em.threshold_SOC = value_receive("EM_Parameter", "parameter_name", "EM_threshold_SOC", 'F');
