@@ -37,7 +37,7 @@ int main(int argc, const char **argv)
 	PUBLICLOAD pl;
 	DEMANDRESPONSE dr;
 	ELECTRICMOTOR em;
-	// ELECTRICVEHICLE ev;
+	ELECTRICVEHICLE ev;
 
 	if (!connect_mysql("DHEMS_fiftyHousehold"))
 		messagePrint(__LINE__, "Failed to Connect MySQL");
@@ -109,10 +109,21 @@ int main(int argc, const char **argv)
 		em.generate_result_flag = value_receive("BaseParameter", "parameter_name", "EM_generate_random_user_result");
 	}
 
+	ev.flag = value_receive("BaseParameter", "parameter_name", "ElectricVehicle");
+	if (ev.flag)
+	{
+		ev.total_charging_pole = value_receive("EV_Parameter", "parameter_name", "Total_Charging_Pole");
+		ev.charging_power = value_receive("EV_Parameter", "parameter_name", "Normal_Charging_power", 'F');
+		ev.MAX_SOC = value_receive("EV_Parameter", "parameter_name", "EM_Upper_SOC", 'F');
+		ev.threshold_SOC = value_receive("EV_Parameter", "parameter_name", "EM_threshold_SOC", 'F');
+		ev.MIN_SOC = value_receive("EV_Parameter", "parameter_name", "EM_Lower_SOC", 'F');
+		ev.can_discharge = value_receive("EM_Parameter", "parameter_name", "Vehicle_can_discharge");
+		ev.generate_result_flag = value_receive("BaseParameter", "parameter_name", "EV_generate_random_user_result");
+	}
 	// determine realtime mode should after getting above related parameter
 	sample_time = value_receive("BaseParameter", "parameter_name", "Global_next_simulate_timeblock");
 	// =-=-=-=-=-=-=- return 1 after determine mode and get SOC -=-=-=-=-=-=-= //
-	real_time = determine_realTimeOrOneDayMode_andGetSOC(ess, em, real_time, variable_name);
+	real_time = determine_realTimeOrOneDayMode_andGetSOC(ess, em, ev, real_time, variable_name);
 	if ((sample_time + 1) == 97)
 	{
 		messagePrint(__LINE__, "Time block to the end !!");
@@ -126,6 +137,12 @@ int main(int argc, const char **argv)
 	{
 		// return how many motors can charge (means flag 'sure' = 1)
 		em.can_charge_amount = enter_newEMInfo_inPole(em, sample_time);
+	}
+	// =-=-=-=-=-=-=- create EV users -=-=-=-=-=-=-= //
+	if (ev.flag)
+	{
+		// return how many cars can charge (means flag 'sure' = 1)
+		ev.can_charge_amount = enter_newEVInfo_inPole(ev, sample_time);
 	}
 
 	if (pl.flag == 1)
@@ -216,6 +233,10 @@ int main(int argc, const char **argv)
 	{
 		update_fullSOC_or_overtime_EM_inPole(em, sample_time);
 	}
+	if (ev.flag)
+	{
+		update_fullSOC_or_overtime_EV_inPole(ev, sample_time);
+	}
 	
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET value = (SELECT A%d FROM GHEMS_control_status where equip_name = '%s') WHERE parameter_name = 'now_SOC'", sample_time, ess.str_SOC.c_str());
 	sent_query();
@@ -229,6 +250,8 @@ int main(int argc, const char **argv)
 	if (sample_time == 95)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET `value` = '0' WHERE `parameter_name` = 'EM_generate_random_user_result'");
+		sent_query();
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET `value` = '0' WHERE `parameter_name` = 'EV_generate_random_user_result'");
 		sent_query();
 	}
 

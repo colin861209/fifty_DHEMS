@@ -549,7 +549,7 @@ void setting_GLPK_columnBoundary(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUB
 	}
 }
 
-int determine_realTimeOrOneDayMode_andGetSOC(ENERGYSTORAGESYSTEM &ess, ELECTRICMOTOR em, int real_time, vector<string> variable_name)
+int determine_realTimeOrOneDayMode_andGetSOC(ENERGYSTORAGESYSTEM &ess, ELECTRICMOTOR em, ELECTRICVEHICLE ev, int real_time, vector<string> variable_name)
 {
 	// 'Realtime mode' if same day & real time = 1;
 	// 'One day mode' =>
@@ -605,6 +605,35 @@ int determine_realTimeOrOneDayMode_andGetSOC(ENERGYSTORAGESYSTEM &ess, ELECTRICM
 			else
 			{
 				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_user_result` SET `Departure_SOC` = NULL, `Real_departure_timeblock` = NULL");
+				sent_query();
+			}
+		}
+
+		if (ev.flag)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE `EV_chargingOrDischarging_status`");
+			sent_query();
+
+			// Reset columns which record related ev power after optimization
+			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_user_number` SET `total_power` = '0', `normal_power` = '0', `discharge_normal_power` = '0', `fast_power` = '0', `super_fast_power` = '0';");
+			sent_query();
+
+			// make sure EV pole is no users using
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `EV_Pole` WHERE `number` IS NOT NULL"); 
+			if (turn_value_to_int(0) != 0)
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `number` = NULL, `sure` = '0', `charging_status` = '0', `discharge_status` = '0', `full` = '0', `wait` = '0', `SOC` = NULL, `BAT_CAP` = NULL, `Start_timeblock` = NULL, `Departure_timeblock` = NULL;");
+				sent_query();
+			}
+			// TRUNCATE EV result table
+			if (ev.generate_result_flag)
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE `EV_user_result`");
+				sent_query();
+			}
+			else
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_user_result` SET `Departure_SOC` = NULL, `Real_departure_timeblock` = NULL");
 				sent_query();
 			}
 		}
@@ -1190,6 +1219,117 @@ void update_fullSOC_or_overtime_EM_inPole(ELECTRICMOTOR em, int sample_time)
 	sent_query();
 }
 
+void update_fullSOC_or_overtime_EV_inPole(ELECTRICVEHICLE ev, int sample_time)
+{
+	functionPrint(__func__);
+
+	float normal_power = 0.0, discharge_normal_power = 0.0;
+	
+	for (int i = 0; i < ev.total_charging_pole; i++)
+	{
+		// check each pole is allowed charging or discharging, update SOC
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `Pole_ID`, `number`, `sure`, `charging_status`, `discharge_status`, `full`, `wait`, `SOC`, `BAT_CAP`, `P_charging_pole`, `Departure_timeblock` FROM `EV_Pole` WHERE EV_Pole.id = '%d'", i + 1);
+		fetch_row_value();
+		int pole_id = turn_int(0);
+		int number = turn_int(1);
+		bool allow_chargeOrDischarge = turn_int(2);
+		bool charging_status = turn_int(3);
+		bool discharging_status = turn_int(4);
+		bool SOC_full = turn_int(5);
+		int wait = turn_int(6);
+		float SOC = turn_float(7);
+		float charging_pole_power = turn_float(9);
+		float departure_timeblock = turn_float(10);
+		float BAT_capacity = turn_float(8);
+		
+		if (allow_chargeOrDischarge)
+		{
+			// charging now, vehicle SOC increase
+			if (charging_status)
+			{
+				normal_power += charging_pole_power;
+				
+				SOC += (charging_pole_power * 0.25) / BAT_capacity;
+				if (SOC >= ev.MAX_SOC)
+				{
+					SOC = ev.MAX_SOC;
+					if (i < ev.charging_power)
+					{
+						if (ev.can_discharge)
+							snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `SOC` = %.3f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+						else
+							snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `sure` = 0, `charging_status` = '0', `full` = 1, `SOC` = %.3f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+						sent_query();
+					}
+				}
+				else
+				{
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `SOC` = %.3f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+					sent_query();
+				}
+			}
+			// normal pole discharging now, vehicle SOC decrease
+			else if (discharging_status)
+			{
+				discharge_normal_power -= charging_pole_power;
+
+				SOC -= (charging_pole_power * 0.25) / BAT_capacity;
+				if (SOC <= ev.MIN_SOC)
+				{
+					SOC = ev.MIN_SOC;
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `SOC` = %.3f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+					sent_query();
+				}
+				else
+				{
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `SOC` = %.3f WHERE `Pole_ID` = '%d' ", SOC, pole_id);
+					sent_query();
+				}
+			}	
+			
+			// vehicle charging times up, set full = 1, and determine later
+			if (departure_timeblock - 1 <= sample_time)
+			{
+				// setting correspond pole id not to charge or discharge
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `sure` = '0', `charging_status` = '0' , `discharge_status` = '0', `full` = '1', `SOC` = '%.3f' WHERE `Pole_ID` = %d;", SOC, pole_id);
+				sent_query();
+			}
+		}
+		
+		// check full flag, and start decrease wait (stay time) until become 0 
+		if (SOC_full)
+		{
+			if (departure_timeblock <= sample_time)
+			{
+				if (wait == 0)
+				{
+					// clean pole and record result
+					empty_charging_pole("EV_Pole", pole_id);
+					record_vehicle_result("EV_user_result", SOC, sample_time, number);
+				}
+				else
+				{
+					wait--;
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_Pole` SET `wait` = '%d' WHERE `Pole_ID` = %d;", wait, pole_id);
+					sent_query();
+				}
+			}
+		}
+		if (sample_time == 95)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `number` FROM `EV_Pole` WHERE `id` = '%d'", i + 1);
+			int number = turn_value_to_int(0);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `SOC` FROM `EV_Pole` WHERE `id` = '%d'", i + 1);
+			float SOC = turn_value_to_float(0);
+			empty_charging_pole("EV_Pole", pole_id);
+			record_vehicle_result("EV_user_result", SOC, sample_time, number);
+		}
+	}
+
+	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EV_user_number` SET `total_power` = %.2f, `normal_power` = '%.2f',`discharge_normal_power` = '%.2f' WHERE `timeblock` = '%d'", normal_power, normal_power, discharge_normal_power, sample_time);
+	sent_query();
+}
+
 // Contained in 'update_fullSOC_or_overtime_EM_inPole'
 void record_vehicle_result(string table, float SOC, int sample_time, int number)
 {
@@ -1280,6 +1420,71 @@ int enter_newEMInfo_inPole(ELECTRICMOTOR em, int sample_time)
 	return turn_value_to_int(0);
 }
 
+int enter_newEVInfo_inPole(ELECTRICVEHICLE ev, int sample_time)
+{
+	functionPrint(__func__);
+
+	// count normal not using charging pole id
+	vector<int> empty_pole, usingNow_pole;
+	for (int i = 0; i < ev.total_charging_pole; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `Pole_ID` FROM `EV_Pole` WHERE `id` = '%d'", i + 1);
+		int pole_id = turn_value_to_int(0);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `sure` FROM `EV_Pole` WHERE `id` = '%d'", i + 1);
+		bool allow_chargeOrDischarge = turn_value_to_int(0);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `full` FROM `EV_Pole` WHERE `id` = '%d'", i + 1);
+		bool SOC_full = turn_value_to_int(0);
+
+		if (allow_chargeOrDischarge || SOC_full)
+			usingNow_pole.push_back(pole_id);
+		else
+			empty_pole.push_back(pole_id);
+	}
+	
+	// get current timeblock will enter how many new EM and number
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `user_number` FROM `EV_user_number` WHERE `timeblock` = '%d'", sample_time);
+	int EV_amount = turn_value_to_int(0);
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(user_number) FROM `EV_user_number` WHERE `timeblock` < '%d'", sample_time);
+	int start_number = turn_value_to_int(0);
+	
+	// When sample_time=0 start_number will return -999, so set start number = 0
+	if (start_number == -999) {start_number = 0;}
+	// get which type and how many user will get in parking lot in this timeblock
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(`capacity(kWh)`) FROM `EV_motor_type`");
+	int type_count = turn_value_to_int(0);
+	vector<float> capacity;
+	vector<int> type_id, user;
+	for (int i = 0; i < type_count; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `type_%d` FROM `EV_wholeDay_userChargingNumber` WHERE `timeblock` = '%d';", i, sample_time);
+		user.push_back(turn_value_to_int(0));
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `capacity(kWh)` FROM `EV_motor_type` WHERE `id` = %d", i);
+		capacity.push_back(turn_value_to_float(0));
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `id` FROM `EV_motor_type` WHERE `id` = %d", i);
+		type_id.push_back(turn_value_to_int(0));
+	}
+	
+	if (ev.generate_result_flag)
+	{
+		messagePrint(__LINE__, "Generate random vehicle result", 'S', 0, 'Y');
+		int soc_mean = value_receive("EV_Parameter_of_randomResult", "parameter_name", "soc_mean");
+		int soc_variance = value_receive("EV_Parameter_of_randomResult", "parameter_name", "soc_variance");
+		int time_mean = value_receive("EV_Parameter_of_randomResult", "parameter_name", "time_mean");
+		int time_variance = value_receive("EV_Parameter_of_randomResult", "parameter_name", "time_variance");
+		int wait_mean = value_receive("EV_Parameter_of_randomResult", "parameter_name", "wait_mean");
+		int wait_variance = value_receive("EV_Parameter_of_randomResult", "parameter_name", "wait_variance");
+		
+		generate_vehicle_result(ev, "EV_user_result", EV_amount, time_mean, time_variance, soc_mean, soc_variance, wait_mean, wait_variance, start_number, user, capacity, type_id, empty_pole, sample_time);
+	}
+	else
+	{
+		messagePrint(__LINE__, "Fetch vehicle result", 'S', 0, 'Y');
+		fetch_vehicle_result("EV_user_result", EV_amount, start_number, empty_pole, sample_time);
+	}
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `EV_Pole` WHERE `sure` = 1");
+	return turn_value_to_int(0);
+}
+
 // Contained in 'enter_newEMInfo_inPole'
 void generate_vehicle_result(ELECTRICMOTOR em, string table, int EM_amount, int time_mean, int time_variance, int soc_mean, int soc_variance, int wait_mean, int wait_variance, int start_number, vector<int> user, vector<float> capacity, vector<int> type_id, vector<int> empty_pole, int sample_time)
 {
@@ -1298,15 +1503,13 @@ void generate_vehicle_result(ELECTRICMOTOR em, string table, int EM_amount, int 
 			float BAT_capacity = 0.0;
 			// FIXME: always insert the same type vehicle
 			// decide which type vehicle to insert
-			if (table == "EM_user_result")
-			{
-				if (/*x == 0 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
-				if (/*x == 1 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
-				if (/*x == 2 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
-				if (/*x == 3 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
-				if (/*x == 4 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
-				if (/*x == 5 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
-			}
+
+			if (/*x == 0 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+			if (/*x == 1 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+			if (/*x == 2 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+			if (/*x == 3 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+			if (/*x == 4 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
+			if (/*x == 5 &&*/ user[x] != 0) {BAT_capacity = capacity[x]; user[x] -= 1; type_num = type_id[x]; goto decide_type;} else {x++;}
 
 			decide_type:
 			int start_timeblock = sample_time;
@@ -1322,6 +1525,65 @@ void generate_vehicle_result(ELECTRICMOTOR em, string table, int EM_amount, int 
 			if (rand_wait < 0) {rand_wait = 1;}
 
 			enter_charging_pole("EM_Pole", "EM_chargingOrDischarging_status", start_number+i+1, rand_wait, rand_SOC, BAT_capacity, start_timeblock, departure_timeblock, empty_pole[i]);
+			insert_vehicle_result(table, empty_pole[i], start_number+i+1, type_num, BAT_capacity, start_timeblock, rand_SOC, departure_timeblock, rand_wait);
+			
+			empty_pole_amount--;
+		}
+		else
+		{
+			insert_vehicle_result(table, 0, start_number+i+1, 0, 0, sample_time, 0, 0, 0);
+		}
+	}
+}
+
+void generate_vehicle_result(ELECTRICVEHICLE ev, string table, int EV_amount, int time_mean, int time_variance, int soc_mean, int soc_variance, int wait_mean, int wait_variance, int start_number, vector<int> user, vector<float> capacity, vector<int> type_id, vector<int> empty_pole, int sample_time)
+{
+	int x = 0, type_num = 0;
+	int empty_pole_amount = empty_pole.size();
+	mt19937 generator(time(NULL));
+
+	// current timeblock will enter 'EV_amount' new EM and number
+	for (int i = 0; i < EV_amount; i++)
+	{
+		if (empty_pole_amount > 0)
+		{
+			normal_distribution<float> time_dis(time_mean, time_variance);
+			normal_distribution<float> soc_dis(soc_mean, soc_variance);
+			normal_distribution<float> wait_dis(wait_mean, wait_variance);
+			float BAT_capacity = 0.0;
+			// FIXME: always insert the same type vehicle
+			// decide which type vehicle to insert
+			
+			do
+			{
+				if (user[x] != 0)
+				{
+					BAT_capacity = capacity[x];
+					user[x] -= 1;
+					type_num = type_id[x];
+					goto decide_type;
+				}
+				else
+				{
+					x++;
+				}
+			} while (1);
+
+
+			decide_type:
+			int start_timeblock = sample_time;
+			int rand_parktime = time_dis(generator);
+			int rand_wait = wait_dis(generator);
+			float rand_SOC = soc_dis(generator) / 100;
+
+			if (rand_SOC < ev.MIN_SOC) {rand_SOC = ev.MIN_SOC;}
+			if (rand_SOC > ev.threshold_SOC) {rand_SOC = ev.threshold_SOC;}
+			if (rand_parktime <= 0) {rand_parktime = time_mean + time_variance;}
+			float departure_timeblock = start_timeblock + rand_parktime;
+			if (departure_timeblock > 95) {departure_timeblock = 95;}
+			if (rand_wait < 0) {rand_wait = 1;}
+
+			enter_charging_pole("EV_Pole", "EV_chargingOrDischarging_status", start_number+i+1, rand_wait, rand_SOC, BAT_capacity, start_timeblock, departure_timeblock, empty_pole[i]);
 			insert_vehicle_result(table, empty_pole[i], start_number+i+1, type_num, BAT_capacity, start_timeblock, rand_SOC, departure_timeblock, rand_wait);
 			
 			empty_pole_amount--;
