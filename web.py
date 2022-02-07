@@ -95,6 +95,7 @@ class Xpath:
         self.GHEMS_SOC = '//*[@id="SOCVsLoad"]'
         self.GHEMS_loadModel = '//*[@id="loadModel"]'
         self.GHEMS_EMchargingSOC = '//*[@id="EMchargingSOC"]'
+        self.GHEMS_EMchargingSOC = '//*[@id="EVchargingSOC"]'
         self.GHEMS_table = '/html/body/table'
         self.LHEMS_loadSum = '//*[@id="households_loadsSum"]'
         self.auto_run = '//*[@id="auto"]'
@@ -126,6 +127,8 @@ class Xpath:
         self.baseParameter_table_simulate_weather = '//*[@id="simulate_weather"]'
         self.baseParameter_table_simulate_price = '//*[@id="simulate_price"]'
         self.baseParameter_table_simulate_history_weather = '//*[@id="simulate_history_weather"]'
+        self.baseParameter_table_EV_flag = '//*[@id="ElectricVehicle"]'
+        self.baseParameter_table_EM_flag = '//*[@id="ElectricMotor"]'
 
 class WEBDRIVER:
     def __init__(self, url, savingFolder="", screenshot_path = "") -> None:
@@ -138,6 +141,8 @@ class WEBDRIVER:
         self.DHEMSFifty="DHEMS_FiftyHousehold"
         self.user_value="root"
         self.password_value="fuzzy314"
+        self.EV_flag=""
+        self.EM_flag=""
         # setting driver then open browser
         options = Options()
         options.add_argument('--headless')
@@ -246,6 +251,8 @@ class WEBDRIVER:
                 element = self.chrome.find_element_by_xpath(xpath.GHEMS_loadModel)
             elif "_EMchargingSOC" in file:
                 element = self.chrome.find_element_by_xpath(xpath.GHEMS_EMchargingSOC)
+            elif "_EVchargingSOC" in file:
+                element = self.chrome.find_element_by_xpath(xpath.GHEMS_EMchargingSOC)
             elif "_table" in file:
                 element = self.chrome.find_element_by_xpath(xpath.GHEMS_table)
             self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
@@ -272,7 +279,9 @@ class WEBDRIVER:
         self.chrome.execute_script("document.documentElement.scrollTop=10000")
         self.chrome.find_element_by_xpath(xpath.baseParameter_table).click()
         self.chrome.execute_script("document.documentElement.scrollTop=10000")
-        
+        self.EM_flag = self.chrome.find_element_by_xpath(xpath.baseParameter_table_EM_flag)
+        self.EV_flag = self.chrome.find_element_by_xpath(xpath.baseParameter_table_EV_flag)
+
         SOC_threshold = self.chrome.find_element_by_xpath(xpath.baseParameter_table_SOCthresh).get_attribute("value")
         dr_mode = self.chrome.find_element_by_xpath(xpath.baseParameter_table_dr_mode).get_attribute("value")
         price = self.chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_price).get_attribute("value")
@@ -350,12 +359,15 @@ if __name__ == "__main__":
     ## screenshot_file: name of the file                         ##
     ## choose_DHEMS_DB: 'DHEMS group' Process                    ##
     ###############################################################
-    webpage = WEBDRIVER(url.DHEMS_web_baseParameter, savingFolder="10.EM\\discharging\\")
+    webpage = WEBDRIVER(url.DHEMS_web_baseParameter, savingFolder="12.EMEV\\both_discharging\\")
     webpage.screenshot_file("LHEMS.jpg")
     webpage.screenshot_file("GHEMS_Price.jpg")
     webpage.screenshot_file("GHEMS_SOC.jpg")
     webpage.screenshot_file("GHEMS_loadModel.jpg")
-    webpage.screenshot_file("GHEMS_EMchargingSOC.jpg")
+    if bool(xpath.baseParameter_table_EM_flag):
+        webpage.screenshot_file("GHEMS_EMchargingSOC.jpg")
+    if bool(xpath.baseParameter_table_EV_flag):
+        webpage.screenshot_file("GHEMS_EVchargingSOC.jpg")
     webpage.screenshot_file("GHEMS_table.jpg")
     webpage.screenshot_everyHousehold_eachLoad_file()
 
@@ -372,13 +384,15 @@ if __name__ == "__main__":
 
     db.exportTable(xpath.text_totalLoad_model)
     # EM table
-    db.exportTable(xpath.text_EM_Parameter)
-    db.exportTable(xpath.text_EM_user_number)
-    db.exportTable(xpath.text_EM_user_result)
-    db.exportTable(xpath.text_EM_chargingOrDischarging_status)
+    if bool(xpath.baseParameter_table_EM_flag):
+        db.exportTable(xpath.text_EM_Parameter)
+        db.exportTable(xpath.text_EM_user_number)
+        db.exportTable(xpath.text_EM_user_result)
+        db.exportTable(xpath.text_EM_chargingOrDischarging_status)
     # EV table
-    db.exportTable(xpath.text_EV_Parameter)
-    db.exportTable(xpath.text_EV_user_number)
-    db.exportTable(xpath.text_EV_user_result)
-    db.exportTable(xpath.text_EV_chargingOrDischarging_status)
+    if bool(xpath.baseParameter_table_EV_flag):
+        db.exportTable(xpath.text_EV_Parameter)
+        db.exportTable(xpath.text_EV_user_number)
+        db.exportTable(xpath.text_EV_user_result)
+        db.exportTable(xpath.text_EV_chargingOrDischarging_status)
     print(f"//--------------- {time()-start_time} ---------------\\")
