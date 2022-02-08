@@ -19,10 +19,11 @@ void pessNegative_smallerThan_oneMinusZMultiplyByPdischargeMax(ENERGYSTORAGESYST
 void pessPositiveMinusPessNegative_equalTo_Pess(ENERGYSTORAGESYSTEM ess, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // balance function
-void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEM(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEMPlusPchargingEV(ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float *solar2, float *load_model, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // demand response
 void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs(DEMANDRESPONSE dr, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void summation_EMEVPcharge_smallerThan_PgridPlusPessPlusPpv(float *solar2, vector<float> Pgrid_max_array, ENERGYSTORAGESYSTEM ess, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // fuel cell 
 void pfcOnPlusPfcOff_equalTo_pfuelCell(float **coefficient, glp_prob *mip, int row_num_maxAddition);
@@ -47,5 +48,11 @@ void EM_Rdischarging_smallerThan_oneMinusMu(ELECTRICMOTOR em, float **coefficien
 void EM_previousSOCPlusPchargeMinusPdischargeTransToSOC_biggerThan_SOCmin(ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void EM_previousSOCPlusSummationPchargeMinusPdischargeTransToSOC_biggerThan_SOCthreshold(ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
-void setting_GHEMS_ObjectiveFunction(DEMANDRESPONSE dr, ELECTRICMOTOR em, float* price, glp_prob *mip);
+// EV
+void EV_Rcharging_smallerThan_mu(ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void EV_Rdischarging_smallerThan_oneMinusMu(ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void EV_previousSOCPlusPchargeMinusPdischargeTransToSOC_biggerThan_SOCmin(ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void EV_previousSOCPlusSummationPchargeMinusPdischargeTransToSOC_biggerThan_SOCthreshold(ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+
+void setting_GHEMS_ObjectiveFunction(DEMANDRESPONSE dr, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float* price, glp_prob *mip);
 #endif

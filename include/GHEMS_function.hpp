@@ -66,8 +66,8 @@ typedef struct
 int determine_realTimeOrOneDayMode_andGetSOC(ENERGYSTORAGESYSTEM &ess, ELECTRICMOTOR em, ELECTRICVEHICLE ev, int real_time, vector<string> variable_name);
 float *getOrUpdate_SolarInfo_ThroughSampleTime(const char *weather);
 void updateTableCost(float *totalLoad, float *totalLoad_price, float *real_grid_pirce, float *publicLoad, float *publicLoad_price, float *fuelCell_kW_price, float *Hydrogen_g_consumption, float *real_sell_pirce, float *demandResponse_feedback, float totalLoad_sum, float totalLoad_priceSum, float real_grid_pirceSum, float publicLoad_sum, float publicLoad_priceSum, float fuelCell_kW_priceSum, float Hydrogen_g_consumptionSum, float real_sell_pirceSum, float totalLoad_taipowerPriceSum, float demandResponse_feedbackSum);
-void optimization(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, float *load_model, float *price);
-void setting_GLPK_columnBoundary(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, vector<string> variable_name, vector<float> Pgrid_max_array, glp_prob *mip);
+void optimization(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, vector<string> variable_name, vector<float> Pgrid_max_array, float *load_model, float *price);
+void setting_GLPK_columnBoundary(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, vector<string> variable_name, vector<float> Pgrid_max_array, glp_prob *mip);
 void calculateCostInfo(DEMANDRESPONSE dr, PUBLICLOAD pl, float *price, bool Pgrid_flag, bool Psell_flag, bool Pess_flag, bool Pfc_flag);
 void updateSingleHouseholdCost(DEMANDRESPONSE dr);
 void insert_GHEMS_variable(ENERGYSTORAGESYSTEM ess);
@@ -88,7 +88,7 @@ void record_vehicle_result(string table, float SOC, int sample_time, int number)
 void empty_charging_pole(string table, int pole_id);
 void generate_vehicle_result(ELECTRICMOTOR em, string table, int EM_amount, int time_mean, int time_variance, int soc_mean, int soc_variance, int wait_mean, int wait_variance, int start_number, vector<int> user, vector<float> capacity, vector<int> type_id, vector<int> empty_pole, int sample_time);
 void generate_vehicle_result(ELECTRICVEHICLE ev, string table, int EV_amount, int time_mean, int time_variance, int soc_mean, int soc_variance, int wait_mean, int wait_variance, int start_number, vector<int> user, vector<float> capacity, vector<int> type_id, vector<int> empty_pole, int sample_time);
-void fetch_vehicle_result(string table, int EM_amount, int start_number, vector<int> empty_pole, int sample_time);
+void fetch_vehicle_result(string result_table, string pole_table, string cdstatus_table, int EM_amount, int start_number, vector<int> empty_pole, int sample_time);
 void enter_charging_pole(string pole_table, string cdstatus_table, int number, int wait, float SOC, float BAT_capacity, int start_timeblock, int departure_timeblock, int pole_id);
 void insert_vehicle_result(string table, int Pole_ID, int number, int type, float BAT_CAP, int start_timeblock, float start_SOC, int original_departure_timeblock, int wait);
 #endif

@@ -54,6 +54,7 @@ int main(int argc, const char **argv)
 
 	// =-=-=-=-=-=-=- we suppose that enerage appliance in community should same as the single appliance times household amount -=-=-=-=-=-=-= //
 	time_block = parameter_tmp[0];
+	// TODO: ess and max grid power should be discuss then update
 	ess.voltage = parameter_tmp[2] * parameter_tmp[1];
 	ess.capacity = parameter_tmp[3];
 	ess.MIN_SOC = parameter_tmp[4];
@@ -61,7 +62,7 @@ int main(int argc, const char **argv)
 	ess.threshold_SOC = parameter_tmp[6];
 	ess.MIN_power = parameter_tmp[7] * parameter_tmp[1];
 	ess.MAX_power = parameter_tmp[8] * parameter_tmp[1];
-	Pgrid_max = parameter_tmp[9] * parameter_tmp[1];
+	Pgrid_max = parameter_tmp[9] * parameter_tmp[1] + 100 + 120;
 	Psell_max = parameter_tmp[10] * parameter_tmp[1];
 	Pfc_max = parameter_tmp[11] * parameter_tmp[1];
 	real_time = (int)parameter_tmp[12];
@@ -113,11 +114,11 @@ int main(int argc, const char **argv)
 	if (ev.flag)
 	{
 		ev.total_charging_pole = value_receive("EV_Parameter", "parameter_name", "Total_Charging_Pole");
-		ev.charging_power = value_receive("EV_Parameter", "parameter_name", "Normal_Charging_power", 'F');
+		ev.charging_power = value_receive("EV_Parameter", "parameter_name", "Charging_power", 'F');
 		ev.MAX_SOC = value_receive("EV_Parameter", "parameter_name", "EM_Upper_SOC", 'F');
 		ev.threshold_SOC = value_receive("EV_Parameter", "parameter_name", "EM_threshold_SOC", 'F');
 		ev.MIN_SOC = value_receive("EV_Parameter", "parameter_name", "EM_Lower_SOC", 'F');
-		ev.can_discharge = value_receive("EM_Parameter", "parameter_name", "Vehicle_can_discharge");
+		ev.can_discharge = value_receive("EV_Parameter", "parameter_name", "Vehicle_can_discharge");
 		ev.generate_result_flag = value_receive("BaseParameter", "parameter_name", "EV_generate_random_user_result");
 	}
 	// determine realtime mode should after getting above related parameter
@@ -197,6 +198,18 @@ int main(int argc, const char **argv)
 				variable_name.push_back(em.str_mu + to_string(i + 1));
 		}
 	}
+	if (ev.flag)
+	{
+		for (int i = 0; i < ev.can_charge_amount; i++)
+			variable_name.push_back(ev.str_charging + to_string(i + 1));
+		if (ev.can_discharge)
+		{
+			for (int i = 0; i < ev.can_charge_amount; i++)
+				variable_name.push_back(ev.str_discharging + to_string(i + 1));
+			for (int i = 0; i < ev.can_charge_amount; i++)
+				variable_name.push_back(ev.str_mu + to_string(i + 1));
+		}
+	}
 	variable = variable_name.size();
 
 	// =-=-=-=-=-=-=- get electric price data -=-=-=-=-=-=-= //
@@ -225,15 +238,15 @@ int main(int argc, const char **argv)
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = '%d-%02d-%02d' WHERE parameter_name = 'lastTime_execute' ", now_time.tm_year + 1900, now_time.tm_mon + 1, now_time.tm_mday);
 	sent_query();
 
-	optimization(ess, dr, pl, em, variable_name, Pgrid_max_array, load_model, price);
+	optimization(ess, dr, pl, em, ev, variable_name, Pgrid_max_array, load_model, price);
 	calculateCostInfo(dr, pl, price, Pgrid_flag, Psell_flag, ess.flag, Pfc_flag);
 	updateSingleHouseholdCost(dr);
 	
-	if (em.flag)
+	if (em.flag && em.can_charge_amount)
 	{
 		update_fullSOC_or_overtime_EM_inPole(em, sample_time);
 	}
-	if (ev.flag)
+	if (ev.flag && ev.can_charge_amount)
 	{
 		update_fullSOC_or_overtime_EV_inPole(ev, sample_time);
 	}
