@@ -16,8 +16,8 @@ extern bool Pgrid_flag, mu_grid_flag, Psell_flag, Pfc_flag, interruptLoad_flag, 
 typedef struct 
 {
 	bool flag;
-	float voltage;
 	float capacity;
+	float battery_rate;
 	float INIT_SOC;
 	float MIN_SOC;
 	float MAX_SOC;

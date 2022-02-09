@@ -587,11 +587,11 @@ void setting_GLPK_columnBoundary(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUB
 			glp_set_col_kind(mip, (find_variableName_position(variable_name, ess.str_Z) + 1 + i * variable), GLP_BV);
 			if (SOC_change_flag)
 			{
-				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_change") + 1 + i * variable), GLP_DB, (-ess.MIN_power * delta_T) / (ess.capacity * ess.voltage), (ess.MAX_power * delta_T) / (ess.capacity * ess.voltage));
+				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_change") + 1 + i * variable), GLP_DB, (-ess.MIN_power * delta_T) / ess.capacity, (ess.MAX_power * delta_T) / ess.capacity);
 				glp_set_col_kind(mip, (find_variableName_position(variable_name, "SOC_change") + 1 + i * variable), GLP_CV);
-				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_increase") + 1 + i * variable), GLP_DB, 0.0, (ess.MAX_power * delta_T) / (ess.capacity * ess.voltage));
+				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_increase") + 1 + i * variable), GLP_DB, 0.0, (ess.MAX_power * delta_T) / ess.capacity);
 				glp_set_col_kind(mip, (find_variableName_position(variable_name, "SOC_increase") + 1 + i * variable), GLP_CV);
-				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_decrease") + 1 + i * variable), GLP_DB, 0.0, (ess.MIN_power * delta_T) / (ess.capacity * ess.voltage));
+				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_decrease") + 1 + i * variable), GLP_DB, 0.0, (ess.MIN_power * delta_T) / ess.capacity);
 				glp_set_col_kind(mip, (find_variableName_position(variable_name, "SOC_decrease") + 1 + i * variable), GLP_CV);
 				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_Z") + 1 + i * variable), GLP_DB, 0.0, 1.0);
 				glp_set_col_kind(mip, (find_variableName_position(variable_name, "SOC_Z") + 1 + i * variable), GLP_BV);
@@ -1099,7 +1099,7 @@ void updateSingleHouseholdCost(DEMANDRESPONSE dr)
 void insert_GHEMS_variable(ENERGYSTORAGESYSTEM ess)
 {
 	functionPrint(__func__);
-	messagePrint(__LINE__, "Vsys = ", 'F', ess.voltage, 'Y');
+	messagePrint(__LINE__, "Vsys = ", 'F', ess.battery_rate, 'Y');
 	messagePrint(__LINE__, "Cbat = ", 'F', ess.capacity, 'Y');
 	messagePrint(__LINE__, "Pbat_min = ", 'F', ess.MIN_power, 'Y');
 	messagePrint(__LINE__, "Pbat_max = ", 'F', ess.MAX_power, 'Y');
@@ -1107,8 +1107,8 @@ void insert_GHEMS_variable(ENERGYSTORAGESYSTEM ess)
 	messagePrint(__LINE__, "Psell_max = ", 'F', Psell_max, 'Y');
 	messagePrint(__LINE__, "Pfc_max = ", 'F', Pfc_max, 'Y');
 
-	string ghems_variable = "`Vsys`, `Cbat`, `Pbat_min`, `Pbat_max`, `Pgrid_max`, `Psell_max`, `Pfc_max`, `datetime`";
-	snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `GHEMS_variable` (%s) VALUES ( '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', CURRENT_TIMESTAMP)", ghems_variable.c_str(), ess.voltage, ess.capacity, ess.MIN_power, ess.MAX_power, Pgrid_max, Psell_max, Pfc_max);
+	string ghems_variable = "`battery_rate`, `Cbat`, `Pbat_min`, `Pbat_max`, `Pgrid_max`, `Psell_max`, `Pfc_max`, `datetime`";
+	snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `GHEMS_variable` (%s) VALUES ( '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', CURRENT_TIMESTAMP)", ghems_variable.c_str(), ess.battery_rate, ess.capacity, ess.MIN_power, ess.MAX_power, Pgrid_max, Psell_max, Pfc_max);
 	sent_query();
 }
 

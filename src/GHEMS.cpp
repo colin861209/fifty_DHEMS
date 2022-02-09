@@ -45,29 +45,20 @@ int main(int argc, const char **argv)
 		messagePrint(__LINE__, "Success to Connect MySQL");
 
 	// =-=-=-=-=-=-=- get parameter values from BaseParameter in need -=-=-=-=-=-=-= //
-	vector<float> parameter_tmp;
-	parameter_tmp.push_back(value_receive("BaseParameter", "parameter_name", "time_block", 'F'));
-	parameter_tmp.push_back(value_receive("BaseParameter", "parameter_name", "householdAmount", 'F'));
-	for (int i = 9; i <= 18; i++)
-		parameter_tmp.push_back(value_receive("BaseParameter", "parameter_id", i, 'F'));
-	parameter_tmp.push_back(value_receive("BaseParameter", "parameter_name", "Global_real_time"));
-
-	// =-=-=-=-=-=-=- we suppose that enerage appliance in community should same as the single appliance times household amount -=-=-=-=-=-=-= //
-	time_block = parameter_tmp[0];
-	// TODO: ess and max grid power should be discuss then update
-	ess.voltage = parameter_tmp[2] * parameter_tmp[1];
-	ess.capacity = parameter_tmp[3];
-	ess.MIN_SOC = parameter_tmp[4];
-	ess.MAX_SOC = parameter_tmp[5];
-	ess.threshold_SOC = parameter_tmp[6];
-	ess.MIN_power = parameter_tmp[7] * parameter_tmp[1];
-	ess.MAX_power = parameter_tmp[8] * parameter_tmp[1];
-	Pgrid_max = parameter_tmp[9] * parameter_tmp[1] + 100 + 120;
-	Psell_max = parameter_tmp[10] * parameter_tmp[1];
-	Pfc_max = parameter_tmp[11] * parameter_tmp[1];
-	real_time = (int)parameter_tmp[12];
-
-	divide = (time_block / 24);
+	// we suppose that enerage appliance in community should same as the single appliance times household amount
+	time_block = value_receive("BaseParameter", "parameter_name", "time_block", 'F');
+	int householdAmount = value_receive("BaseParameter", "parameter_name", "householdAmount");
+	ess.capacity = value_receive("BaseParameter", "parameter_name", "Cbat", 'F') * householdAmount;
+	ess.battery_rate = value_receive("BaseParameter", "parameter_name", "battery_rate", 'F');
+	ess.MIN_SOC = value_receive("BaseParameter", "parameter_name", "SOCmin", 'F');
+	ess.MAX_SOC = value_receive("BaseParameter", "parameter_name", "SOCmax", 'F');
+	ess.threshold_SOC = value_receive("BaseParameter", "parameter_name", "SOCthres", 'F');
+	ess.MIN_power = ess.capacity * ess.battery_rate;
+	ess.MAX_power = ess.capacity * ess.battery_rate;
+	Pgrid_max = value_receive("BaseParameter", "parameter_name", "Pgridmax", 'F') * householdAmount;
+	Psell_max = value_receive("BaseParameter", "parameter_name", "Psellmax", 'F') * householdAmount;
+	Pfc_max = value_receive("BaseParameter", "parameter_name", "Pfcmax", 'F') * householdAmount;
+	real_time = value_receive("BaseParameter", "parameter_name", "Global_real_time");	divide = (time_block / 24);
 	delta_T = 1.0 / (float)divide;
 	point_num = 6;
 	piecewise_num = point_num - 1;
@@ -231,7 +222,7 @@ int main(int argc, const char **argv)
 		{
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_control_status` WHERE equip_name = '%s' ", i + sample_time, dr.str_alpha.c_str());
 			float dr_weighting_sumOfAlpha = turn_value_to_float(0);
-			Pgrid_max_array.push_back(Pgrid_max / parameter_tmp[1] * dr_weighting_sumOfAlpha);
+			Pgrid_max_array.push_back(Pgrid_max / householdAmount * dr_weighting_sumOfAlpha);
 		}
 	}
 

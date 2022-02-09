@@ -33,27 +33,20 @@ int main(void)
 	else
 		messagePrint(__LINE__, "Success to Connect MySQL");
 
-	// =-=-=-=-=-=-=- get BaseParameter values -=-=-=-=-=-=-= //
-	float *base_par = new float[3 + 7];
-	for (int i = 1; i <= 3; i++)
-		base_par[i - 1] = value_receive("BaseParameter", "parameter_id", i);
-
-	for (int i = 9; i <= 15; i++)
-		base_par[i - 6] = value_receive("BaseParameter", "parameter_id", i, 'F');
-
+	// =-=-=-=-=-=-=- get BaseParameter values -=-=-=-=-=-=-= //	
 	comlv.flag = value_receive("BaseParameter", "parameter_name", "comfortLevel_flag");
-	time_block = base_par[0];
+	time_block = value_receive("BaseParameter", "parameter_name", "time_block");
 	// householdTotal / distributed_householdTotal	總用戶數 / 各組總用戶
 	// household_id	/ distributed_household_id		當前實際用戶 / 各組當前用戶
-	householdTotal = base_par[1];
-	distributed_householdTotal = base_par[1] / base_par[2];
-	ess.voltage = base_par[3];
-	ess.capacity = base_par[4];
-	ess.MIN_SOC = base_par[5];
-	ess.MAX_SOC = base_par[6];
-	ess.threshold_SOC = base_par[7];
-	ess.MIN_power = base_par[8];
-	ess.MAX_power = base_par[9];
+	householdTotal = value_receive("BaseParameter", "parameter_name", "householdAmount");
+	distributed_householdTotal = householdTotal / value_receive("BaseParameter", "parameter_name", "householdDistributed");
+	ess.capacity = value_receive("BaseParameter", "parameter_name", "Cbat", 'F');
+	ess.battery_rate = value_receive("BaseParameter", "parameter_name", "battery_rate", 'F');
+	ess.MIN_SOC = value_receive("BaseParameter", "parameter_name", "SOCmin", 'F');
+	ess.MAX_SOC = value_receive("BaseParameter", "parameter_name", "SOCmax", 'F');
+	ess.threshold_SOC = value_receive("BaseParameter", "parameter_name", "SOCthres", 'F');
+	ess.MIN_power = ess.capacity * ess.battery_rate;
+	ess.MAX_power = ess.capacity * ess.battery_rate;
 	divide = (time_block / 24);
 	delta_T = 1.0 / (float)divide;
 

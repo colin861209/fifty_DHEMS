@@ -132,10 +132,10 @@ void previousSOCPlusSummationPessTransToSOC_biggerThan_SOCthreshold(ENERGYSTORAG
     }
     glp_set_row_name(mip, bnd_row_num, "");
     if (sample_time == 0)
-        glp_set_row_bnds(mip, bnd_row_num, GLP_LO, ((ess.threshold_SOC - ess.INIT_SOC) * ess.capacity * ess.voltage) / delta_T, 0.0);
+        glp_set_row_bnds(mip, bnd_row_num, GLP_LO, ((ess.threshold_SOC - ess.INIT_SOC) * ess.capacity) / delta_T, 0.0);
 
     else
-        glp_set_row_bnds(mip, bnd_row_num, GLP_DB, ((ess.threshold_SOC - ess.INIT_SOC) * ess.capacity * ess.voltage) / delta_T, ((0.99 - ess.INIT_SOC) * ess.capacity * ess.voltage) / delta_T);
+        glp_set_row_bnds(mip, bnd_row_num, GLP_DB, ((ess.threshold_SOC - ess.INIT_SOC) * ess.capacity) / delta_T, ((0.99 - ess.INIT_SOC) * ess.capacity) / delta_T);
     // avoid the row max is bigger than SOC max
 
     coef_row_num += row_num_maxAddition;
@@ -153,10 +153,10 @@ void previousSOCPlusPessTransToSOC_equalTo_currentSOC(ENERGYSTORAGESYSTEM ess, f
         {
             coefficient[coef_row_num + i][j * variable + find_variableName_position(variable_name, ess.str_Pess)] = -1.0;
         }
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_SOC)] = ess.capacity * ess.voltage / delta_T;
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_SOC)] = ess.capacity / delta_T;
 
         glp_set_row_name(mip, (bnd_row_num + i), "");
-        glp_set_row_bnds(mip, (bnd_row_num + i), GLP_FX, (ess.INIT_SOC * ess.capacity * ess.voltage / delta_T), (ess.INIT_SOC * ess.capacity * ess.voltage / delta_T));
+        glp_set_row_bnds(mip, (bnd_row_num + i), GLP_FX, (ess.INIT_SOC * ess.capacity / delta_T), (ess.INIT_SOC * ess.capacity / delta_T));
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
@@ -828,7 +828,7 @@ void SOCPositive_smallerThan_SOCZMultiplyByPchargeMaxTransToSOC(ENERGYSTORAGESYS
     for (int i = 0; i < (time_block - sample_time); i++)
     {
         coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_increase")] = 1.0;
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_Z")] = -((ess.MAX_power * delta_T) / (ess.capacity * ess.voltage));
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_Z")] = -((ess.MAX_power * delta_T) / ess.capacity);
 
         glp_set_row_name(mip, (bnd_row_num + i), "");
         glp_set_row_bnds(mip, (bnd_row_num + i), GLP_UP, 0.0, 0.0);
@@ -845,10 +845,10 @@ void SOCNegative_smallerThan_oneMinusSOCZMultiplyByPdischargeMaxTransToSOC(ENERG
     for (int i = 0; i < (time_block - sample_time); i++)
     {
         coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_decrease")] = 1.0;
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_Z")] = ((ess.MIN_power * delta_T) / (ess.capacity * ess.voltage));
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_Z")] = ((ess.MIN_power * delta_T) / ess.capacity);
 
         glp_set_row_name(mip, (bnd_row_num + i), "");
-        glp_set_row_bnds(mip, (bnd_row_num + i), GLP_UP, 0.0, (ess.MIN_power * delta_T) / (ess.capacity * ess.voltage));
+        glp_set_row_bnds(mip, (bnd_row_num + i), GLP_UP, 0.0, (ess.MIN_power * delta_T) / ess.capacity);
     }
     coef_row_num += row_num_maxAddition;
     bnd_row_num += row_num_maxAddition;
@@ -862,7 +862,7 @@ void SOCchange_equalTo_PessTransToSOC(ENERGYSTORAGESYSTEM ess, float **coefficie
     for (int i = 0; i < (time_block - sample_time); i++)
     {
         coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "SOC_change")] = 1.0;
-        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_Pess)] = -delta_T / (ess.capacity * ess.voltage);
+        coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, ess.str_Pess)] = -delta_T / ess.capacity;
 
         glp_set_row_name(mip, (bnd_row_num + i), "");
         glp_set_row_bnds(mip, (bnd_row_num + i), GLP_FX, 0.0, 0.0);
