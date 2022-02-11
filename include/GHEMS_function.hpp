@@ -5,14 +5,6 @@
 #include <string>
 using namespace std;
 
-// common parameter
-extern int time_block, variable, divide, sample_time, point_num, piecewise_num;
-extern float delta_T;
-extern float Pgrid_max, Psell_max, Delta_battery, Pfc_max;
-
-// flag
-extern bool SOC_change_flag;
-
 typedef struct 
 {
 	bool flag;
@@ -63,18 +55,17 @@ typedef struct
 	string str_mu = "EV_mu";
 } ELECTRICVEHICLE;
 
-int determine_realTimeOrOneDayMode_andGetSOC(ENERGYSTORAGESYSTEM &ess, ELECTRICMOTOR em, ELECTRICVEHICLE ev, int real_time, vector<string> variable_name);
-float *getOrUpdate_SolarInfo_ThroughSampleTime(const char *weather);
-void updateTableCost(float *totalLoad, float *totalLoad_price, float *real_grid_pirce, float *publicLoad, float *publicLoad_price, float *fuelCell_kW_price, float *Hydrogen_g_consumption, float *real_sell_pirce, float *demandResponse_feedback, float totalLoad_sum, float totalLoad_priceSum, float real_grid_pirceSum, float publicLoad_sum, float publicLoad_priceSum, float fuelCell_kW_priceSum, float Hydrogen_g_consumptionSum, float real_sell_pirceSum, float totalLoad_taipowerPriceSum, float demandResponse_feedbackSum);
-void optimization(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, vector<string> variable_name, vector<float> Pgrid_max_array, float *load_model, float *price);
-void setting_GLPK_columnBoundary(ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, vector<string> variable_name, vector<float> Pgrid_max_array, glp_prob *mip);
-void calculateCostInfo(DEMANDRESPONSE dr, PUBLICLOAD pl, float *price, bool Pgrid_flag, bool Psell_flag, bool Pess_flag, bool Pfc_flag);
+int determine_realTimeOrOneDayMode_andGetSOC(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM &ess, ELECTRICMOTOR em, ELECTRICVEHICLE ev, int real_time);
+float *getOrUpdate_SolarInfo_ThroughSampleTime(BASEPARAMETER bp, const char *weather);
+void updateTableCost(BASEPARAMETER bp, float *totalLoad, float *totalLoad_price, float *real_grid_pirce, float *publicLoad, float *publicLoad_price, float *fuelCell_kW_price, float *Hydrogen_g_consumption, float *real_sell_pirce, float *demandResponse_feedback, float totalLoad_sum, float totalLoad_priceSum, float real_grid_pirceSum, float publicLoad_sum, float publicLoad_priceSum, float fuelCell_kW_priceSum, float Hydrogen_g_consumptionSum, float real_sell_pirceSum, float totalLoad_taipowerPriceSum, float demandResponse_feedbackSum);
+void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev);
+void setting_GLPK_columnBoundary(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, glp_prob *mip);
+void calculateCostInfo(BASEPARAMETER bp, DEMANDRESPONSE dr, PUBLICLOAD pl);
 void updateSingleHouseholdCost(DEMANDRESPONSE dr);
-void insert_GHEMS_variable(ENERGYSTORAGESYSTEM ess);
-float getPrevious_battery_dischargeSOC(int sample_time, string target_equip_name);
-float *get_allDay_price(string col_name);
-float *get_totalLoad_power(bool uncontrollable_load_flag);
-int *countPublicLoads_AlreadyOpenedTimes(int publicLoad_num);
+void insert_GHEMS_variable(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess);
+float getPrevious_battery_dischargeSOC(int time_block, int sample_time, string target_equip_name);
+float *get_totalLoad_power(int time_block, bool uncontrollable_load_flag);
+int *countPublicLoads_AlreadyOpenedTimes(BASEPARAMETER bp, int publicLoad_num);
 vector<int> count_publicLoads_RemainOperateTime(int public_num, vector<int> public_ot, int *buff);
 
 // electric vehicle & motor 
