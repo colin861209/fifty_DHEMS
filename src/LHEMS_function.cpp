@@ -15,7 +15,7 @@
 int coef_row_num = 0, bnd_row_num = 1;
 char column[400] = "A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A29,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95";
 
-void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, COMFORTLEVEL comlv, INTERRUPTLOAD irl, int *uninterrupt_start, int *uninterrupt_end, int *uninterrupt_ot, int *uninterrupt_reot, float *uninterrupt_p, bool *uninterrupt_flag, int *varying_start, int *varying_end, int *varying_ot, int *varying_reot, bool *varying_flag, int **varying_t_pow, float **varying_p_pow, float *uncontrollable_load, int distributed_group_num)
+void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, COMFORTLEVEL comlv, INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, float *uncontrollable_load, int distributed_group_num)
 {
 	functionPrint(__func__);
 
@@ -30,22 +30,22 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		comlv.weighting = calculate_comfortLevel_weighting(bp, comfortLevel_startEnd, comlv.comfortLevel, comlv.total_timeInterval);
 	}
 
-	countUninterruptAndVaryingLoads_Flag(bp, uninterrupt_flag, varying_flag);
+	countUninterruptAndVaryingLoads_Flag(bp, uirl, varl);
 
 	int *buff = new int[bp.app_count];
 	for (int i = 0; i < bp.app_count; i++)
 		buff[i] = 0;
 	countLoads_AlreadyOpenedTimes(bp, buff);
 	count_interruptLoads_RemainOperateTime(irl, buff);
-	count_uninterruptAndVaryingLoads_RemainOperateTime(bp, 2, bp.uninterrupt_num, uninterrupt_ot, uninterrupt_reot, uninterrupt_end, uninterrupt_flag, irl.number, buff);
-	count_uninterruptAndVaryingLoads_RemainOperateTime(bp, 3, bp.varying_num, varying_ot, varying_reot, varying_end, varying_flag, irl.number, buff);
+	count_uninterruptLoads_RemainOperateTime(bp, uirl, irl.number, buff);
+	count_varyingLoads_RemainOperateTime(bp, varl, irl.number + uirl.number, buff);
 
-	int **varying_t_d = NEW2D(bp.varying_num, bp.remain_timeblock, int);
+	varl.block = NEW2D(varl.number, bp.remain_timeblock, int);
 	// varying_p_d will get error if two varying load have different operation time
-	float **varying_p_d = NEW2D(bp.varying_num, varying_ot[0], float);
-	float *varying_p_max = new float[bp.varying_num];
-	init_VaryingLoads_OperateTimeAndPower(bp, varying_t_d, varying_p_d, varying_ot);
-	putValues_VaryingLoads_OperateTimeAndPower(bp, varying_t_d, varying_p_d, varying_t_pow, varying_p_pow, varying_start, varying_end, varying_p_max);
+	varl.power = NEW2D(varl.number, varl.ot[0], float);
+	varl.max_power = new float[varl.number];
+	init_VaryingLoads_OperateTimeAndPower(bp, varl);
+	putValues_VaryingLoads_OperateTimeAndPower(bp, varl);
 
 	// float *weighting_array;
 	int *participate_array;
@@ -61,14 +61,14 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	if (dr.mode != 0) { rowTotal += bp.remain_timeblock * 2; }
 	rowTotal += bp.remain_timeblock;
 	if (ess.flag) { rowTotal += bp.remain_timeblock * 4 + 1; }
-	if (bp.uninterruptLoad_flag)
+	if (uirl.flag)
 	{
 		rowTotal += 1;
-		for (int i = 0; i < bp.uninterrupt_num; i++)
+		for (int i = 0; i < uirl.number; i++)
 		{
-			if (uninterrupt_flag[i] == 0)
+			if (uirl.continuous_flag[i] == 0)
 			{
-				rowTotal += bp.remain_timeblock * uninterrupt_reot[i] * 2;
+				rowTotal += bp.remain_timeblock * uirl.reot[i] * 2;
 			}
 			else
 			{
@@ -76,14 +76,14 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 			}
 		}
 	}
-	if (bp.varyingLoad_flag)
+	if (varl.flag)
 	{
 		rowTotal += 1;
-		for (int i = 0; i < bp.varying_num; i++)
+		for (int i = 0; i < varl.number; i++)
 		{
-			if (varying_flag[i] == 0)
+			if (varl.continuous_flag[i] == 0)
 			{
-				rowTotal += bp.remain_timeblock * varying_reot[i] * 2;
+				rowTotal += bp.remain_timeblock * varl.reot[i] * 2;
 			}
 			else
 			{
@@ -102,7 +102,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	glp_add_rows(mip, rowTotal);
 	glp_add_cols(mip, colTotal);
 
-	setting_LHEMS_columnBoundary(irl, bp, ess, dr, mip, varying_p_max);
+	setting_LHEMS_columnBoundary(irl, uirl, varl, bp, ess, dr, mip);
 
 	float **coefficient = NEW2D(rowTotal, colTotal, float);
 	for (int m = 0; m < rowTotal; m++)
@@ -125,7 +125,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	}
 
 	// (Balanced function) Pgrid j - Pess j = sum(Pa j) + Puc j
-	pgridMinusPess_equalTo_ploadPlusPuncontrollLoad(irl, bp, ess, uninterrupt_start, uninterrupt_end, uninterrupt_p, varying_start, varying_end, uncontrollable_load, coefficient, mip, bp.remain_timeblock);
+	pgridMinusPess_equalTo_ploadPlusPuncontrollLoad(irl, uirl, varl, bp, ess, uncontrollable_load, coefficient, mip, bp.remain_timeblock);
 
 	if (ess.flag)
 	{
@@ -141,25 +141,25 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		pessPositiveMinusPessNegative_equalTo_Pess(bp, ess, coefficient, mip, bp.remain_timeblock);
 	}
 
-	if (bp.uninterruptLoad_flag)
+	if (uirl.flag)
 	{
 		// sum(δa j) = 1 (uninterrupt loads)
-		summation_uninterruptDelta_equalTo_one(bp, uninterrupt_start, uninterrupt_end, uninterrupt_reot, uninterrupt_flag, coefficient, mip, 1);
+		summation_uninterruptDelta_equalTo_one(uirl, bp, coefficient, mip, 1);
 		// ra j+n >= δa j (uninterrupt loads)
-		uninterruptRajToN_biggerThan_uninterruptDelta(bp, uninterrupt_start, uninterrupt_end, uninterrupt_reot, uninterrupt_flag, coefficient, mip, bp.remain_timeblock);
+		uninterruptRajToN_biggerThan_uninterruptDelta(uirl, bp, coefficient, mip, bp.remain_timeblock);
 	}
 
-	if (bp.varyingLoad_flag)
+	if (varl.flag)
 	{
 		// sum(δa j) = 1 (varying loads)
-		summation_varyingDelta_equalTo_one(bp, varying_start, varying_end, varying_reot, varying_flag, coefficient, mip, 1);
+		summation_varyingDelta_equalTo_one(varl, bp, coefficient, mip, 1);
 		// ra j+n >= δa j (varying loads)
-		varyingRajToN_biggerThan_varyingDelta(bp, varying_start, varying_end, varying_reot, varying_flag, coefficient, mip, bp.remain_timeblock);
+		varyingRajToN_biggerThan_varyingDelta(varl, bp, coefficient, mip, bp.remain_timeblock);
 		// ψa j+n  >= δa j * σa n
-		varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(bp, varying_start, varying_end, varying_reot, varying_flag, varying_t_d, varying_p_d, buff, irl.number, coefficient, mip, bp.remain_timeblock);
+		varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(varl, bp, buff, irl.number + uirl.number, coefficient, mip, bp.remain_timeblock);
 	}
 
-	setting_LHEMS_objectiveFunction(irl, bp, dr, comlv, bp.price, participate_array, mip);
+	setting_LHEMS_objectiveFunction(irl, uirl, varl, bp, dr, comlv, bp.price, participate_array, mip);
 
 	int *ia = new int[rowTotal * colTotal + 1];
 	int *ja = new int[rowTotal * colTotal + 1];
@@ -245,10 +245,10 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 			for (int j = 0; j < bp.time_block; j++)
 			{
 				s[j] = glp_mip_col_val(mip, h);
-				if ((i > irl.number + bp.uninterrupt_num) && (i <= bp.app_count)) //sometimes varying load will have weird, use power model instead of varying load
+				if ((i > irl.number + uirl.number) && (i <= bp.app_count)) //sometimes varying load will have weird, use power model instead of varying load
 				{
 					s[j] = glp_mip_col_val(mip, l);
-					if (s[j] == varying_p_pow[0][0] || s[j] == varying_p_pow[0][1] || s[j] == varying_p_pow[0][2])
+					if (s[j] == varl.power_tmp[0][0] || s[j] == varl.power_tmp[0][1] || s[j] == varl.power_tmp[0][2])
 						s[j] = 1.0;
 				}
 				h = (h + bp.variable);
@@ -268,10 +268,10 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 			for (int j = 0; j < bp.remain_timeblock; j++)
 			{
 				s[j + bp.sample_time] = glp_mip_col_val(mip, h);
-				if ((i > irl.number + bp.uninterrupt_num) && (i <= bp.app_count)) //sometimes varying load will have weird, use power model instead of varying load
+				if ((i > irl.number + uirl.number) && (i <= bp.app_count)) //sometimes varying load will have weird, use power model instead of varying load
 				{
 					s[j + bp.sample_time] = glp_mip_col_val(mip, l);
-					if (s[j + bp.sample_time] == varying_p_pow[0][0] || s[j + bp.sample_time] == varying_p_pow[0][1] || s[j + bp.sample_time] == varying_p_pow[0][2])
+					if (s[j + bp.sample_time] == varl.power_tmp[0][0] || s[j + bp.sample_time] == varl.power_tmp[0][1] || s[j + bp.sample_time] == varl.power_tmp[0][2])
 						s[j + bp.sample_time] = 1.0;
 				}
 				h = (h + bp.variable);
@@ -293,7 +293,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	return;
 }
 
-void setting_LHEMS_columnBoundary(INTERRUPTLOAD irl, BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, glp_prob *mip, float *varying_p_max)
+void setting_LHEMS_columnBoundary(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, glp_prob *mip)
 {
 	functionPrint(__func__);
 	messagePrint(__LINE__, "Setting columns...", 'S', 0, 'Y');
@@ -308,20 +308,20 @@ void setting_LHEMS_columnBoundary(INTERRUPTLOAD irl, BASEPARAMETER bp, ENERGYSTO
 				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, irl.str_interrupt + to_string(j)) + 1 + i * bp.variable), GLP_BV);
 			}
 		}
-		if (bp.uninterruptLoad_flag)
+		if (uirl.flag)
 		{
-			for (int j = 1; j <= bp.uninterrupt_num; j++)
+			for (int j = 1; j <= uirl.number; j++)
 			{
-				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, bp.str_uninterrupt + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
-				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, bp.str_uninterrupt + to_string(j)) + 1 + i * bp.variable), GLP_BV);
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, uirl.str_uninterrupt + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
+				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, uirl.str_uninterrupt + to_string(j)) + 1 + i * bp.variable), GLP_BV);
 			}
 		}
-		if (bp.varyingLoad_flag)
+		if (varl.flag)
 		{
-			for (int j = 1; j <= bp.varying_num; j++)
+			for (int j = 1; j <= varl.number; j++)
 			{
-				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, bp.str_varying + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
-				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, bp.str_varying + to_string(j)) + 1 + i * bp.variable), GLP_BV);
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, varl.str_varying + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
+				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, varl.str_varying + to_string(j)) + 1 + i * bp.variable), GLP_BV);
 			}
 		}
 		if (bp.Pgrid_flag)
@@ -347,25 +347,25 @@ void setting_LHEMS_columnBoundary(INTERRUPTLOAD irl, BASEPARAMETER bp, ENERGYSTO
 			glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, dr.str_alpha) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
 			glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, dr.str_alpha) + 1 + i * bp.variable), GLP_CV);
 		}
-		if (bp.uninterruptLoad_flag)
+		if (uirl.flag)
 		{
-			for (int j = 1; j <= bp.uninterrupt_num; j++)
+			for (int j = 1; j <= uirl.number; j++)
 			{
-				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, bp.str_uninterDelta + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
-				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, bp.str_uninterDelta + to_string(j)) + 1 + i * bp.variable), GLP_BV);
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, uirl.str_uninterDelta + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
+				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, uirl.str_uninterDelta + to_string(j)) + 1 + i * bp.variable), GLP_BV);
 			}
 		}
-		if (bp.varyingLoad_flag)
+		if (varl.flag)
 		{
-			for (int j = 1; j <= bp.varying_num; j++)
+			for (int j = 1; j <= varl.number; j++)
 			{
-				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, bp.str_varyingDelta + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
-				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, bp.str_varyingDelta + to_string(j)) + 1 + i * bp.variable), GLP_BV);
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, varl.str_varyingDelta + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
+				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, varl.str_varyingDelta + to_string(j)) + 1 + i * bp.variable), GLP_BV);
 			}
-			for (int j = 1; j <= bp.varying_num; j++)
+			for (int j = 1; j <= varl.number; j++)
 			{
-				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, bp.str_varyingPsi + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, varying_p_max[j - 1]);
-				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, bp.str_varyingPsi + to_string(j)) + 1 + i * bp.variable), GLP_CV);
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, varl.str_varyingPsi + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, varl.max_power[j - 1]);
+				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, varl.str_varyingPsi + to_string(j)) + 1 + i * bp.variable), GLP_CV);
 			}
 		}
 	}
@@ -438,39 +438,39 @@ int determine_realTimeOrOneDayMode_andGetSOC(BASEPARAMETER &bp, ENERGYSTORAGESYS
 	return real_time;
 }
 
-void countUninterruptAndVaryingLoads_Flag(BASEPARAMETER bp, bool *uninterrupt_flag, bool *varying_flag)
+void countUninterruptAndVaryingLoads_Flag(BASEPARAMETER bp, UNINTERRUPTLOAD &uirl, VARYINGLOAD &varl)
 {
 	printf("\nFunction: %s\n\t", __func__);
 	int flag = 0;
 	if (bp.sample_time != 0)
 	{
-		for (int i = 0; i < bp.uninterrupt_num; i++)
+		for (int i = 0; i < uirl.number; i++)
 		{
 			flag = 0;
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (bp.str_uninterDelta + to_string(i + 1)).c_str(), bp.household_id);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (uirl.str_uninterDelta + to_string(i + 1)).c_str(), bp.household_id);
 			fetch_row_value();
 			for (int j = 0; j < bp.sample_time; j++)
 			{
 				flag += turn_int(j);
 			}
-			uninterrupt_flag[i] = flag;
+			uirl.continuous_flag[i] = flag;
 		}
-		for (int i = 0; i < bp.varying_num; i++)
+		for (int i = 0; i < varl.number; i++)
 		{
 			flag = 0;
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (bp.str_varyingDelta + to_string(i + 1)).c_str(), bp.household_id);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (varl.str_varyingDelta + to_string(i + 1)).c_str(), bp.household_id);
 			fetch_row_value();
 			for (int j = 0; j < bp.sample_time; j++)
 			{
 				flag += turn_int(j);
 			}
-			varying_flag[i] = flag;
+			varl.continuous_flag[i] = flag;
 		}
 	}
-	for (int i = 0; i < bp.uninterrupt_num; i++)
-		printf("LINE %d: uninterrupt_flag[%d] : %d\n\t", __LINE__, i, uninterrupt_flag[i]);
-	for (int i = 0; i < bp.varying_num; i++)
-		printf("LINE %d: varying_flag[%d] : %d\n", __LINE__, i, varying_flag[i]);
+	for (int i = 0; i < uirl.number; i++)
+		printf("LINE %d: uninterrupt_flag[%d] : %d\n\t", __LINE__, i, uirl.continuous_flag[i]);
+	for (int i = 0; i < varl.number; i++)
+		printf("LINE %d: varying_flag[%d] : %d\n", __LINE__, i, varl.continuous_flag[i]);
 }
 
 void countLoads_AlreadyOpenedTimes(BASEPARAMETER bp, int *buff)
@@ -519,147 +519,136 @@ void count_interruptLoads_RemainOperateTime(INTERRUPTLOAD &irl, int *buff)
 	}
 }
 
-void count_uninterruptAndVaryingLoads_RemainOperateTime(BASEPARAMETER bp, int group_id, int loads_total, int *total_operateTime, int *remain_operateTime, int *end_time, bool *flag, int interrupt_num, int *buff)
+void count_uninterruptLoads_RemainOperateTime(BASEPARAMETER bp, UNINTERRUPTLOAD &uirl, int buff_shift_length, int *buff)
 {
-	switch (group_id)
+	functionPrint(__func__);
+
+	for (int i = 0; i < uirl.number; i++)
 	{
-	case 2:
-		printf("\nFunction: %s group id : %d\n\t", __func__, group_id);
-		for (int i = 0; i < bp.uninterrupt_num; i++)
+		if (uirl.continuous_flag[i] == 0)
 		{
-			if (flag[i] == 0)
-			{
-				remain_operateTime[i] = total_operateTime[i];
-			}
-			if (flag[i] == 1)
-			{
-				if (((total_operateTime[i] - buff[i + interrupt_num]) < total_operateTime[i]) && ((total_operateTime[i] - buff[i + interrupt_num]) > 0))
-				{
-					remain_operateTime[i] = total_operateTime[i] - buff[i + interrupt_num];
-					if (remain_operateTime[i] != 0)
-					{
-						end_time[i] = bp.sample_time + remain_operateTime[i] - 1;
-					}
-				}
-				else if ((total_operateTime[i] - buff[i + interrupt_num]) <= 0)
-				{
-					remain_operateTime[i] = 0;
-				}
-			}
-			printf("LINE %d: uninterrupt load %d : reot = %d\n\t", __LINE__, i, remain_operateTime[i]);
+			uirl.reot[i] = uirl.ot[i];
 		}
-		break;
-	case 3:
-		printf("\nFunction: %s group id : %d\n\t", __func__, group_id);
-		for (int i = 0; i < bp.varying_num; i++)
+		if (uirl.continuous_flag[i] == 1)
 		{
-			if (flag[i] == 0)
+			if (((uirl.ot[i] - buff[i + buff_shift_length]) < uirl.ot[i]) && ((uirl.ot[i] - buff[i + buff_shift_length]) > 0))
 			{
-				remain_operateTime[i] = total_operateTime[i];
-			}
-			if (flag[i] == 1)
-			{
-				if (((total_operateTime[i] - buff[i + interrupt_num + bp.uninterrupt_num]) < total_operateTime[i]) && ((total_operateTime[i] - buff[i + interrupt_num + bp.uninterrupt_num]) > 0))
+				uirl.reot[i] = uirl.ot[i] - buff[i + buff_shift_length];
+				if (uirl.reot[i] != 0)
 				{
-					remain_operateTime[i] = total_operateTime[i] - buff[i + interrupt_num + bp.uninterrupt_num];
-					if (remain_operateTime[i] != 0)
-					{
-						end_time[i] = bp.sample_time + remain_operateTime[i] - 1;
-					}
-				}
-				else if ((total_operateTime[i] - buff[i + interrupt_num + bp.uninterrupt_num]) <= 0)
-				{
-					remain_operateTime[i] = 0;
+					uirl.end[i] = bp.sample_time + uirl.reot[i] - 1;
 				}
 			}
-			printf("LINE %d: varying load %d : reot = %d\n", __LINE__, i, remain_operateTime[i]);
+			else if ((uirl.ot[i] - buff[i + buff_shift_length]) <= 0)
+			{
+				uirl.reot[i] = 0;
+			}
 		}
-		break;
-	default:
-		printf("\nFunction: %s no matching group id : %d\n\t", __func__, group_id);
-		break;
+		printf("LINE %d: uninterrupt load %d : reot = %d\n\t", __LINE__, i, uirl.reot[i]);
 	}
 }
 
-void init_VaryingLoads_OperateTimeAndPower(BASEPARAMETER bp, int **varying_t_d, float **varying_p_d, int *varying_ot)
+void count_varyingLoads_RemainOperateTime(BASEPARAMETER bp, VARYINGLOAD &varl, int buff_shift_length, int *buff)
+{
+	functionPrint(__func__);
+	
+	for (int i = 0; i < varl.number; i++)
+	{
+		if (varl.continuous_flag[i] == 0)
+		{
+			varl.reot[i] = varl.ot[i];
+		}
+		if (varl.continuous_flag[i] == 1)
+		{
+			if (((varl.ot[i] - buff[i + buff_shift_length]) < varl.ot[i]) && ((varl.ot[i] - buff[i + buff_shift_length]) > 0))
+			{
+				varl.reot[i] = varl.ot[i] - buff[i + buff_shift_length];
+				if (varl.reot[i] != 0)
+				{
+					varl.end[i] = bp.sample_time + varl.reot[i] - 1;
+				}
+			}
+			else if ((varl.ot[i] - buff[i + buff_shift_length]) <= 0)
+			{
+				varl.reot[i] = 0;
+			}
+		}
+		printf("LINE %d: uninterrupt load %d : reot = %d\n\t", __LINE__, i, varl.reot[i]);
+	}
+}
+
+void init_VaryingLoads_OperateTimeAndPower(BASEPARAMETER bp, VARYINGLOAD &varl)
 {
 	printf("\nFunction: %s \n\t", __func__);
-	for (int i = 0; i < bp.varying_num; i++)
+	for (int i = 0; i < varl.number; i++)
 	{
 		for (int m = 0; m < bp.remain_timeblock; m++)
 		{
-			varying_t_d[i][m] = 0;
+			varl.block[i][m] = 0;
 		}
-		for (int m = 0; m < varying_ot[i]; m++)
+		for (int m = 0; m < varl.ot[i]; m++)
 		{
-			varying_p_d[i][m] = 0.0;
+			varl.power[i][m] = 0.0;
 		}
 	}
 }
 
-void putValues_VaryingLoads_OperateTimeAndPower(BASEPARAMETER bp, int **varying_t_d, float **varying_p_d, int **varying_t_pow, float **varying_p_pow, int *varying_start, int *varying_end, float *varying_p_max)
+void putValues_VaryingLoads_OperateTimeAndPower(BASEPARAMETER bp, VARYINGLOAD &varl)
 {
 	printf("\nFunction: %s \n\t", __func__);
 
-	for (int i = 0; i < bp.varying_num; i++)
+	for (int i = 0; i < varl.number; i++)
 	{
-		for (int j = 0; j < varying_t_pow[i][0]; j++)
+		for (int j = 0; j < varl.block_tmp[i][0]; j++)
 		{
-			varying_p_d[i][j] = varying_p_pow[i][0];
+			varl.power[i][j] = varl.power_tmp[i][0];
 		}
-		for (int j = varying_t_pow[i][0]; j < varying_t_pow[i][0] + varying_t_pow[i][1]; j++)
+		for (int j = varl.block_tmp[i][0]; j < varl.block_tmp[i][0] + varl.block_tmp[i][1]; j++)
 		{
-			varying_p_d[i][j] = varying_p_pow[i][1];
+			varl.power[i][j] = varl.power_tmp[i][1];
 		}
-		for (int j = varying_t_pow[i][0] + varying_t_pow[i][1]; j < varying_t_pow[i][0] + varying_t_pow[i][1] + varying_t_pow[i][2]; j++)
+		for (int j = varl.block_tmp[i][0] + varl.block_tmp[i][1]; j < varl.block_tmp[i][0] + varl.block_tmp[i][1] + varl.block_tmp[i][2]; j++)
 		{
-			varying_p_d[i][j] = varying_p_pow[i][2];
+			varl.power[i][j] = varl.power_tmp[i][2];
 		}
 	}
 
-	for (int i = 0; i < bp.varying_num; i++)
+	for (int i = 0; i < varl.number; i++)
 	{
-		if ((varying_end[i] - bp.sample_time) >= 0)
+		if ((varl.end[i] - bp.sample_time) >= 0)
 		{
-			if ((varying_start[i] - bp.sample_time) >= 0)
+			if ((varl.start[i] - bp.sample_time) >= 0)
 			{
-				for (int m = (varying_start[i] - bp.sample_time); m <= (varying_end[i] - bp.sample_time); m++)
+				for (int m = (varl.start[i] - bp.sample_time); m <= (varl.end[i] - bp.sample_time); m++)
 				{
-					varying_t_d[i][m] = 1;
+					varl.block[i][m] = 1;
 				}
 			}
-			else if ((varying_start[i] - bp.sample_time) < 0)
+			else if ((varl.start[i] - bp.sample_time) < 0)
 			{
-				for (int m = 0; m <= (varying_end[i] - bp.sample_time); m++)
+				for (int m = 0; m <= (varl.end[i] - bp.sample_time); m++)
 				{
-					varying_t_d[i][m] = 1;
+					varl.block[i][m] = 1;
 				}
 			}
 		}
 	}
 
-	for (int i = 0; i < bp.varying_num; i++)
+	for (int i = 0; i < varl.number; i++)
 	{
-		varying_p_max[i] = 0.0;
+		varl.max_power[i] = 0.0;
 
 		for (int j = 0; j < 3; j++)
 		{
-			if (varying_p_pow[i][j] > varying_p_max[i])
+			if (varl.power_tmp[i][j] > varl.max_power[i])
 			{
-				varying_p_max[i] = varying_p_pow[i][j];
+				varl.max_power[i] = varl.power_tmp[i][j];
 			}
 		}
 	}
-	// printf("LINE %d: Varying loads power model : ", __LINE__);
-	// for (int i = 0; i < varying_num; i++)
-	// {
-	// 	for (int j = 0; j < varying_t_pow[i][0] + varying_t_pow[i][1] + varying_t_pow[i][2]; j++)
-	// 		printf("%.2f ", varying_p_d[i][j]);
-	// 	printf("\n\tLINE %d: Varying loads Max power = %.2f\n", __LINE__, varying_p_max[i]);
-	// }
 }
 
-void update_loadModel(BASEPARAMETER bp, INTERRUPTLOAD irl, float *uninterrupt_p, int distributed_group_num)
+void update_loadModel(BASEPARAMETER bp, INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, int distributed_group_num)
 {
 	functionPrint(__func__);
 	float *power_tmp = new float[bp.remain_timeblock];
@@ -675,18 +664,18 @@ void update_loadModel(BASEPARAMETER bp, INTERRUPTLOAD irl, float *uninterrupt_p,
 			power_tmp[j - bp.sample_time] += turn_float(j) * irl.power[i];
 		}
 	}
-	for (int i = 0; i < bp.uninterrupt_num; i++)
+	for (int i = 0; i < uirl.number; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (bp.str_uninterrupt + to_string(i + 1)).c_str(), bp.household_id);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (uirl.str_uninterrupt + to_string(i + 1)).c_str(), bp.household_id);
 		fetch_row_value();
 		for (int j = bp.sample_time; j < bp.time_block; j++)
 		{
-			power_tmp[j - bp.sample_time] += turn_float(j) * uninterrupt_p[i];
+			power_tmp[j - bp.sample_time] += turn_float(j) * uirl.power[i];
 		}
 	}
-	for (int i = 0; i < bp.varying_num; i++)
+	for (int i = 0; i < varl.number; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (bp.str_varyingPsi + to_string(i + 1)).c_str(), bp.household_id);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (varl.str_varyingPsi + to_string(i + 1)).c_str(), bp.household_id);
 		fetch_row_value();
 		for (int j = bp.sample_time; j < bp.time_block; j++)
 		{
