@@ -95,7 +95,7 @@ class Xpath:
         self.GHEMS_SOC = '//*[@id="SOCVsLoad"]'
         self.GHEMS_loadModel = '//*[@id="loadModel"]'
         self.GHEMS_EMchargingSOC = '//*[@id="EMchargingSOC"]'
-        self.GHEMS_EMchargingSOC = '//*[@id="EVchargingSOC"]'
+        self.GHEMS_EVchargingSOC = '//*[@id="EVchargingSOC"]'
         self.GHEMS_table = '/html/body/table'
         self.LHEMS_loadSum = '//*[@id="households_loadsSum"]'
         self.auto_run = '//*[@id="auto"]'
@@ -252,7 +252,7 @@ class WEBDRIVER:
             elif "_EMchargingSOC" in file:
                 element = self.chrome.find_element_by_xpath(xpath.GHEMS_EMchargingSOC)
             elif "_EVchargingSOC" in file:
-                element = self.chrome.find_element_by_xpath(xpath.GHEMS_EMchargingSOC)
+                element = self.chrome.find_element_by_xpath(xpath.GHEMS_EVchargingSOC)
             elif "_table" in file:
                 element = self.chrome.find_element_by_xpath(xpath.GHEMS_table)
             self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
