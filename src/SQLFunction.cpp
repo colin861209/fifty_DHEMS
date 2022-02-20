@@ -260,3 +260,14 @@ float **getPublicLoad(bool publicLoad_flag, int publicLoad_num)
 	}
 	return info;
 }
+
+float *get_allDay_price(int time_block, string col_name)
+{
+	float *price = new float[time_block];
+	for (int i = 0; i <= time_block; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM price WHERE price_period = %d", col_name.c_str(), i);
+		price[i] = turn_value_to_float(0);
+	}
+	return price;
+}

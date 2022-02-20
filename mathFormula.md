@@ -24,11 +24,14 @@ $$
     z_{i}^{j}, i=0,...,M-1,~j=0,...,J-1 \\
     \lambda_{i}^{j}, i=0,...,M-1,~j=0,...,J-1 \\
     r_{ca}^{j}, j=0,...,J-1,~ca \in A_{c1} \\
-    r_{em,n}^{c,j}, n=1,...,N,j=0,...,J-1 \\
-    r_{em,n}^{d,j}, n=1,...,N,j=0,...,J-1 \\
-    \mu_{em,n}^{j}, n=1,...,N,j=0,...,J-1 \\
+    r_{em,n}^{c,j}, m=1,...,M,j=0,...,J-1 \\
+    r_{em,n}^{d,j}, m=1,...,M,j=0,...,J-1 \\
+    \mu_{em,n}^{j}, m=1,...,M,j=0,...,J-1 \\
+    r_{ev,n}^{c,j}, v=1,...,V,j=0,...,J-1 \\
+    r_{ev,n}^{d,j}, v=1,...,V,j=0,...,J-1 \\
+    \mu_{ev,n}^{j}, v=1,...,V,j=0,...,J-1 \\
 }}
-\sum_{j=k}^{J-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} - \sum_{j=k}^{J-1}\sum_{n=1}^{N} \rho_{b}^{j}P_{n}^{d,max}r_{em,n}^{d,j}T_{s} -
+\sum_{j=k}^{J-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} - \sum_{j=k}^{J-1}\rho_{b}^{j}(\sum_{m=1}^{M} P_{m}^{d,max}r_{em,m}^{d,j} + \sum_{v=1}^{V} P_{v}^{d,max}r_{ev,v}^{d,j})T_{s} -
 \sum_{j=\tau_{r}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
 \quad
 \begin{aligned}
@@ -52,9 +55,11 @@ $$
     
     $$ E_{s} \leq \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} (P_{grid}^{avg} - P_{grid}^{j})T_{s} $$
   
+    $$ \sum_{v=1}^{V}r_{ev, v}^{c, j}P_{ev, v}^{c, max} + \sum_{m=1}^{M}r_{ev, m}^{c, j}P_{em, m}^{c, max} \leq P_{grid}^{j, max}-P_{discharge}^{max}+P_{pv}^{j} \quad j=k...J-1 $$
+
 * Blanced Function
     
-    $$ P^{j}_{grid} + P^{j}_{PV} + P^{j}_{FC} - P^{j}_{sell} - P^{j}_{ESS} = \sum_{n=1}^{N}(r_{em, n}^{c, j}P_{n}^{c,max}-r_{em, n}^{d, j}P_{n}^{d,max}) + \sum_{ca \in A_{c1}} P_{ca}^{j} + \sum_{u=1}^{U}(\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} + \sum_{a \in A_{uc}} P_{u, uc}^{j}) $$
+    $$ P^{j}_{grid} + P^{j}_{PV} + P^{j}_{FC} - P^{j}_{sell} - P^{j}_{ESS} = \sum_{m=1}^{M}(r_{em, m}^{c, j}P_{m}^{c,max}-r_{em, m}^{d, j}P_{m}^{d,max}) + \sum_{v=1}^{V}(r_{ev, v}^{c, j}P_{v}^{c,max}-r_{ev, v}^{d, j}P_{v}^{d,max}) + \sum_{ca \in A_{c1}} P_{ca}^{j} + \sum_{u=1}^{U}(\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} + \sum_{a \in A_{uc}} P_{u, uc}^{j}) $$
 
 * Grid & Sell
   <!-- * $P_{u, grid}^{j}$ 第 u 個住戶在第 j 個時刻消耗的市電功率 -->
@@ -150,30 +155,56 @@ $$
       $$ \sum_{k=0}^{J-1} r_{ca}^{j} \geq Q_{ca} - |d|, \qquad \forall d \in [\tau_{ca}^{s}, \tau_{ca}^{e}] \cap [\tau_{r}^{s}, \tau_{r}^{e}] $$
   ---
 * Electric Motor
-    * $r_{em, n}^{c, j}$ 第n充電柱在第j時刻的可充電旗標
-    * $r_{em, n}^{d, j}$ 第n充電柱在第j時刻的可放電旗標
+    * $r_{em, m}^{c, j}$ 第n充電柱在第j時刻的可充電旗標
+    * $r_{em, m}^{d, j}$ 第n充電柱在第j時刻的可放電旗標
     * $SOC_{em}^{max} SOC_{em}^{min}$ 電動機車SOC最大最小值
     * $SOC_{em}^{threshold}$ 電動機車離場時規定SOC值
-    * $\tau_{em, n}^{s}$ 第n充電柱進場電動機車時刻
-    * $\tau_{em, n}^{e}$ 第n充電柱離場電動機車時刻
+    * $\tau_{em, m}^{s}$ 第n充電柱進場電動機車時刻
+    * $\tau_{em, m}^{e}$ 第n充電柱離場電動機車時刻
     * Variable
     
-      $$ r_{em, n}^{c, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, n}^{s}, \tau_{em, n}^{e}], \forall n \in [0,N] $$
+      $$ r_{em, m}^{c, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,N] $$
 
-      $$ r_{em, n}^{c, j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{em, n}^{s}, \tau_{em, n}^{e}], \forall n \in [0,N] $$
+      $$ r_{em, m}^{c, j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,N] $$
 
-      $$ r_{em, n}^{d, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, n}^{s}, \tau_{em, n}^{e}], \forall n \in [0,N] $$
+      $$ r_{em, m}^{d, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,N] $$
 
-      $$ r_{em, n}^{d, j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{em, n}^{s}, \tau_{em, n}^{e}], \forall n \in [0,N] $$
+      $$ r_{em, m}^{d, j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,N] $$
 
     * Constraint
-      $$ r_{em,n}^{c,j} \leq \mu_{em, n}^{j}, \qquad \forall n \in [0,N] $$
+      $$ r_{em,m}^{c,j} \leq \mu_{em, m}^{j}, \qquad \forall m \in [0,N] $$
 
-      $$ r_{em,n}^{d,j} \leq (1-\mu_{em, n}^{j}), \qquad \forall n \in [0,N] $$
+      $$ r_{em,m}^{d,j} \leq (1-\mu_{em, m}^{j}), \qquad \forall m \in [0,N] $$
 
-      $$ SOC_{em}^{min} \leq SOC_{em, n}^{j-1} + (\frac{P_{n}^{c, max}r_{em, n}^{c,j}T_{s}}{E_{n}^{cap}} - \frac{P_{n}^{d, max}r_{em, n}^{d, j}T_{s}}{E_{n}^{cap}}), \qquad \forall n \in [0,N] $$
+      $$ SOC_{em}^{min} \leq SOC_{em, m}^{j-1} + (\frac{P_{m}^{c, max}r_{em, m}^{c,j}T_{s}}{E_{m}^{cap}} - \frac{P_{m}^{d, max}r_{em, m}^{d, j}T_{s}}{E_{m}^{cap}}), \qquad \forall m \in [0,N] $$
       
-      $$ SOC_{em}^{threshold} \leq SOC_{em, n}^{j-1} + \sum_{j=\tau_{em, n}^{s}}^{\tau_{em, n}^{e}-1} (\frac{P_{n}^{c, max}r_{em, n}^{c,j}T_{s}}{E_{n}^{cap}} - \frac{P_{n}^{d, max}r_{em, n}^{d, j}T_{s}}{E_{n}^{cap}}), \qquad \forall n \in [0,N] $$
+      $$ SOC_{em}^{threshold} \leq SOC_{em, m}^{j-1} + \sum_{j=\tau_{em, m}^{s}}^{\tau_{em, m}^{e}-1} (\frac{P_{m}^{c, max}r_{em, m}^{c,j}T_{s}}{E_{m}^{cap}} - \frac{P_{m}^{d, max}r_{em, m}^{d, j}T_{s}}{E_{m}^{cap}}), \qquad \forall m \in [0,N] $$
+  ---
+* Electric Vehicle
+    * $r_{ev, v}^{c, j}$ 第v充電柱在第j時刻的可充電旗標
+    * $r_{ev, v}^{d, j}$ 第v充電柱在第j時刻的可放電旗標
+    * $SOC_{ev}^{max} SOC_{ev}^{min}$ 電動機車SOC最大最小值
+    * $SOC_{ev}^{threshold}$ 電動機車離場時規定SOC值
+    * $\tau_{ev, v}^{s}$ 第v充電柱進場電動機車時刻
+    * $\tau_{ev, v}^{e}$ 第v充電柱離場電動機車時刻
+    * Variable
+    
+      $$ r_{ev, v}^{c, j} \in \{0,1\}, \qquad \forall j \in [\tau_{ev, v}^{s}, \tau_{ev, v}^{e}], \forall v \in [0,V] $$
+
+      $$ r_{ev, v}^{c, j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{ev, v}^{s}, \tau_{ev, v}^{e}], \forall v \in [0,V] $$
+
+      $$ r_{ev, v}^{d, j} \in \{0,1\}, \qquad \forall j \in [\tau_{ev, v}^{s}, \tau_{ev, v}^{e}], \forall v \in [0,V] $$
+
+      $$ r_{ev, v}^{d, j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{ev, v}^{s}, \tau_{ev, v}^{e}], \forall v \in [0,V] $$
+
+    * Constraint
+      $$ r_{ev,m}^{c,j} \leq \mu_{ev, v}^{j}, \qquad \forall v \in [0,V] $$
+
+      $$ r_{ev,m}^{d,j} \leq (1-\mu_{ev, v}^{j}), \qquad \forall v \in [0,V] $$
+
+      $$ SOC_{ev}^{min} \leq SOC_{ev, v}^{j-1} + (\frac{P_{v}^{c, max}r_{ev, v}^{c,j}T_{s}}{E_{v}^{cap}} - \frac{P_{v}^{d, max}r_{ev, v}^{d, j}T_{s}}{E_{v}^{cap}}), \qquad \forall v \in [0,V] $$
+      
+      $$ SOC_{ev}^{threshold} \leq SOC_{ev, v}^{j-1} + \sum_{j=\tau_{ev, v}^{s}}^{\tau_{ev, v}^{e}-1} (\frac{P_{v}^{c, max}r_{ev, v}^{c,j}T_{s}}{E_{v}^{cap}} - \frac{P_{v}^{d, max}r_{ev, v}^{d, j}T_{s}}{E_{v}^{cap}}), \qquad \forall v \in [0,V] $$
 
     <!-- * For GHEMS => LHEMS
     $$ P_{ESS}^{j} = \sum_{u=1}^{U} \beta_{u}^{j} P_{u,ESS}^{j} $$
