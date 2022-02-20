@@ -54,23 +54,11 @@ typedef struct
 	string str_SOC_decrease = "SOC_decrease";
 	string str_SOC_Z = "SOC_Z";
 	// LHEMS
-	bool interruptLoad_flag;
-	bool uninterruptLoad_flag;
-	bool varyingLoad_flag;
-	int interrupt_num;
-	int uninterrupt_num;
-	int varying_num;
 	int app_count;
 	int householdTotal;
 	int household_id;
 	int distributed_householdTotal;
 	int distributed_household_id;
-	string str_interrupt = "interrupt";
-	string str_uninterrupt = "uninterrupt";
-	string str_uninterDelta = "uninterDelta";
-	string str_varying = "varying";
-	string str_varyingDelta = "varyingDelta";
-	string str_varyingPsi = "varyingPsi";
 } BASEPARAMETER;
 
 typedef struct 

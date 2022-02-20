@@ -23,6 +23,9 @@ int main(void)
 	ENERGYSTORAGESYSTEM ess;
 	DEMANDRESPONSE dr;
 	COMFORTLEVEL comlv;
+	INTERRUPTLOAD irl;
+    UNINTERRUPTLOAD uirl;
+	VARYINGLOAD varl;
 
 	if (!connect_mysql("DHEMS_fiftyHousehold"))
 		messagePrint(__LINE__, "Failed to Connect MySQL");
@@ -63,12 +66,12 @@ int main(void)
 
 	// =-=-=-=-=-=-=- get load_list loads category's amount -=-=-=-=-=-=-= //
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = 1");
-	bp.interrupt_num = turn_value_to_int(0);
+	irl.number = turn_value_to_int(0);
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = 2");
-	bp.uninterrupt_num = turn_value_to_int(0);
+	uirl.number = turn_value_to_int(0);
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = 3");
-	bp.varying_num = turn_value_to_int(0);
-	bp.app_count = bp.interrupt_num + bp.uninterrupt_num + bp.varying_num;
+	varl.number = turn_value_to_int(0);
+	bp.app_count = irl.number + uirl.number + varl.number;
 
 	// =-=-=-=-=-=-=- get demand response -=-=-=-=-=-=-= //
 	dr.mode = value_receive("BaseParameter", "parameter_name", "dr_mode");
@@ -82,28 +85,28 @@ int main(void)
 		dr.feedback_price = dr_info[3];
 		dr.customer_baseLine = dr_info[4];
 	}
-	bp.interruptLoad_flag = flag_receive("LHEMS_flag", bp.str_interrupt);
-	bp.uninterruptLoad_flag = flag_receive("LHEMS_flag", bp.str_uninterrupt);
-	bp.varyingLoad_flag = flag_receive("LHEMS_flag", bp.str_varying);
+	irl.flag = flag_receive("LHEMS_flag", irl.str_interrupt);
+	uirl.flag = flag_receive("LHEMS_flag", uirl.str_uninterrupt);
+	varl.flag = flag_receive("LHEMS_flag", varl.str_varying);
 	bp.Pgrid_flag = flag_receive("LHEMS_flag", bp.str_Pgrid);
 	ess.flag = flag_receive("LHEMS_flag", ess.str_Pess);
 
 	// =-=-=-=-=-=-=- Define variable name and use in GLPK -=-=-=-=-=-=-= //
 	// Most important thing, helping in GLPK big matrix setting
-	if (bp.interruptLoad_flag == 1)
+	if (irl.flag == 1)
 	{
-		for (int i = 0; i < bp.interrupt_num; i++)
-			bp.variable_name.push_back(bp.str_interrupt + to_string(i + 1));
+		for (int i = 0; i < irl.number; i++)
+			bp.variable_name.push_back(irl.str_interrupt + to_string(i + 1));
 	}
-	if (bp.uninterruptLoad_flag == 1)
+	if (uirl.flag == 1)
 	{
-		for (int i = 0; i < bp.uninterrupt_num; i++)
-			bp.variable_name.push_back(bp.str_uninterrupt + to_string(i + 1));
+		for (int i = 0; i < uirl.number; i++)
+			bp.variable_name.push_back(uirl.str_uninterrupt + to_string(i + 1));
 	}
-	if (bp.varyingLoad_flag == 1)
+	if (varl.flag == 1)
 	{
-		for (int i = 0; i < bp.varying_num; i++)
-			bp.variable_name.push_back(bp.str_varying + to_string(i + 1));
+		for (int i = 0; i < varl.number; i++)
+			bp.variable_name.push_back(varl.str_varying + to_string(i + 1));
 	}
 	if (bp.Pgrid_flag == 1)
 		bp.variable_name.push_back(bp.str_Pgrid);
@@ -117,17 +120,17 @@ int main(void)
 	}
 	if (dr.mode != 0)
 		bp.variable_name.push_back(dr.str_alpha);
-	if (bp.uninterruptLoad_flag == 1)
+	if (uirl.flag == 1)
 	{
-		for (int i = 0; i < bp.uninterrupt_num; i++)
-			bp.variable_name.push_back(bp.str_uninterDelta + to_string(i + 1));
+		for (int i = 0; i < uirl.number; i++)
+			bp.variable_name.push_back(uirl.str_uninterDelta + to_string(i + 1));
 	}
-	if (bp.varyingLoad_flag == 1)
+	if (varl.flag == 1)
 	{
-		for (int i = 0; i < bp.varying_num; i++)
-			bp.variable_name.push_back(bp.str_varyingDelta + to_string(i + 1));
-		for (int i = 0; i < bp.varying_num; i++)
-			bp.variable_name.push_back(bp.str_varyingPsi + to_string(i + 1));
+		for (int i = 0; i < varl.number; i++)
+			bp.variable_name.push_back(varl.str_varyingDelta + to_string(i + 1));
+		for (int i = 0; i < varl.number; i++)
+			bp.variable_name.push_back(varl.str_varyingPsi + to_string(i + 1));
 	}
 	bp.variable = bp.variable_name.size();
 
@@ -143,31 +146,31 @@ int main(void)
 	init_totalLoad_flag_and_table(bp, distributed_group_num);
 
 	// =-=-=-=-=-=-=- get each hosueholds' loads info -=-=-=-=-=-=-= //
-	int *interrupt_start = new int[bp.interrupt_num];
-	int *interrupt_end = new int[bp.interrupt_num];
-	int *interrupt_ot = new int[bp.interrupt_num];
-	int *interrupt_reot = new int[bp.interrupt_num];
-	float *interrupt_p = new float[bp.interrupt_num];
+	irl.start = new int[irl.number];
+	irl.end = new int[irl.number];
+	irl.ot = new int[irl.number];
+	irl.reot = new int[irl.number];
+	irl.power = new float[irl.number];
 
-	int *uninterrupt_start = new int[bp.uninterrupt_num];
-	int *uninterrupt_end = new int[bp.uninterrupt_num];
-	int *uninterrupt_ot = new int[bp.uninterrupt_num];
-	int *uninterrupt_reot = new int[bp.uninterrupt_num];
-	float *uninterrupt_p = new float[bp.uninterrupt_num];
-	bool *uninterrupt_flag = new bool[bp.uninterrupt_num];
+	uirl.start = new int[uirl.number];
+	uirl.end = new int[uirl.number];
+	uirl.ot = new int[uirl.number];
+	uirl.reot = new int[uirl.number];
+	uirl.power = new float[uirl.number];
+	uirl.continuous_flag = new bool[uirl.number];
 
-	int *varying_start = new int[bp.varying_num];
-	int *varying_end = new int[bp.varying_num];
-	int *varying_ot = new int[bp.varying_num];
-	int *varying_reot = new int[bp.varying_num];
-	int **varying_t_pow = NEW2D(bp.varying_num, 3, int);
-	float **varying_p_pow = NEW2D(bp.varying_num, 3, float);
-	bool *varying_flag = new bool[bp.varying_num];
+	varl.start = new int[varl.number];
+	varl.end = new int[varl.number];
+	varl.ot = new int[varl.number];
+	varl.reot = new int[varl.number];
+	varl.block_tmp = NEW2D(varl.number, 3, int);
+	varl.power_tmp = NEW2D(varl.number, 3, float);
+	varl.continuous_flag = new bool[varl.number];
 
 	char *s_time = new char[3];
 	char *token = strtok(s_time, "-");
 	vector<int> time_tmp;
-	for (int i = 0; i < bp.interrupt_num; i++)
+	for (int i = 0; i < irl.number; i++)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d_startEndOperationTime FROM load_list WHERE group_id = 1 and number = %d", bp.household_id, i + 1);
 		char *seo_time = turn_value_to_string(0);
@@ -177,17 +180,17 @@ int main(void)
 			time_tmp.push_back(atoi(token));
 			token = strtok(NULL, "~");
 		}
-		interrupt_start[i] = (int)time_tmp[0];
-		interrupt_end[i] = (int)time_tmp[1] - 1;
-		interrupt_ot[i] = (int)time_tmp[2];
-		interrupt_reot[i] = 0;
+		irl.start[i] = time_tmp[0];
+		irl.end[i] = time_tmp[1] - 1;
+		irl.ot[i] = time_tmp[2];
+		irl.reot[i] = 0;
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = 1 and number = %d", i + 1);
-		interrupt_p[i] = turn_value_to_float(0);
+		irl.power[i] = turn_value_to_float(0);
 		time_tmp.clear();
 	}
-	for (int i = 0; i < bp.uninterrupt_num; i++)
+	for (int i = 0; i < uirl.number; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d_startEndOperationTime FROM load_list WHERE group_id = 2 and number = %d", bp.household_id, i + 1 + bp.interrupt_num);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d_startEndOperationTime FROM load_list WHERE group_id = 2 and number = %d", bp.household_id, i + 1 + irl.number);
 		char *seo_time = turn_value_to_string(0);
 		token = strtok(seo_time, "~");
 		while (token != NULL)
@@ -195,18 +198,18 @@ int main(void)
 			time_tmp.push_back(atoi(token));
 			token = strtok(NULL, "~");
 		}
-		uninterrupt_start[i] = (int)time_tmp[0];
-		uninterrupt_end[i] = (int)time_tmp[1] - 1;
-		uninterrupt_ot[i] = (int)time_tmp[2];
-		uninterrupt_reot[i] = 0;
-		uninterrupt_flag[i] = 0;
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = 2 and number = %d", i + 1 + bp.interrupt_num);
-		uninterrupt_p[i] = turn_value_to_float(0);
+		uirl.start[i] = time_tmp[0];
+		uirl.end[i] = time_tmp[1] - 1;
+		uirl.ot[i] = time_tmp[2];
+		uirl.reot[i] = 0;
+		uirl.continuous_flag[i] = 0;
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = 2 and number = %d", i + 1 + irl.number);
+		uirl.power[i] = turn_value_to_float(0);
 		time_tmp.clear();
 	}
-	for (int i = 0; i < bp.varying_num; i++)
+	for (int i = 0; i < varl.number; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d_startEndOperationTime FROM load_list WHERE group_id = 3 and number = %d", bp.household_id, i + 1 + bp.interrupt_num + bp.uninterrupt_num);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d_startEndOperationTime FROM load_list WHERE group_id = 3 and number = %d", bp.household_id, i + 1 + irl.number + uirl.number);
 		char *seo_time = turn_value_to_string(0);
 		token = strtok(seo_time, "~");
 		while (token != NULL)
@@ -214,23 +217,23 @@ int main(void)
 			time_tmp.push_back(atoi(token));
 			token = strtok(NULL, "~");
 		}
-		varying_start[i] = (int)time_tmp[0];
-		varying_end[i] = (int)time_tmp[1] - 1;
-		varying_ot[i] = (int)time_tmp[2];
-		varying_reot[i] = 0;
-		varying_flag[i] = 0;
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1, power2, power3, block1, block2, block3 FROM load_list WHERE group_id = 3 and number = %d", i + 1 + bp.interrupt_num + bp.uninterrupt_num);
+		varl.start[i] = time_tmp[0];
+		varl.end[i] = time_tmp[1] - 1;
+		varl.ot[i] = time_tmp[2];
+		varl.reot[i] = 0;
+		varl.continuous_flag[i] = 0;
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1, power2, power3, block1, block2, block3 FROM load_list WHERE group_id = 3 and number = %d", i + 1 + irl.number + uirl.number);
 		fetch_row_value();
 		for (int z = 0; z < 3; z++)
-			varying_p_pow[i][z] = turn_float(z);
+			varl.power_tmp[i][z] = turn_float(z);
 		for (int z = 0; z < 3; z++)
-			varying_t_pow[i][z] = turn_int(z + 3);
+			varl.block_tmp[i][z] = turn_int(z + 3);
 		time_tmp.clear();
 	}
 
-	optimization(bp, ess, dr, comlv, interrupt_start, interrupt_end, interrupt_ot, interrupt_reot, interrupt_p, uninterrupt_start, uninterrupt_end, uninterrupt_ot, uninterrupt_reot, uninterrupt_p, uninterrupt_flag, varying_start, varying_end, varying_ot, varying_reot, varying_flag, varying_t_pow, varying_p_pow, uncontrollable_load, distributed_group_num);
+	optimization(bp, ess, dr, comlv, irl, uirl, varl, uncontrollable_load, distributed_group_num);
 
-	update_loadModel(bp, interrupt_p, uninterrupt_p, distributed_group_num);
+	update_loadModel(bp, irl, uirl, varl, distributed_group_num);
 	calculateCostInfo(bp);
 
 	printf("LINE %d: sample_time = %d\n", __LINE__, bp.sample_time);
