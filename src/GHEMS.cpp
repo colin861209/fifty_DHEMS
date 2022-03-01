@@ -219,7 +219,10 @@ int main(int argc, const char **argv)
 		{
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_control_status` WHERE equip_name = '%s' ", i + bp.sample_time, dr.str_alpha.c_str());
 			float dr_weighting_sumOfAlpha = turn_value_to_float(0);
-			bp.Pgrid_max_array.push_back(bp.Pgrid_max / householdAmount * dr_weighting_sumOfAlpha);
+			if (bp.Pgrid_max / householdAmount * dr_weighting_sumOfAlpha > dr.customer_baseLine)
+				bp.Pgrid_max_array.push_back(dr.customer_baseLine);
+			else
+				bp.Pgrid_max_array.push_back(bp.Pgrid_max / householdAmount * dr_weighting_sumOfAlpha);
 		}
 	}
 
