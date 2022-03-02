@@ -58,7 +58,6 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	// sum by 'row_num_maxAddition' in every constraint below
 	int rowTotal = 0;
 	if (irl.flag) { rowTotal += irl.number; }
-	if (dr.mode != 0) { rowTotal += bp.remain_timeblock * 2; }
 	rowTotal += bp.remain_timeblock;
 	if (ess.flag) { rowTotal += bp.remain_timeblock * 4 + 1; }
 	if (uirl.flag)
@@ -114,14 +113,6 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	if (irl.flag)
 	{
 		summation_interruptLoadRa_biggerThan_Qa(irl, bp, coefficient, mip, irl.number);
-	}
-
-	if (dr.mode != 0)
-	{
-		// 0 < Pgrid j < αu j *Pgrid max
-		pgrid_smallerThan_alphaPgridMax(bp, dr, coefficient, mip, bp.remain_timeblock);
-		// (1 - Du j) < alpha < 1 in operate time, else alpha is 1
-		alpha_between_oneminusDu_and_one(bp, dr, participate_array, coefficient, mip, bp.remain_timeblock);
 	}
 
 	// (Balanced function) Pgrid j - Pess j = sum(Pa j) + Puc j
@@ -341,11 +332,6 @@ void setting_LHEMS_columnBoundary(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYI
 			glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, ess.str_SOC) + 1 + i * bp.variable), GLP_CV);
 			glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, ess.str_Z) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
 			glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, ess.str_Z) + 1 + i * bp.variable), GLP_BV);
-		}
-		if (dr.mode != 0)
-		{
-			glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, dr.str_alpha) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
-			glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, dr.str_alpha) + 1 + i * bp.variable), GLP_CV);
 		}
 		if (uirl.flag)
 		{
