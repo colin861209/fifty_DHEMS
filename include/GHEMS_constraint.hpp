@@ -3,7 +3,10 @@
 
 extern float Hydro_Cons, Hydro_Price;
 
-void summation_publicLoadRa_biggerThan_QaMinusD(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void summation_forceToStopPublicLoadRa_biggerThan_QaMinusD(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void summation_interruptPublicLoadRa_biggerThan_Qa(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void summation_periodicPublicLoadRa_biggerThan_Qa(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+
 void pgrid_smallerThan_muGridMultiplyByPgridMaxArray(BASEPARAMETER &bp, int dr_mode, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // sell

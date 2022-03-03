@@ -131,10 +131,18 @@ int main(int argc, const char **argv)
 
 	if (pl.flag == 1)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = 5");
-		pl.number = turn_value_to_int(0);
-		for (int i = 0; i < pl.number; i++)
-			bp.variable_name.push_back(pl.str_publicLoad + to_string(i + 1));
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = '5'");
+		pl.forceToStop_number = turn_value_to_int(0);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = '6' ");
+		pl.interrupt_number = turn_value_to_int(0);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = '7' ");
+		pl.periodic_number = turn_value_to_int(0);
+		for (int i = 0; i < pl.forceToStop_number; i++)
+			bp.variable_name.push_back(pl.str_forceToStop_publicLoad + to_string(i + 1));
+		for (int i = 0; i < pl.interrupt_number; i++)
+			bp.variable_name.push_back(pl.str_interrupt_publicLoad + to_string(i + 1));
+		for (int i = 0; i < pl.periodic_number; i++)
+			bp.variable_name.push_back(pl.str_periodic_publicLoad + to_string(i + 1));
 	}
 	if (bp.Pgrid_flag == 1)
 		bp.variable_name.push_back(bp.str_Pgrid);
@@ -215,14 +223,11 @@ int main(int argc, const char **argv)
 	// =-=-=-=-=-=-=- get total weighting from dr_alpha -=-=-=-=-=-=-= //
 	if (dr.mode != 0)
 	{
-		for (int i = 0; i < bp.remain_timeblock; i++)
+		bp.Pgrid_max_array.assign(bp.remain_timeblock, bp.Pgrid_max);
+		for (int i = dr.startTime - bp.sample_time; i < dr.endTime -bp.sample_time; i++)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_control_status` WHERE equip_name = '%s' ", i + bp.sample_time, dr.str_alpha.c_str());
-			float dr_weighting_sumOfAlpha = turn_value_to_float(0);
-			if (bp.Pgrid_max / householdAmount * dr_weighting_sumOfAlpha > dr.customer_baseLine)
-				bp.Pgrid_max_array.push_back(dr.customer_baseLine);
-			else
-				bp.Pgrid_max_array.push_back(bp.Pgrid_max / householdAmount * dr_weighting_sumOfAlpha);
+			if (i >= 0)
+				bp.Pgrid_max_array[i] = dr.customer_baseLine;
 		}
 	}
 
@@ -231,7 +236,7 @@ int main(int argc, const char **argv)
 
 	optimization(bp, ess, dr, pl, em, ev);
 	calculateCostInfo(bp, dr, pl);
-	updateSingleHouseholdCost(dr);
+	updateSingleHouseholdCost(bp, dr);
 	
 	if (em.flag && em.can_charge_amount)
 	{

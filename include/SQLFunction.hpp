@@ -87,7 +87,7 @@ typedef struct
 	int minDecrease_power;
 	int feedback_price;
 	int customer_baseLine;
-	string str_alpha = "dr_alpha";
+	float household_CBL;
 } DEMANDRESPONSE;
 
 int connect_mysql(string DB_name);
@@ -110,7 +110,7 @@ float value_receive(string table_name, string condition_col_name, int condition_
 float *get_allDay_price(int time_block, string col_name);
 void insert_status_into_MySQLTable(string table_name, char *status_name, float *status_value, string col_name1 = "", string col_value1 = "", string col_name2 = "", int col_value2 = -1);
 void update_status_to_MySQLTable(string table_name, float *status_value, string condition_col_name1, string condition_col_target1, string conjunction = "", string condition_col_name2 = "", int condition_col_target2 = -1);
-float **getPublicLoad(bool publicLoad_flag, int publicLoad_num);
+float **getPublicLoad(int group_number, int publicLoad_num);
 void *new2d(int, int, int);
 #define NEW2D(H, W, TYPE) (TYPE **)new2d(H, W, sizeof(TYPE))
 #endif 
