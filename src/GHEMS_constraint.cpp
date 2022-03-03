@@ -278,7 +278,7 @@ void pessPositiveMinusPessNegative_equalTo_Pess(BASEPARAMETER &bp, ENERGYSTORAGE
 }
 
 // =-=-=-=-=-=-=- balanced equation -=-=-=-=-=-=-= //
-void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEMPlusPchargingEV(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEMPlusPchargingEV(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, UNCONTROLLABLELOAD ucl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
     
@@ -384,10 +384,7 @@ void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusP
             coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, bp.str_Psell)] = 1.0;
 
         glp_set_row_name(mip, (bp.bnd_row_num + i), "");
-        if (bp.solar[i + bp.sample_time] - bp.load_model[i + bp.sample_time] < 0)
-            glp_set_row_bnds(mip, (bp.bnd_row_num + i), GLP_FX, bp.solar[i + bp.sample_time] - bp.load_model[i + bp.sample_time], bp.solar[i + bp.sample_time] - bp.load_model[i + bp.sample_time]);
-        else
-            glp_set_row_bnds(mip, (bp.bnd_row_num + i), GLP_DB, -0.0001, bp.solar[i + bp.sample_time] - bp.load_model[i + bp.sample_time]);
+        glp_set_row_bnds(mip, (bp.bnd_row_num + i), GLP_FX, bp.solar[i + bp.sample_time] - bp.load_model[i + bp.sample_time] - ucl.power_array[i + bp.sample_time], bp.solar[i + bp.sample_time] - bp.load_model[i + bp.sample_time] - ucl.power_array[i + bp.sample_time]);
     }
     bp.coef_row_num += row_num_maxAddition;
     bp.bnd_row_num += row_num_maxAddition;

@@ -29,6 +29,7 @@ int main(int argc, const char **argv)
 	DEMANDRESPONSE dr;
 	ELECTRICMOTOR em;
 	ELECTRICVEHICLE ev;
+	UNCONTROLLABLELOAD ucl;
 
 	if (!connect_mysql("DHEMS_fiftyHousehold"))
 		messagePrint(__LINE__, "Failed to Connect MySQL");
@@ -77,6 +78,11 @@ int main(int argc, const char **argv)
 	ess.flag = flag_receive("GHEMS_flag", ess.str_Pess);
 	bp.Pfc_flag = flag_receive("GHEMS_flag", bp.str_Pfc);
 	bp.SOC_change_flag = flag_receive("GHEMS_flag", bp.str_SOC_change);
+	ucl.flag = value_receive("BaseParameter", "parameter_name", "Global_uncontrollable_load_flag");
+	if (ucl.flag)
+	{
+		ucl.generate_flag = value_receive("BaseParameter", "parameter_name", "generate_Global_uncontrollable_load_flag");
+	}
 	
 	// =-=-=-=-=-=-=- get parameter values from EM_parameter in need -=-=-=-=-=-=-= //
 	// NOTE: 2022/01/03 Discuss with professor comfirm not using fast/super fast charging users, so not fully complete all the process
@@ -128,6 +134,8 @@ int main(int argc, const char **argv)
 		// return how many cars can charge (means flag 'sure' = 1)
 		ev.can_charge_amount = enter_newEVInfo_inPole(ev, bp.sample_time);
 	}
+	// =-=-=-=-=-=-=- uncontrollable load -=-=-=-=-=-=-= //
+	Global_UCload_rand_operationTime(bp, ucl);
 
 	if (pl.flag == 1)
 	{
@@ -234,7 +242,7 @@ int main(int argc, const char **argv)
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = '%d-%02d-%02d' WHERE parameter_name = 'lastTime_execute' ", now_time.tm_year + 1900, now_time.tm_mon + 1, now_time.tm_mday);
 	sent_query();
 
-	optimization(bp, ess, dr, pl, em, ev);
+	optimization(bp, ess, dr, pl, ucl, em, ev);
 	calculateCostInfo(bp, dr, pl);
 	updateSingleHouseholdCost(bp, dr);
 	
@@ -261,6 +269,8 @@ int main(int argc, const char **argv)
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET `value` = '0' WHERE `parameter_name` = 'EM_generate_random_user_result'");
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET `value` = '0' WHERE `parameter_name` = 'EV_generate_random_user_result'");
+		sent_query();
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET `value` = '0' WHERE `parameter_name` = 'generate_Global_uncontrollable_load_flag'");
 		sent_query();
 	}
 

@@ -90,6 +90,14 @@ typedef struct
 	float household_CBL;
 } DEMANDRESPONSE;
 
+typedef struct 
+{
+	bool flag;
+	bool generate_flag;
+	int number;
+	float* power_array;
+}UNCONTROLLABLELOAD;
+
 int connect_mysql(string DB_name);
 int fetch_row_value();
 void sent_query();

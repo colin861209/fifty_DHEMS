@@ -28,7 +28,7 @@ float Hydro_Cons = 0.04; // unit kWh/g
 float Hydro_Price = 0.0;
 char column[400] = "A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A29,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95";
 
-void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev)
+void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, UNCONTROLLABLELOAD ucl, ELECTRICMOTOR em, ELECTRICVEHICLE ev)
 {
 	functionPrint(__func__);
 
@@ -206,7 +206,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	}
 
 	// Pgrid j + Pfc j + Ppv j - Pess j - Psell j = sum(Pu,a j) + Pc,a + sum(Pem, n j) + sum(Pev, n j)
-	pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEMPlusPchargingEV(bp, ess, pl, em, ev, coefficient, mip, bp.remain_timeblock);
+	pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEMPlusPchargingEV(bp, ess, pl, ucl, em, ev, coefficient, mip, bp.remain_timeblock);
 
 	// dr constraint
 	if (dr.mode != 0)
@@ -1284,6 +1284,95 @@ vector<int> count_publicLoads_RemainOperateTime(int public_num, vector<int> publ
 		messagePrint(__LINE__, "Public load remain times: ", 'I', public_reot[i], 'Y');
 	}
 	return public_reot;
+}
+
+// uncontrollable load
+void Global_UCload_rand_operationTime(BASEPARAMETER bp, UNCONTROLLABLELOAD &ucl)
+{
+	functionPrint(__func__);
+
+	float *result = new float[bp.time_block];
+	
+	
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE `group_id` = 8");
+	ucl.number =  turn_value_to_int(0);
+	
+	if (!ucl.flag)
+	{
+		for (int i = 0; i < ucl.number; i++)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `GHEMS_uncontrollable_load` SET `uncontrollable_load%d` = '0.0' ", i + 1);
+			sent_query();		
+		}
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `GHEMS_uncontrollable_load` SET `totalLoad` = '0.0' ");
+		sent_query();
+		
+		ucl.power_array = result;
+	}
+	else
+	{	
+		if (ucl.generate_flag)
+		{
+			srand(time(NULL));
+			if (bp.sample_time == 0)
+			{
+				for (int i = 0; i < ucl.number; i++)
+				{
+					for (int i = 0; i < bp.time_block; i++)
+						result[i] = 0.0;
+					
+					snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `uncontrollable_loads`, `power1` FROM `load_list` WHERE `group_id` = 8 LIMIT %d, %d", i, i + 1);
+					fetch_row_value();
+					char *seo_time = mysql_row[0];
+					float power = atof(mysql_row[1]);
+					char *tmp;
+					tmp = strtok(seo_time, "~");
+					vector<int> time_seperate;
+					while (tmp != NULL)
+					{
+						time_seperate.push_back(atoi(tmp));
+						tmp = strtok(NULL, "~");
+					}
+
+					int operate_count = 0;
+					for (int j = time_seperate[0]; j < time_seperate[1]; j++)
+					{
+						if (operate_count != time_seperate[2])
+						{
+							int operate_tmp = rand() % 2;
+							float operate_power = operate_tmp * power;
+							operate_count += operate_tmp;
+							result[j] += operate_power;
+						}
+					}
+					time_seperate.clear();
+					
+					for (int j = 0; j < bp.time_block; j++)
+					{
+						snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `GHEMS_uncontrollable_load` SET `uncontrollable_load%d` = '%.1f' WHERE `time_block` = %d;", i + 1, result[j], j);
+						sent_query();
+					}
+				}
+				for (int j = 0; j < bp.time_block; j++)
+				{
+					float power_total = 0.0;
+					for (int i = 0; i < ucl.number; i++)
+					{
+						snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `uncontrollable_load%d` FROM `GHEMS_uncontrollable_load` WHERE time_block = %d", i + 1, j);
+						power_total += turn_value_to_float(0);
+					}
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `GHEMS_uncontrollable_load` SET `totalLoad` = '%.1f' WHERE `time_block` = %d;", power_total, j);
+					sent_query();
+				}
+			}
+		}
+		for (int i = 0; i < bp.time_block; i++)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `totalLoad` FROM `GHEMS_uncontrollable_load` WHERE `time_block` = %d;", i);
+			result[i] = turn_value_to_float(0);
+		}
+		ucl.power_array = result;
+	}
 }
 
 void update_fullSOC_or_overtime_EM_inPole(ELECTRICMOTOR em, int sample_time)
