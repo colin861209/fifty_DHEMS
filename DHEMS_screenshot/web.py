@@ -28,14 +28,13 @@ class WEBDRIVER:
         options.add_argument("--disable-notifications")  #不啟用通知
         options.add_experimental_option("excludeSwitches", ['enable-automation', 'ignore-certificate-errors']) # 關閉 "chrome目前受到自動測試軟體控制”信息"
         if "html" in url:
-            # options.add_argument("start-maximized")
+            options.add_argument("start-maximized")
             pass
         else:
             self.screenshot_path=screenshot_path
             prefs = {"download.default_directory" : self.screenshot_path}
             options.add_experimental_option("prefs", prefs)
         self.chrome = webdriver.Chrome('C:/Users/sonu/Desktop/howThesis/webDriver/chromedriver', options=options)
-        self.chrome.set_window_size(1920, 1080)
         self.chrome.get(url)
         self.wait = WebDriverWait(self.chrome, timeout=self.timeout)
         # get screenshot path
@@ -158,22 +157,28 @@ class WEBDRIVER:
         self.chrome.execute_script("document.documentElement.scrollTop=10000")
         self.chrome.find_element_by_xpath(xpath.baseParameter_table).click()
         self.chrome.execute_script("document.documentElement.scrollTop=10000")
-        self.EM_flag = self.chrome.find_element_by_xpath(xpath.baseParameter_table_EM_flag)
-        self.EV_flag = self.chrome.find_element_by_xpath(xpath.baseParameter_table_EV_flag)
+        self.EM_flag = self.chrome.find_element_by_xpath(xpath.baseParameter_table_EM_flag).get_attribute("value")
+        self.EV_flag = self.chrome.find_element_by_xpath(xpath.baseParameter_table_EV_flag).get_attribute("value")
 
         SOC_threshold = self.chrome.find_element_by_xpath(xpath.baseParameter_table_SOCthresh).get_attribute("value")
         dr_mode = self.chrome.find_element_by_xpath(xpath.baseParameter_table_dr_mode).get_attribute("value")
         price = self.chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_price).get_attribute("value")
         weather = self.chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_weather).get_attribute("value")
-        price += "\\"
-        weather += "\\"
+        comfortLevel_flag = self.chrome.find_element_by_xpath(xpath.baseParameter_table_comfortLevel_flag).get_attribute("value")
         # 2021/09/07 don't consider history weather
         # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\9.comfortLevel\\summer_price\\sunny\\{SOCinit0.3} or {SOCinit0.3_dr1}\\"
         if int(dr_mode) != 0:
             SOC_threshold = "SOCinit" + SOC_threshold + "_dr" + dr_mode + "\\"    
         else:
             SOC_threshold = "SOCinit" + SOC_threshold + "\\"
-        self.screenshot_path = self.screenshot_path + price + weather + SOC_threshold
+        
+        folder_name = ""
+        folder_name += "EM_" if int(self.EM_flag) != 0 else "noEM_"
+        folder_name += "EV_" if int(self.EV_flag) != 0 else "noEV_"
+        folder_name += "coml" if int(comfortLevel_flag) != 0 else "noComl"
+        
+        self.screenshot_path = self.screenshot_path + price + "\\" + weather + "\\" + folder_name + "\\" + SOC_threshold
+        
         print(f"=-=-=-=-=-=-=-=-=-= File import to ===>  {self.screenshot_path} =-=-=-=-=-=-=-=-=-=")
         # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\not_summer_price\\sunny\\SOCinit0.7_dr1\\sunny\\"
         # if int(dr_mode) != 0:
@@ -244,9 +249,9 @@ if __name__ == "__main__":
     webpage.screenshot_file("GHEMS_Price.jpg")
     webpage.screenshot_file("GHEMS_SOC.jpg")
     webpage.screenshot_file("GHEMS_loadModel.jpg")
-    if bool(xpath.baseParameter_table_EM_flag):
+    if bool(int(webpage.EM_flag)):
         webpage.screenshot_file("GHEMS_EMchargingSOC.jpg")
-    if bool(xpath.baseParameter_table_EV_flag):
+    if bool(int(webpage.EV_flag)):
         webpage.screenshot_file("GHEMS_EVchargingSOC.jpg")
     webpage.screenshot_file("GHEMS_table.jpg")
     webpage.screenshot_everyHousehold_eachLoad_file()
@@ -258,18 +263,19 @@ if __name__ == "__main__":
     db.exportTable(xpath.text_BaseParameter)
     db.exportTable(xpath.text_GHEMS_control_status)
     db.exportTable(xpath.text_GHEMS_flag)
+    db.exportTable(xpath.text_GHEMS_uncontrollable_load)
     db.exportTable(xpath.text_LHEMS_control_status)
     db.exportTable(xpath.text_LHEMS_flag)
     db.exportTable(xpath.text_LHEMS_cost)
     db.exportTable(xpath.text_totalLoad_model)
     # EM table
-    if bool(xpath.baseParameter_table_EM_flag):
+    if bool(int(webpage.EM_flag)):
         db.exportTable(xpath.text_EM_Parameter)
         db.exportTable(xpath.text_EM_user_number)
         db.exportTable(xpath.text_EM_user_result)
         db.exportTable(xpath.text_EM_chargingOrDischarging_status)
     # EV table
-    if bool(xpath.baseParameter_table_EV_flag):
+    if bool(int(webpage.EV_flag)):
         db.exportTable(xpath.text_EV_Parameter)
         db.exportTable(xpath.text_EV_user_number)
         db.exportTable(xpath.text_EV_user_result)

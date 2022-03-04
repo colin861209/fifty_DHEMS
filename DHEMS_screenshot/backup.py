@@ -30,17 +30,21 @@ class WEBDRIVER:
             'rowCount': [
                 xpath.rowCount_backup_BaseParameter, xpath.rowCount_backup_EM_Parameter, xpath.rowCount_backup_EM_user_number, 
                 xpath.rowCount_backup_EM_user_result, xpath.rowCount_backup_EV_Parameter, xpath.rowCount_backup_EV_user_number, 
-                xpath.rowCount_backup_EV_user_result, xpath.rowCount_backup_GHEMS, xpath.rowCount_backup_LHEMS, xpath.rowCount_backup_totalLoad
+                xpath.rowCount_backup_EV_user_result, xpath.rowCount_backup_GHEMS, xpath.rowCount_backup_GHEMS_ucLoad, 
+                xpath.rowCount_backup_LHEMS, xpath.rowCount_backup_LHEMS_cost, xpath.rowCount_backup_totalLoad
             ],
             'table': [
                 xpath.text_backup_BaseParameter, xpath.text_backup_EM_Parameter, xpath.text_backup_EM_user_number, 
                 xpath.text_backup_EM_user_result, xpath.text_backup_EV_Parameter, xpath.text_backup_EV_user_number, 
-                xpath.text_backup_EV_user_result, xpath.text_backup_GHEMS, xpath.text_backup_LHEMS, xpath.text_backup_totalLoad
+                xpath.text_backup_EV_user_result, xpath.text_backup_GHEMS, xpath.text_backup_GHEMS_ucLoad, 
+                xpath.text_backup_LHEMS, xpath.text_backup_LHEMS_cost, xpath.text_backup_totalLoad
             ],    
             'name': [
                 xpath.str_BaseParameter, xpath.str_EM_Parameter, xpath.str_EM_user_number, 
                 xpath.str_EM_user_result, xpath.str_EV_Parameter, xpath.str_EV_user_number, 
-                xpath.str_EV_user_result, xpath.str_GHEMS_control_status, xpath.str_LHEMS_control_status, xpath.str_totalLoad_model],        
+                xpath.str_EV_user_result, xpath.str_GHEMS_control_status, xpath.str_GHEMS_ucLoad, 
+                xpath.str_LHEMS_control_status, xpath.str_LHEMS_cost, xpath.str_totalLoad_model
+            ],        
         }
         # setting driver then open browser
         options = Options()
@@ -205,11 +209,8 @@ class WEBDRIVER:
 
         chart_sequence = {
             'file_name' : ["cost.jpg", "status.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg"],
-            'file_xpath' : [xpath.LHEMS_table, xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15]
+            'file_xpath' : [xpath.backup_LHEMS_table, xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15]
         }
-        # don't screenshot cost img because we don't show cost info in backup_LHEMS.html
-        chart_sequence['file_xpath'].pop(0)
-        chart_sequence['file_name'].pop(0)
         chart_sequence['file_xpath'].reverse()
         chart_sequence['file_name'].reverse()
         for i in range (householdTotal):
