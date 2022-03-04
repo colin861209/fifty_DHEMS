@@ -377,7 +377,6 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		display_coefAndBnds_rowNum();
 		printf("Error > sol is 0, No Solution, give up the solution\n");
 		printf("%.2f\n", glp_mip_col_val(mip, find_variableName_position(bp.variable_name, ess.str_SOC) + 1));
-		// CLEAN:
 		if (em.flag)
 		{
 			if (em.can_discharge)
@@ -424,7 +423,6 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 				}
 			}
 		}
-		exit(0);
 		return;
 	}
 
