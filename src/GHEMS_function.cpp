@@ -43,27 +43,9 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		float **f_publicLoad = getPublicLoad(5, pl.forceToStop_number);
 		for (int i = 0; i < pl.forceToStop_number; i++)
 		{
-			int decrease_ot = 0, start, end;
 			pl.forceToStop_start[i] = int(f_publicLoad[i][0]);
 			pl.forceToStop_end[i] = int(f_publicLoad[i][1]) - 1;
-			if (dr.mode != 0)
-			{
-				if (pl.forceToStop_end[i] >= dr.startTime)
-				{
-					if (pl.forceToStop_start[i] <= dr.startTime)
-						start = dr.startTime;
-					else
-						start = pl.forceToStop_start[i]	;
-					
-					if (pl.forceToStop_end[i] + 1 >= dr.endTime)
-						end = dr.endTime;
-					else
-						end = pl.forceToStop_end[i] + 1;
-					
-					decrease_ot = end - start;
-				}
-			}
-			pl.forceToStop_operation_time[i] = int(f_publicLoad[i][2]) - decrease_ot;
+			pl.forceToStop_operation_time[i] = int(f_publicLoad[i][2]);
 			pl.forceToStop_power[i] = f_publicLoad[i][3];
 		}
 		int *f_buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.forceToStop_number, pl.str_forceToStop_publicLoad);
