@@ -58,6 +58,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	// sum by 'row_num_maxAddition' in every constraint below
 	int rowTotal = 0;
 	if (irl.flag) { rowTotal += irl.number; }
+	if (dr.mode != 0) { rowTotal += bp.remain_timeblock; }
 	rowTotal += bp.remain_timeblock;
 	if (ess.flag) { rowTotal += bp.remain_timeblock * 4 + 1; }
 	if (uirl.flag)
@@ -113,6 +114,11 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	if (irl.flag)
 	{
 		summation_interruptLoadRa_biggerThan_Qa(irl, bp, coefficient, mip, irl.number);
+	}
+
+	if (dr.mode != 0)
+	{
+		pgrid_smallerThan_Pavg(bp, dr, coefficient, mip, bp.remain_timeblock);
 	}
 
 	// (Balanced function) Pgrid j - Pess j = sum(Pa j) + Puc j
