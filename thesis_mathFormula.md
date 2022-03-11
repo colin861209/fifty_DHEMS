@@ -15,7 +15,7 @@ $$
 \min_{\substack {
     P_{grid}^{j}, j=0,...,J-1 \\ 
     P_{ESS}^{j}, j=0,...,J-1 \\
-    r_{ca}^{j}, j=0,...,J-1,~ca \in A_{d0} \cup A_{d1} \cup A_{d2} \\
+    r_{p}^{j}, j=0,...,J-1,~p \in A_{d0} \cup A_{d1} \cup A_{d2} \\
     r_{em,n}^{c,j}, m=1,...,M,j=0,...,J-1 \\
     r_{em,n}^{d,j}, m=1,...,M,j=0,...,J-1 \\
     \mu_{em,n}^{j}, m=1,...,M,j=0,...,J-1 \\
@@ -83,35 +83,30 @@ $$
 
 * Community Public Load
     * Formula
-    $$ P_{ca}^{j} =
+    $$ P_{p}^{j} =
       \left\{ 
         \begin{array}{c}
-          r_{ca}^{j} P_{ca}^{max}, \qquad &\forall k \in [\tau_{ca}^{s}, \tau_{ca}^{e}]\\
+          r_{p}^{j} P_{p}^{max}, \qquad &\forall k \in [\tau_{p}^{s}, \tau_{p}^{e}]\\
           0 \qquad, \qquad &otherwise
         \end{array}
       \right.
     $$
     * Variable
-      $$ r_{ca}^{j} \in \{0,1\}, \qquad \forall j \in [\tau_{ca}^{s}, \tau_{ca}^{e}] $$
+      $$ r_{p}^{j} \in \{0,1\}, \qquad \forall j \in [\tau_{p}^{s}, \tau_{p}^{e}] $$
 
-      $$ r_{ca}^{j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{ca}^{s}, \tau_{ca}^{e}] $$
+      $$ r_{p}^{j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{p}^{s}, \tau_{p}^{e}] $$
       
-      $$ \forall ca \in A_{c1} $$
+      $$ \forall p \in A_{c1} $$
     * Constraint
       * Force To Stop
-      $$ \sum_{j=0}^{J-1} r_{ca}^{j} \geq Q_{ca} - |d|, \qquad \forall d \in [\tau_{ca}^{s}, \tau_{ca}^{e}] \cap [\tau_{r}^{s}, \tau_{r}^{e}] $$
-      
-      $$ \forall ca \in A_{d0} $$
+      $$ \sum_{j=0}^{J-1} r_{p}^{j} \geq Q_{p} - |d|, \qquad \forall d \in [\tau_{p}^{s}, \tau_{p}^{e}] \cap [\tau_{r}^{s}, \tau_{r}^{e}], \quad \forall p \in A_{d0} $$
 
       * Interrupt
-      $$ \sum_{j=0}^{J-1} r_{ca}^{j} \geq Q_{ca}, \qquad \forall d \in [\tau_{ca}^{s}, \tau_{ca}^{e}] $$
-      
-      $$ \forall ca \in A_{d1} $$
+      $$ \sum_{j=\tau_{p}^{s}}^{\tau_{p}^{e}} r_{p}^{j} \geq Q_{p},\quad \forall p \in A_{d1} $$
 
       * Periodic
-      $$ \sum_{j=\tau_{ca}^{s, l}}^{\tau_{ca}^{e, l}} r_{ca}^{j} \geq Q_{ca, l} $$
-      
-      $$ \forall ca \in A_{d2} $$
+      $$ \sum_{j=\tau_{p}^{s, l}}^{\tau_{p}^{e, l}} r_{p}^{j} \geq Q_{p, l}, \quad l=1,2,...,L,\quad \forall p \in A_{d2} $$
+
   ---
 * Electric Motor
     * $r_{em, m}^{c, j}$ 第n充電柱在第j時刻的可充電旗標
@@ -178,7 +173,7 @@ $$ \min_{\substack{
     P_{u, grid}^{j},~j=0,...,J-1\\
     \alpha_{u}^{j}, j=0,..., J-1
 }}
-\sum_{j=k}^{J-1} \rho_{b}^{j}P^{j}_{u,grid} T_{s} +
+\sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+vw_{u,a}^{j}) +
 \sum_{j=\tau_{r}}^{\tau_{r}^{e}} D_{u}^{j}\rho_{f}^{j}(P_{u, grid}^{avg}-P^{j}_{u,grid}) T_{s},
 \quad 
 \begin{aligned}
@@ -188,6 +183,17 @@ $$ \min_{\substack{
 $$
 
 <!-- HEMS Constraint -->
+* Comfort level
+  
+  $$ w_{u,a}^{j}=
+  \left\{ 
+      \begin{array}
+        r\frac{j-\tau_{u,a}^{s,c}}{\tau_{u,a}^{e,c}-\tau_{u,a}^{s,c}}+(c+1),if\quad & j\in[\tau_{u,a}^{s,c},\tau_{u,a}^{e,c}],i=1...m_{c},c=1...n_{a}\\
+        \infty \qquad, \qquad &otherwise
+      \end{array}
+    \right.
+  $$
+
 * Demand response
     
 	* $D_{u}^{j}$: 住戶u在j時刻是否參與輔助服務
@@ -195,8 +201,12 @@ $$
 
     $$ D_{u}^{j} \in \{0, 1\} $$
 
-    $$ P_{u,max}^{d}= \max_{j=\tau_{r}^{s},...,\tau_{r}^{e}}P_{grid}^{j,d}, \quad d=1,...,5 $$
+    $$ P_{u,max}^{d}= \max_{j=\tau_{r}^{s},...,\tau_{r}^{e}}P_{u,grid}^{j,d}, \quad d=1,...,5 $$
     $$ P_{u,grid}^{avg} = \frac{\sum_{d=1}^{D} P_{u,max}^{d}} {D} $$
+
+    * Constraint
+
+    $$ P_{u, grid}^{j} \leq P_{u, grid}^{avg}, \quad j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
 
 * Balanced Function
 	* $A_{u,uc}$第u個住戶的不可控負載類型
