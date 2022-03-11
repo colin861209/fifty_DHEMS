@@ -243,8 +243,6 @@ int main(int argc, const char **argv)
 	sent_query();
 
 	optimization(bp, ess, dr, pl, ucl, em, ev);
-	calculateCostInfo(bp, dr, pl);
-	updateSingleHouseholdCost(bp, dr);
 	
 	if (em.flag && em.can_charge_amount)
 	{
@@ -254,6 +252,9 @@ int main(int argc, const char **argv)
 	{
 		update_fullSOC_or_overtime_EV_inPole(ev, bp.sample_time);
 	}
+	
+	calculateCostInfo(bp, dr, pl, em, ev, ucl);
+	updateSingleHouseholdCost(bp, dr);
 	
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET value = (SELECT A%d FROM GHEMS_control_status where equip_name = '%s') WHERE parameter_name = 'now_SOC'", bp.sample_time, ess.str_SOC.c_str());
 	sent_query();

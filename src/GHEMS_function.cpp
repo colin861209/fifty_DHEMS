@@ -916,7 +916,7 @@ void updateTableCost(BASEPARAMETER bp, float *totalLoad, float *totalLoad_price,
 	// step1_sell = opt_sell_result;
 }
 
-void calculateCostInfo(BASEPARAMETER bp, DEMANDRESPONSE dr, PUBLICLOAD pl)
+void calculateCostInfo(BASEPARAMETER bp, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, UNCONTROLLABLELOAD ucl)
 {
 	functionPrint(__func__);
 
@@ -984,11 +984,36 @@ void calculateCostInfo(BASEPARAMETER bp, DEMANDRESPONSE dr, PUBLICLOAD pl)
 	for (int i = bp.sample_time; i < bp.time_block; i++)
 	{
 		// =-=-=-=-=-=-=- calculate total load spend how much money if only use grid power -=-=-=-=-=-=-= //
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT totalLoad FROM totalLoad_model WHERE time_block = %d ", i);
+		totalLoad[i] = turn_value_to_float(0);
+
+		if (ucl.flag)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `totalLoad` FROM `GHEMS_uncontrollable_load` WHERE time_block = %d ", i);
+			totalLoad[i] += turn_value_to_float(0);
+		}
+		if (em.flag)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `total_power` FROM `EM_user_number` WHERE timeblock = %d ", i);
+			totalLoad[i] += turn_value_to_float(0);
+			if (em.can_discharge)
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `discharge_normal_power` FROM `EM_user_number` WHERE timeblock = %d ", i);
+				totalLoad[i] += turn_value_to_float(0);
+			}
+		}
+		if (ev.flag)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `total_power` FROM `EV_user_number` WHERE timeblock = %d ", i);
+			totalLoad[i] += turn_value_to_float(0);
+			if (em.can_discharge)
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `discharge_normal_power` FROM `EV_user_number` WHERE timeblock = %d ", i);
+				totalLoad[i] += turn_value_to_float(0);
+			}
+		}
 		if (pl.flag)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT totalLoad FROM totalLoad_model WHERE time_block = %d ", i);
-			totalLoad[i] = turn_value_to_float(0);
-
 			for (int j = 0; j < pl.forceToStop_number; j++)
 			{
 				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_forceToStop_publicLoad+to_string(j+1)).c_str());
