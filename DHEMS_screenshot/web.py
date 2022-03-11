@@ -28,12 +28,14 @@ class WEBDRIVER:
         options.add_argument("--disable-notifications")  #不啟用通知
         options.add_experimental_option("excludeSwitches", ['enable-automation', 'ignore-certificate-errors']) # 關閉 "chrome目前受到自動測試軟體控制”信息"
         if "html" in url:
-            options.add_argument("start-maximized")
+            # options.add_argument("start-maximized")
             pass
         else:
             self.screenshot_path=screenshot_path
             prefs = {"download.default_directory" : self.screenshot_path}
             options.add_experimental_option("prefs", prefs)
+        # headless can't work with "start-maximized" in the same time
+        options.add_argument("--window-size=1920,1080")
         self.chrome = webdriver.Chrome('C:/Users/sonu/Desktop/howThesis/webDriver/chromedriver', options=options)
         self.chrome.get(url)
         self.wait = WebDriverWait(self.chrome, timeout=self.timeout)
@@ -177,7 +179,7 @@ class WEBDRIVER:
         folder_name += "EV_" if int(self.EV_flag) != 0 else "noEV_"
         folder_name += "coml" if int(comfortLevel_flag) != 0 else "noComl"
         
-        self.screenshot_path = self.screenshot_path + price + "\\" + weather + "\\" + folder_name + "\\" + SOC_threshold
+        self.screenshot_path = self.screenshot_path + price + "\\" + folder_name + "\\" + weather + "\\" + SOC_threshold
         
         print(f"=-=-=-=-=-=-=-=-=-= File import to ===>  {self.screenshot_path} =-=-=-=-=-=-=-=-=-=")
         # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\7.50household\\not_summer_price\\sunny\\SOCinit0.7_dr1\\sunny\\"
