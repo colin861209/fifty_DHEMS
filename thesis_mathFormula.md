@@ -173,7 +173,7 @@ $$ \min_{\substack{
     P_{u, grid}^{j},~j=0,...,J-1\\
     \alpha_{u}^{j}, j=0,..., J-1
 }}
-\sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+vw_{u,a}^{j}) +
+\sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+\sum_{a \in A_{u,c1}\in A_{u,c2} \in A_{u,c3}}\sum_{i=1}^{m_c}vw_{u,a_i}^{j}) +
 \sum_{j=\tau_{r}}^{\tau_{r}^{e}} D_{u}^{j}\rho_{f}^{j}(P_{u, grid}^{avg}-P^{j}_{u,grid}) T_{s},
 \quad 
 \begin{aligned}
@@ -185,10 +185,10 @@ $$
 <!-- HEMS Constraint -->
 * Comfort level
   
-  $$ w_{u,a}^{j}=
+  $$ w_{u,a_i}^{j}=
   \left\{ 
       \begin{array}
-        r\frac{j-\tau_{u,a}^{s,c}}{\tau_{u,a}^{e,c}-\tau_{u,a}^{s,c}}+(c+1),if\quad & j\in[\tau_{u,a}^{s,c},\tau_{u,a}^{e,c}],i=1...m_{c},c=1...n_{a}\\
+        r\frac{j-\tau_{u,a}^{s_{i},c}}{\tau_{u,a}^{e_{i},c}-\tau_{u,a}^{s_{i},c}}+(c+1),if\quad & j\in[\tau_{u,a}^{s_{i},c},\tau_{u,a}^{e_{i},c}],i=1...m_{c},c=1...n_{a}\\
         \infty \qquad, \qquad &otherwise
       \end{array}
     \right.
