@@ -168,3 +168,26 @@ We should modify parameters from this [website](140.124.42.65/how/BaseParameter.
   + In `GHEMS_Constraint.cpp`
   1.  Each time block can't less than min SOC in function `EM_previousSOCPlusPchargeTransToSOC_biggerThan_SOCmin`
   2.  Departure SOC bigger than threshold SOC in function `EM_previousSOCPlusSummationPchargeTransToSOC_biggerThan_SOCthreshold`
+
+---
+### 2022/03/25
+
++ Commit Link [8dc3370](https://github.com/colin861209/fifty_DHEMS/commit/8dc33709d8fe0f5070c61091fe16a7232e98e1c3)
++ Pgrid max won't exceed than CBL power
++ LHEMS:
++ Remove dr alpha
+    + New Cost
++ GHEMS:
+  + Uncontrollable Load
+  + Public Load
+    + force to stop
+    + interrupt
+    + periodic
++ web.py
+  + New screenshot path
+  + Fix ev em flag
+  + export GHEMS_UCLoad
++ backup.py
+  + Target folder
+  + Rescreenshot all images or not (yY/nN)
+  + Recover or SaveAs all images, if choose rescreenshot the images (1/2)
