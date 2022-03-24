@@ -29,6 +29,7 @@ int main(int argc, const char **argv)
 	DEMANDRESPONSE dr;
 	ELECTRICMOTOR em;
 	ELECTRICVEHICLE ev;
+	UNCONTROLLABLELOAD ucl;
 
 	if (!connect_mysql("DHEMS_fiftyHousehold"))
 		messagePrint(__LINE__, "Failed to Connect MySQL");
@@ -77,6 +78,11 @@ int main(int argc, const char **argv)
 	ess.flag = flag_receive("GHEMS_flag", ess.str_Pess);
 	bp.Pfc_flag = flag_receive("GHEMS_flag", bp.str_Pfc);
 	bp.SOC_change_flag = flag_receive("GHEMS_flag", bp.str_SOC_change);
+	ucl.flag = value_receive("BaseParameter", "parameter_name", "Global_uncontrollable_load_flag");
+	if (ucl.flag)
+	{
+		ucl.generate_flag = value_receive("BaseParameter", "parameter_name", "generate_Global_uncontrollable_load_flag");
+	}
 	
 	// =-=-=-=-=-=-=- get parameter values from EM_parameter in need -=-=-=-=-=-=-= //
 	// NOTE: 2022/01/03 Discuss with professor comfirm not using fast/super fast charging users, so not fully complete all the process
@@ -128,13 +134,23 @@ int main(int argc, const char **argv)
 		// return how many cars can charge (means flag 'sure' = 1)
 		ev.can_charge_amount = enter_newEVInfo_inPole(ev, bp.sample_time);
 	}
+	// =-=-=-=-=-=-=- uncontrollable load -=-=-=-=-=-=-= //
+	Global_UCload_rand_operationTime(bp, ucl);
 
 	if (pl.flag == 1)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = 5");
-		pl.number = turn_value_to_int(0);
-		for (int i = 0; i < pl.number; i++)
-			bp.variable_name.push_back(pl.str_publicLoad + to_string(i + 1));
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = '5'");
+		pl.forceToStop_number = turn_value_to_int(0);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = '6' ");
+		pl.interrupt_number = turn_value_to_int(0);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = '7' ");
+		pl.periodic_number = turn_value_to_int(0);
+		for (int i = 0; i < pl.forceToStop_number; i++)
+			bp.variable_name.push_back(pl.str_forceToStop_publicLoad + to_string(i + 1));
+		for (int i = 0; i < pl.interrupt_number; i++)
+			bp.variable_name.push_back(pl.str_interrupt_publicLoad + to_string(i + 1));
+		for (int i = 0; i < pl.periodic_number; i++)
+			bp.variable_name.push_back(pl.str_periodic_publicLoad + to_string(i + 1));
 	}
 	if (bp.Pgrid_flag == 1)
 		bp.variable_name.push_back(bp.str_Pgrid);
@@ -215,20 +231,18 @@ int main(int argc, const char **argv)
 	// =-=-=-=-=-=-=- get total weighting from dr_alpha -=-=-=-=-=-=-= //
 	if (dr.mode != 0)
 	{
-		for (int i = 0; i < bp.remain_timeblock; i++)
+		bp.Pgrid_max_array.assign(bp.remain_timeblock, bp.Pgrid_max);
+		for (int i = dr.startTime - bp.sample_time; i < dr.endTime -bp.sample_time; i++)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_control_status` WHERE equip_name = '%s' ", i + bp.sample_time, dr.str_alpha.c_str());
-			float dr_weighting_sumOfAlpha = turn_value_to_float(0);
-			bp.Pgrid_max_array.push_back(bp.Pgrid_max / householdAmount * dr_weighting_sumOfAlpha);
+			if (i >= 0)
+				bp.Pgrid_max_array[i] = dr.customer_baseLine;
 		}
 	}
 
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = '%d-%02d-%02d' WHERE parameter_name = 'lastTime_execute' ", now_time.tm_year + 1900, now_time.tm_mon + 1, now_time.tm_mday);
 	sent_query();
 
-	optimization(bp, ess, dr, pl, em, ev);
-	calculateCostInfo(bp, dr, pl);
-	updateSingleHouseholdCost(dr);
+	optimization(bp, ess, dr, pl, ucl, em, ev);
 	
 	if (em.flag && em.can_charge_amount)
 	{
@@ -238,6 +252,9 @@ int main(int argc, const char **argv)
 	{
 		update_fullSOC_or_overtime_EV_inPole(ev, bp.sample_time);
 	}
+	
+	calculateCostInfo(bp, dr, pl, em, ev, ucl);
+	updateSingleHouseholdCost(bp, dr);
 	
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET value = (SELECT A%d FROM GHEMS_control_status where equip_name = '%s') WHERE parameter_name = 'now_SOC'", bp.sample_time, ess.str_SOC.c_str());
 	sent_query();
@@ -253,6 +270,8 @@ int main(int argc, const char **argv)
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET `value` = '0' WHERE `parameter_name` = 'EM_generate_random_user_result'");
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET `value` = '0' WHERE `parameter_name` = 'EV_generate_random_user_result'");
+		sent_query();
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET `value` = '0' WHERE `parameter_name` = 'generate_Global_uncontrollable_load_flag'");
 		sent_query();
 	}
 

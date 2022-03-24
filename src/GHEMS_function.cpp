@@ -28,45 +28,62 @@ float Hydro_Cons = 0.04; // unit kWh/g
 float Hydro_Price = 0.0;
 char column[400] = "A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A29,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95";
 
-void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev)
+void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, UNCONTROLLABLELOAD ucl, ELECTRICMOTOR em, ELECTRICVEHICLE ev)
 {
 	functionPrint(__func__);
 
 	if (pl.flag)
 	{
-		pl.start.assign(pl.number, 0);
-		pl.end.assign(pl.number, 0);
-		pl.operation_time.assign(pl.number, 0);
-		pl.remain_operation_time.assign(pl.number, 0);
-		pl.power.assign(pl.number, 0);
-		float **publicLoad = getPublicLoad(pl.flag, pl.number);
-		for (int i = 0; i < pl.number; i++)
+		// force to stop public load
+		pl.forceToStop_start.assign(pl.forceToStop_number, 0);
+		pl.forceToStop_end.assign(pl.forceToStop_number, 0);
+		pl.forceToStop_operation_time.assign(pl.forceToStop_number, 0);
+		pl.forceToStop_remain_operation_time.assign(pl.forceToStop_number, 0);
+		pl.forceToStop_power.assign(pl.forceToStop_number, 0);
+		float **f_publicLoad = getPublicLoad(5, pl.forceToStop_number);
+		for (int i = 0; i < pl.forceToStop_number; i++)
 		{
-			int decrease_ot = 0, start, end;
-			pl.start[i] = int(publicLoad[i][0]);
-			pl.end[i] = int(publicLoad[i][1]) - 1;
-			if (dr.mode != 0)
-			{
-				if (pl.end[i] >= dr.startTime)
-				{
-					if (pl.start[i] <= dr.startTime)
-						start = dr.startTime;
-					else
-						start = pl.start[i]	;
-					
-					if (pl.end[i] + 1 >= dr.endTime)
-						end = dr.endTime;
-					else
-						end = pl.end[i] + 1;
-					
-					decrease_ot = end - start;
-				}
-			}
-			pl.operation_time[i] = int(publicLoad[i][2]) - decrease_ot;
-			pl.power[i] = publicLoad[i][3];
+			pl.forceToStop_start[i] = int(f_publicLoad[i][0]);
+			pl.forceToStop_end[i] = int(f_publicLoad[i][1]) - 1;
+			pl.forceToStop_operation_time[i] = int(f_publicLoad[i][2]);
+			pl.forceToStop_power[i] = f_publicLoad[i][3];
 		}
-		int *buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.number);
-		pl.remain_operation_time = count_publicLoads_RemainOperateTime(pl.number, pl.operation_time, buff);
+		int *f_buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.forceToStop_number, pl.str_forceToStop_publicLoad);
+		pl.forceToStop_remain_operation_time = count_publicLoads_RemainOperateTime(pl.forceToStop_number, pl.forceToStop_operation_time, f_buff);
+		
+		// interrupt public load
+		pl.interrupt_start.assign(pl.interrupt_number, 0);
+		pl.interrupt_end.assign(pl.interrupt_number, 0);
+		pl.interrupt_operation_time.assign(pl.interrupt_number, 0);
+		pl.interrupt_remain_operation_time.assign(pl.interrupt_number, 0);
+		pl.interrupt_power.assign(pl.interrupt_number, 0);
+		float **i_publicLoad = getPublicLoad(6, pl.interrupt_number);
+		for (int i = 0; i < pl.interrupt_number; i++)
+		{
+			pl.interrupt_start[i] = int(i_publicLoad[i][0]);
+			pl.interrupt_end[i] = int(i_publicLoad[i][1]) - 1;
+			pl.interrupt_operation_time[i] = int(i_publicLoad[i][2]);
+			pl.interrupt_power[i] = i_publicLoad[i][3];
+		}
+		int *i_buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.interrupt_number, pl.str_interrupt_publicLoad);
+		pl.interrupt_remain_operation_time = count_publicLoads_RemainOperateTime(pl.interrupt_number, pl.interrupt_operation_time, i_buff);
+		
+		// periodic public load
+		pl.periodic_start.assign(pl.periodic_number, 0);
+		pl.periodic_end.assign(pl.periodic_number, 0);
+		pl.periodic_operation_time.assign(pl.periodic_number, 0);
+		pl.periodic_remain_operation_time.assign(pl.periodic_number, 0);
+		pl.periodic_power.assign(pl.periodic_number, 0);
+		float **p_publicLoad = getPublicLoad(7, pl.periodic_number);
+		for (int i = 0; i < pl.periodic_number; i++)
+		{
+			pl.periodic_start[i] = int(p_publicLoad[i][0]);
+			pl.periodic_end[i] = int(p_publicLoad[i][1]) - 1;
+			pl.periodic_operation_time[i] = int(p_publicLoad[i][2]);
+			pl.periodic_power[i] = p_publicLoad[i][3];
+		}
+		int *p_buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.periodic_number, pl.str_periodic_publicLoad);
+		pl.periodic_remain_operation_time = count_publicLoads_RemainOperateTime(pl.periodic_number, pl.periodic_operation_time, p_buff);
 	}
 	
 	if (em.flag && em.can_charge_amount)
@@ -103,7 +120,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 
 	// sum by 'row_num_maxAddition' in every constraint below
 	int rowTotal = 0;
-	if (pl.flag) { rowTotal += pl.number; }
+	if (pl.flag) { rowTotal += pl.forceToStop_number + pl.interrupt_number + pl.periodic_number; }
 	if (bp.Pgrid_flag) { rowTotal += bp.remain_timeblock; }
 	if (bp.Psell_flag)	{ rowTotal += bp.remain_timeblock * 2;}
 	if (ess.flag) { rowTotal += bp.remain_timeblock * 4 + 1; }
@@ -135,7 +152,9 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 
 	if (pl.flag)
 	{
-		summation_publicLoadRa_biggerThan_QaMinusD(bp, dr, pl, coefficient, mip, pl.number);
+		summation_forceToStopPublicLoadRa_biggerThan_QaMinusD(bp, dr, pl, coefficient, mip, pl.forceToStop_number);
+		summation_interruptPublicLoadRa_biggerThan_Qa(bp, dr, pl, coefficient, mip, pl.interrupt_number);
+		summation_periodicPublicLoadRa_biggerThan_Qa(bp, dr, pl, coefficient, mip, pl.periodic_number);
 	}
 
 	if (bp.Pgrid_flag)
@@ -169,7 +188,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	}
 
 	// Pgrid j + Pfc j + Ppv j - Pess j - Psell j = sum(Pu,a j) + Pc,a + sum(Pem, n j) + sum(Pev, n j)
-	pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEMPlusPchargingEV(bp, ess, pl, em, ev, coefficient, mip, bp.remain_timeblock);
+	pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEMPlusPchargingEV(bp, ess, pl, ucl, em, ev, coefficient, mip, bp.remain_timeblock);
 
 	// dr constraint
 	if (dr.mode != 0)
@@ -340,7 +359,6 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		display_coefAndBnds_rowNum();
 		printf("Error > sol is 0, No Solution, give up the solution\n");
 		printf("%.2f\n", glp_mip_col_val(mip, find_variableName_position(bp.variable_name, ess.str_SOC) + 1));
-		// CLEAN:
 		if (em.flag)
 		{
 			if (em.can_discharge)
@@ -387,7 +405,6 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 				}
 			}
 		}
-		exit(0);
 		return;
 	}
 
@@ -396,32 +413,32 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	if (em.flag || ev.flag)
 	{
 		int size_without_EMEV = bp.variable;
-	if (em.flag)
-	{
-		for (int n = 0; n < em.can_charge_amount; n++)
+		if (em.flag)
 		{
-			float c_status = glp_mip_col_val(mip, find_variableName_position(bp.variable_name, em.str_charging + to_string(n + 1)) + 1);
-			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `charging_status` = '%d' WHERE `Pole_ID` = '%d'", int(c_status), em.Pole_ID[n]);
-			sent_query();
+			for (int n = 0; n < em.can_charge_amount; n++)
+			{
+				float c_status = glp_mip_col_val(mip, find_variableName_position(bp.variable_name, em.str_charging + to_string(n + 1)) + 1);
+				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `charging_status` = '%d' WHERE `Pole_ID` = '%d'", int(c_status), em.Pole_ID[n]);
+				sent_query();
+				if (em.can_discharge)
+				{
+					float d_status = glp_mip_col_val(mip, find_variableName_position(bp.variable_name, em.str_discharging + to_string(n + 1)) + 1);
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `discharge_status` = '%d' WHERE `Pole_ID` = '%d'", int(d_status), em.Pole_ID[n]);
+					sent_query();
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_chargingOrDischarging_status` SET `A%d` = '%d' WHERE `user_number` = %d", bp.sample_time, int(c_status)-int(d_status), em.number[n]);
+					sent_query();
+				}
+				else
+				{
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_chargingOrDischarging_status` SET `A%d` = '%d' WHERE `user_number` = %d", bp.sample_time, int(c_status), em.number[n]);
+					sent_query();
+				}
+			}
 			if (em.can_discharge)
-			{
-				float d_status = glp_mip_col_val(mip, find_variableName_position(bp.variable_name, em.str_discharging + to_string(n + 1)) + 1);
-				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_Pole` SET `discharge_status` = '%d' WHERE `Pole_ID` = '%d'", int(d_status), em.Pole_ID[n]);
-				sent_query();
-				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_chargingOrDischarging_status` SET `A%d` = '%d' WHERE `user_number` = %d", bp.sample_time, int(c_status)-int(d_status), em.number[n]);
-				sent_query();
-			}
+				size_without_EMEV -= em.can_charge_amount * 3;
 			else
-			{
-				snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `EM_chargingOrDischarging_status` SET `A%d` = '%d' WHERE `user_number` = %d", bp.sample_time, int(c_status), em.number[n]);
-				sent_query();
-			}
+				size_without_EMEV -= em.can_charge_amount;
 		}
-		if (em.can_discharge)
-			size_without_EMEV -= em.can_charge_amount * 3;
-		else
-			size_without_EMEV -= em.can_charge_amount;
-	}
 		if (ev.flag)
 		{
 			for (int n = 0; n < ev.can_charge_amount; n++)
@@ -542,10 +559,20 @@ void setting_GLPK_columnBoundary(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMA
 	{
 		if (pl.flag == 1)
 		{
-			for (int j = 1; j <= pl.number; j++)
+			for (int j = 1; j <= pl.forceToStop_number; j++)
 			{
-				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, pl.str_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
-				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, pl.str_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_BV);
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
+				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_BV);
+			}
+			for (int j = 1; j <= pl.interrupt_number; j++)
+			{
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
+				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_BV);
+			}		
+			for (int j = 1; j <= pl.periodic_number; j++)
+			{
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
+				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_BV);
 			}
 		}
 		if (bp.Pgrid_flag == 1)
@@ -889,7 +916,7 @@ void updateTableCost(BASEPARAMETER bp, float *totalLoad, float *totalLoad_price,
 	// step1_sell = opt_sell_result;
 }
 
-void calculateCostInfo(BASEPARAMETER bp, DEMANDRESPONSE dr, PUBLICLOAD pl)
+void calculateCostInfo(BASEPARAMETER bp, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, UNCONTROLLABLELOAD ucl)
 {
 	functionPrint(__func__);
 
@@ -957,16 +984,57 @@ void calculateCostInfo(BASEPARAMETER bp, DEMANDRESPONSE dr, PUBLICLOAD pl)
 	for (int i = bp.sample_time; i < bp.time_block; i++)
 	{
 		// =-=-=-=-=-=-=- calculate total load spend how much money if only use grid power -=-=-=-=-=-=-= //
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT totalLoad FROM totalLoad_model WHERE time_block = %d ", i);
+		totalLoad[i] = turn_value_to_float(0);
+
+		if (ucl.flag)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `totalLoad` FROM `GHEMS_uncontrollable_load` WHERE time_block = %d ", i);
+			totalLoad[i] += turn_value_to_float(0);
+		}
+		if (em.flag)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `total_power` FROM `EM_user_number` WHERE timeblock = %d ", i);
+			totalLoad[i] += turn_value_to_float(0);
+			if (em.can_discharge)
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `discharge_normal_power` FROM `EM_user_number` WHERE timeblock = %d ", i);
+				totalLoad[i] += turn_value_to_float(0);
+			}
+		}
+		if (ev.flag)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `total_power` FROM `EV_user_number` WHERE timeblock = %d ", i);
+			totalLoad[i] += turn_value_to_float(0);
+			if (em.can_discharge)
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `discharge_normal_power` FROM `EV_user_number` WHERE timeblock = %d ", i);
+				totalLoad[i] += turn_value_to_float(0);
+			}
+		}
 		if (pl.flag)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT totalLoad FROM totalLoad_model WHERE time_block = %d ", i);
-			totalLoad[i] = turn_value_to_float(0);
-
-			for (int j = 0; j < pl.number; j++)
+			for (int j = 0; j < pl.forceToStop_number; j++)
 			{
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_publicLoad+to_string(j+1)).c_str());
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_forceToStop_publicLoad+to_string(j+1)).c_str());
 				int status_tmp = turn_value_to_int(0);
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = 5 LIMIT %d, %d", j, j + 1);
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = '5' LIMIT %d, %d", j, j + 1);
+				float power_tmp = turn_value_to_float(0);
+				publicLoad[i] += status_tmp * power_tmp;
+			}
+			for (int j = 0; j < pl.interrupt_number; j++)
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_interrupt_publicLoad+to_string(j+1)).c_str());
+				int status_tmp = turn_value_to_int(0);
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = '6' LIMIT %d, %d", j, j + 1);
+				float power_tmp = turn_value_to_float(0);
+				publicLoad[i] += status_tmp * power_tmp;
+			}
+			for (int j = 0; j < pl.periodic_number; j++)
+			{
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_periodic_publicLoad+to_string(j+1)).c_str());
+				int status_tmp = turn_value_to_int(0);
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = '7' LIMIT %d, %d", j, j + 1);
 				float power_tmp = turn_value_to_float(0);
 				publicLoad[i] += status_tmp * power_tmp;
 			}
@@ -1038,54 +1106,78 @@ void calculateCostInfo(BASEPARAMETER bp, DEMANDRESPONSE dr, PUBLICLOAD pl)
 	updateTableCost(bp, totalLoad, totalLoad_price, real_grid_pirce, publicLoad, publicLoad_price, fuelCell_kW_price, Hydrogen_g_consumption, real_sell_pirce, demandResponse_feedback, totalLoad_sum, totalLoad_priceSum, real_grid_pirceSum, publicLoad_sum, publicLoad_priceSum, fuelCell_kW_priceSum, Hydrogen_g_consumptionSum, real_sell_pirceSum, totalLoad_taipowerPriceSum, demandResponse_feedbackSum);
 }
 
-void updateSingleHouseholdCost(DEMANDRESPONSE dr)
+void updateSingleHouseholdCost(BASEPARAMETER bp, DEMANDRESPONSE dr)
 {
 	functionPrint(__func__);
-
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(origin_grid_price) FROM `LHEMS_cost`");
-	float origin_grid_priceSum = turn_value_to_float(0);
+	
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM `BaseParameter` WHERE parameter_name = 'householdAmount'");
 	float householdTotal = turn_value_to_float(0);
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM `BaseParameter` WHERE parameter_name = 'realGridPurchase'");
-	float total_gridCost = turn_value_to_float(0);
+	// O_{u,ca}^{cost}
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM `BaseParameter` WHERE parameter_name = 'publicLoadSpend(threeLevelPrice)'");
-	float total_publicCost = turn_value_to_float(0);
+	float single_public_price = turn_value_to_float(0) / householdTotal;
 	
-	float total_origin_priceSum = origin_grid_priceSum + total_publicCost;
-	float single_public_price = total_publicCost / householdTotal;
-	
-	float feedbackTotalPrice = 0.0;
-	int participateTotal = 0;
-	vector<int> single_participateTotal;
+	vector<float> each_household_feedbackTotalPrice;
+	each_household_feedbackTotalPrice.assign(householdTotal, 0);
 	if (dr.mode != 0)
 	{
-		single_participateTotal.assign(householdTotal, 0);
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM `BaseParameter` WHERE parameter_name = 'demandResponse_feedbackPrice'");
-		feedbackTotalPrice = turn_value_to_float(0);
-		for (int i = dr.startTime; i < dr.endTime; i++)
+		vector<float> C_uj;
+		for (int j = dr.startTime; j < dr.endTime; j++)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_demand_response_participation`", i);
-			participateTotal += turn_value_to_int(0);
-			for (int j = 0; j < householdTotal; j++)
-			{				
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `LHEMS_demand_response_participation` WHERE household_id = %d", i, j + 1);
-				single_participateTotal[j] += turn_value_to_int(0);
+			C_uj.assign(householdTotal, 0);
+			// O_{dr}^{j,feedback}
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `A%d` FROM `cost` WHERE `cost_name` = 'demand_response_feedback'", j);
+			float each_timeblock_feedbackPrice = turn_value_to_float(0);
+
+			for (int i = 0; i < householdTotal; i++)
+			{
+				// P_{u, grid}^{avg}
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT MAX(household%d) FROM `LHEMS_demand_response_CBL` WHERE `time_block` BETWEEN %d AND %d AND `comfort_level_flag` = (SELECT value FROM BaseParameter WHERE parameter_name = 'comfortLevel_flag')", i + 1, dr.startTime, dr.endTime - 1);
+				float P_uavg = turn_value_to_float(0);
+				
+				// D_{u}^{j}
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM `LHEMS_demand_response_participation` WHERE household_id = %d", j, i + 1);
+				int participate = turn_value_to_int(0);
+
+				// P_{u, grid}^{j}
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `A%d` FROM `LHEMS_control_status` WHERE `equip_name` = 'Pgrid' AND `household_id` = %d ", j, i + 1);
+				float P_ugrid = turn_value_to_float(0);
+
+				C_uj[i] = participate * dr.feedback_price * (P_uavg - P_ugrid) * bp.delta_T;
+			}
+
+			float sum_C_uj = accumulate(C_uj.begin(), C_uj.end(), 0);
+
+			for (int i = 0; i < householdTotal; i++)
+			{
+				// O_{u, dr}^{feedback}
+				each_household_feedbackTotalPrice[i] += each_timeblock_feedbackPrice * C_uj[i] / sum_C_uj;
 			}
 		}	
 	}
 
 	for (int i = 0; i < householdTotal; i++)
 	{
-		float single_feedback_price = 0.0; 
-		if (dr.mode != 0)
-			single_feedback_price = feedbackTotalPrice*single_participateTotal[i]/participateTotal;
+		// T_{u, price}
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT origin_grid_price FROM `LHEMS_cost` WHERE household_id = %d", i + 1);
 		float single_origin_grid_price = turn_value_to_float(0);
+		// T_{u, price}^{total}
 		float origin_pay_price = single_origin_grid_price + single_public_price;
-		float real_grid_price = origin_pay_price / total_origin_priceSum * total_gridCost;
-		float final_pay_price = real_grid_price - single_feedback_price;
+		float real_grid_price = 0;
+		for (int j = 0; j < bp.time_block; j++)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT round((SELECT `A%d` FROM `LHEMS_cost` WHERE `household_id` = %d)/SUM(A%d), 4) FROM `LHEMS_cost` ORDER BY `household_id` ASC", j, i + 1, j);
+			float each_timeblock_household_percent =  turn_value_to_float(0);
+			// O_{total}^{j, cost}
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `A%d` FROM `cost` WHERE cost_name = 'real_buy_grid_price'", j);
+			float each_timeblock_gridCost = turn_value_to_float(0);
+			// O_{u, cost}
+			real_grid_price += each_timeblock_gridCost * each_timeblock_household_percent;
+		}
+		
+		// O_{u, cost}^{total}
+		float final_pay_price = real_grid_price - each_household_feedbackTotalPrice[i];
 		float saving_efficiency = (origin_pay_price - final_pay_price) / origin_pay_price;
-		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_cost` SET `real_grid_price` = '%.3f', `public_price` = '%.3f', `feedback_price` = '%.3f', `origin_pay_price` = '%.3f', `final_pay_price` = '%.3f', `saving_efficiency` = '%.5f' WHERE `household_id` = %d", real_grid_price, single_public_price, single_feedback_price, origin_pay_price, final_pay_price, saving_efficiency, i + 1);
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_cost` SET `real_grid_price` = '%.3f', `public_price` = '%.3f', `feedback_price` = '%.3f', `origin_pay_price` = '%.3f', `final_pay_price` = '%.3f', `saving_efficiency` = '%.5f' WHERE `household_id` = %d", real_grid_price, single_public_price, each_household_feedbackTotalPrice[i], origin_pay_price, final_pay_price, saving_efficiency, i + 1);
 		sent_query();
 	}	
 }
@@ -1149,7 +1241,7 @@ float *get_totalLoad_power(int time_block, bool uncontrollable_load_flag)
 	return load_model;
 }
 
-int *countPublicLoads_AlreadyOpenedTimes(BASEPARAMETER bp, int publicLoad_num)
+int *countPublicLoads_AlreadyOpenedTimes(BASEPARAMETER bp, int publicLoad_num, string publicLoad_name)
 {
 	functionPrint(__func__);
 	int *buff = new int[publicLoad_num];
@@ -1162,7 +1254,7 @@ int *countPublicLoads_AlreadyOpenedTimes(BASEPARAMETER bp, int publicLoad_num)
 		for (int i = 0; i < publicLoad_num; i++)
 		{
 			int coun = 0;
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM GHEMS_control_status WHERE equip_name = '%s'", column, bp.variable_name[i].c_str());
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM GHEMS_control_status WHERE equip_name = '%s'", column, (publicLoad_name + to_string(i + 1)).c_str());
 			fetch_row_value();
 			for (int j = 0; j < bp.sample_time; j++)
 			{
@@ -1197,6 +1289,95 @@ vector<int> count_publicLoads_RemainOperateTime(int public_num, vector<int> publ
 		messagePrint(__LINE__, "Public load remain times: ", 'I', public_reot[i], 'Y');
 	}
 	return public_reot;
+}
+
+// uncontrollable load
+void Global_UCload_rand_operationTime(BASEPARAMETER bp, UNCONTROLLABLELOAD &ucl)
+{
+	functionPrint(__func__);
+
+	float *result = new float[bp.time_block];
+	
+	
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE `group_id` = 8");
+	ucl.number =  turn_value_to_int(0);
+	
+	if (!ucl.flag)
+	{
+		for (int i = 0; i < ucl.number; i++)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `GHEMS_uncontrollable_load` SET `uncontrollable_load%d` = '0.0' ", i + 1);
+			sent_query();		
+		}
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `GHEMS_uncontrollable_load` SET `totalLoad` = '0.0' ");
+		sent_query();
+		
+		ucl.power_array = result;
+	}
+	else
+	{	
+		if (ucl.generate_flag)
+		{
+			srand(time(NULL));
+			if (bp.sample_time == 0)
+			{
+				for (int i = 0; i < ucl.number; i++)
+				{
+					for (int i = 0; i < bp.time_block; i++)
+						result[i] = 0.0;
+					
+					snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `uncontrollable_loads`, `power1` FROM `load_list` WHERE `group_id` = 8 LIMIT %d, %d", i, i + 1);
+					fetch_row_value();
+					char *seo_time = mysql_row[0];
+					float power = atof(mysql_row[1]);
+					char *tmp;
+					tmp = strtok(seo_time, "~");
+					vector<int> time_seperate;
+					while (tmp != NULL)
+					{
+						time_seperate.push_back(atoi(tmp));
+						tmp = strtok(NULL, "~");
+					}
+
+					int operate_count = 0;
+					for (int j = time_seperate[0]; j < time_seperate[1]; j++)
+					{
+						if (operate_count != time_seperate[2])
+						{
+							int operate_tmp = rand() % 2;
+							float operate_power = operate_tmp * power;
+							operate_count += operate_tmp;
+							result[j] += operate_power;
+						}
+					}
+					time_seperate.clear();
+					
+					for (int j = 0; j < bp.time_block; j++)
+					{
+						snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `GHEMS_uncontrollable_load` SET `uncontrollable_load%d` = '%.1f' WHERE `time_block` = %d;", i + 1, result[j], j);
+						sent_query();
+					}
+				}
+				for (int j = 0; j < bp.time_block; j++)
+				{
+					float power_total = 0.0;
+					for (int i = 0; i < ucl.number; i++)
+					{
+						snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `uncontrollable_load%d` FROM `GHEMS_uncontrollable_load` WHERE time_block = %d", i + 1, j);
+						power_total += turn_value_to_float(0);
+					}
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `GHEMS_uncontrollable_load` SET `totalLoad` = '%.1f' WHERE `time_block` = %d;", power_total, j);
+					sent_query();
+				}
+			}
+		}
+		for (int i = 0; i < bp.time_block; i++)
+		{
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `totalLoad` FROM `GHEMS_uncontrollable_load` WHERE `time_block` = %d;", i);
+			result[i] = turn_value_to_float(0);
+		}
+		ucl.power_array = result;
+	}
 }
 
 void update_fullSOC_or_overtime_EM_inPole(ELECTRICMOTOR em, int sample_time)

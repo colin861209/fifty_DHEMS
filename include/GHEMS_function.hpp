@@ -8,13 +8,28 @@ using namespace std;
 typedef struct 
 {
 	bool flag;
-	int number;
-	vector<int> start;
-	vector<int> end;
-	vector<int> operation_time;
-	vector<int> remain_operation_time;
-	vector<float> power;
+	int forceToStop_number;
+	int interrupt_number;
+	int periodic_number;
+	vector<int> forceToStop_start;
+	vector<int> interrupt_start;
+	vector<int> periodic_start;
+	vector<int> forceToStop_end;
+	vector<int> interrupt_end;
+	vector<int> periodic_end;
+	vector<int> forceToStop_operation_time;
+	vector<int> interrupt_operation_time;
+	vector<int> periodic_operation_time;
+	vector<int> forceToStop_remain_operation_time;
+	vector<int> interrupt_remain_operation_time;
+	vector<int> periodic_remain_operation_time;
+	vector<float> forceToStop_power;
+	vector<float> interrupt_power;
+	vector<float> periodic_power;
 	string str_publicLoad = "publicLoad";
+	string str_forceToStop_publicLoad = "forceToStop_publicLoad";
+	string str_interrupt_publicLoad = "interrupt_publicLoad";
+	string str_periodic_publicLoad = "periodic_publicLoad";
 } PUBLICLOAD;
 
 typedef struct 
@@ -58,15 +73,16 @@ typedef struct
 int determine_realTimeOrOneDayMode_andGetSOC(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM &ess, ELECTRICMOTOR em, ELECTRICVEHICLE ev, int real_time);
 float *getOrUpdate_SolarInfo_ThroughSampleTime(BASEPARAMETER bp, const char *weather);
 void updateTableCost(BASEPARAMETER bp, float *totalLoad, float *totalLoad_price, float *real_grid_pirce, float *publicLoad, float *publicLoad_price, float *fuelCell_kW_price, float *Hydrogen_g_consumption, float *real_sell_pirce, float *demandResponse_feedback, float totalLoad_sum, float totalLoad_priceSum, float real_grid_pirceSum, float publicLoad_sum, float publicLoad_priceSum, float fuelCell_kW_priceSum, float Hydrogen_g_consumptionSum, float real_sell_pirceSum, float totalLoad_taipowerPriceSum, float demandResponse_feedbackSum);
-void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev);
+void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, UNCONTROLLABLELOAD ucl, ELECTRICMOTOR em, ELECTRICVEHICLE ev);
 void setting_GLPK_columnBoundary(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, glp_prob *mip);
-void calculateCostInfo(BASEPARAMETER bp, DEMANDRESPONSE dr, PUBLICLOAD pl);
-void updateSingleHouseholdCost(DEMANDRESPONSE dr);
+void calculateCostInfo(BASEPARAMETER bp, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, UNCONTROLLABLELOAD ucl);
+void updateSingleHouseholdCost(BASEPARAMETER bp, DEMANDRESPONSE dr);
 void insert_GHEMS_variable(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess);
 float getPrevious_battery_dischargeSOC(int time_block, int sample_time, string target_equip_name);
 float *get_totalLoad_power(int time_block, bool uncontrollable_load_flag);
-int *countPublicLoads_AlreadyOpenedTimes(BASEPARAMETER bp, int publicLoad_num);
+int *countPublicLoads_AlreadyOpenedTimes(BASEPARAMETER bp, int publicLoad_num, string publicLoad_name);
 vector<int> count_publicLoads_RemainOperateTime(int public_num, vector<int> public_ot, int *buff);
+void Global_UCload_rand_operationTime(BASEPARAMETER bp, UNCONTROLLABLELOAD &ucl);
 
 // electric vehicle & motor 
 // major

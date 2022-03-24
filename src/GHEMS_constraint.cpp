@@ -13,26 +13,26 @@
 #include "GHEMS_constraint.hpp"
 
 // =-=-=-=-=-=-=- public load -=-=-=-=-=-=-= //
-void summation_publicLoadRa_biggerThan_QaMinusD(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void summation_forceToStopPublicLoadRa_biggerThan_QaMinusD(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
-    for (int i = 0; i < pl.number; i++)
+    for (int i = 0; i < pl.forceToStop_number; i++)
     {
-        if ((pl.end[i] - bp.sample_time) >= 0)
+        if ((pl.forceToStop_end[i] - bp.sample_time) >= 0)
         {
-            if ((pl.start[i] - bp.sample_time) >= 0)
+            if ((pl.forceToStop_start[i] - bp.sample_time) >= 0)
             {
-                for (int j = (pl.start[i] - bp.sample_time); j <= (pl.end[i] - bp.sample_time); j++)
+                for (int j = (pl.forceToStop_start[i] - bp.sample_time); j <= (pl.forceToStop_end[i] - bp.sample_time); j++)
                 {
-                    coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_publicLoad + to_string(i + 1))] = 1.0;
+                    coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(i + 1))] = 1.0;
                 }
             }
-            else if ((pl.start[i] - bp.sample_time) < 0)
+            else if ((pl.forceToStop_start[i] - bp.sample_time) < 0)
             {
-                for (int j = 0; j <= (pl.end[i] - bp.sample_time); j++)
+                for (int j = 0; j <= (pl.forceToStop_end[i] - bp.sample_time); j++)
                 {
-                    coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_publicLoad + to_string(i + 1))] = 1.0;
+                    coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(i + 1))] = 1.0;
                 }
             }
             if (dr.mode != 0)
@@ -43,25 +43,87 @@ void summation_publicLoadRa_biggerThan_QaMinusD(BASEPARAMETER &bp, DEMANDRESPONS
                     {
                         for (int j = (dr.startTime - bp.sample_time); j < (dr.endTime - bp.sample_time); j++)
                         {
-                            coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_publicLoad + to_string(i + 1))] = 0.0;
+                            coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(i + 1))] = 0.0;
                         }
                     }
                     else if ((dr.startTime - bp.sample_time) < 0)
                     {
                         for (int j = 0; j < (dr.endTime - bp.sample_time); j++)
                         {
-                            coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_publicLoad + to_string(i + 1))] = 0.0;
+                            coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(i + 1))] = 0.0;
                         }
                     }
                 }
             }
         }        
         glp_set_row_name(mip, bp.bnd_row_num + i, "");
-        glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_LO, ((float)pl.remain_operation_time[i]), 0.0);
+        glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_LO, ((float)pl.forceToStop_remain_operation_time[i]), 0.0);
     }
     bp.coef_row_num += row_num_maxAddition;
     bp.bnd_row_num += row_num_maxAddition;
     saving_coefAndBnds_rowNum(bp.coef_row_num, row_num_maxAddition, bp.bnd_row_num, row_num_maxAddition);
+}
+
+void summation_interruptPublicLoadRa_biggerThan_Qa(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+{
+	functionPrint(__func__);
+
+	for (int i = 0; i < pl.interrupt_number; i++)
+	{
+		if ((pl.interrupt_end[i] - bp.sample_time) >= 0)
+		{
+			if ((pl.interrupt_start[i] - bp.sample_time) >= 0)
+			{
+				for (int j = (pl.interrupt_start[i] - bp.sample_time); j <= (pl.interrupt_end[i] - bp.sample_time); j++)
+				{
+					coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(i + 1))] = 1.0;
+				}
+			}
+			else if ((pl.interrupt_start[i] - bp.sample_time) < 0)
+			{
+				for (int j = 0; j <= (pl.interrupt_end[i] - bp.sample_time); j++)
+				{
+					coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(i + 1))] = 1.0;
+				}
+			}
+		}
+		glp_set_row_name(mip, bp.bnd_row_num + i, "");
+		glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_LO, ((float)pl.interrupt_remain_operation_time[i]), 0.0);
+	}
+	bp.coef_row_num += row_num_maxAddition;
+	bp.bnd_row_num += row_num_maxAddition;
+	saving_coefAndBnds_rowNum(bp.coef_row_num, row_num_maxAddition, bp.bnd_row_num, row_num_maxAddition);
+}
+
+void summation_periodicPublicLoadRa_biggerThan_Qa(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+{
+	functionPrint(__func__);
+
+	for (int i = 0; i < pl.periodic_number; i++)
+	{
+		if ((pl.periodic_end[i] - bp.sample_time) >= 0)
+		{
+			if ((pl.periodic_start[i] - bp.sample_time) >= 0)
+			{
+				for (int j = (pl.periodic_start[i] - bp.sample_time); j <= (pl.periodic_end[i] - bp.sample_time); j++)
+				{
+					coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(i + 1))] = 1.0;
+				}
+			}
+			else if ((pl.periodic_start[i] - bp.sample_time) < 0)
+			{
+				for (int j = 0; j <= (pl.periodic_end[i] - bp.sample_time); j++)
+				{
+					coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(i + 1))] = 1.0;
+				}
+			}
+		}
+		glp_set_row_name(mip, bp.bnd_row_num + i, "");
+		glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_LO, ((float)pl.periodic_remain_operation_time[i]), 0.0);
+	}
+	bp.coef_row_num += row_num_maxAddition;
+	bp.bnd_row_num += row_num_maxAddition;
+	saving_coefAndBnds_rowNum(bp.coef_row_num, row_num_maxAddition, bp.bnd_row_num, row_num_maxAddition);
 }
 
 // =-=-=-=-=-=-=- grid with demand response or sell -=-=-=-=-=-=-= //
@@ -216,28 +278,68 @@ void pessPositiveMinusPessNegative_equalTo_Pess(BASEPARAMETER &bp, ENERGYSTORAGE
 }
 
 // =-=-=-=-=-=-=- balanced equation -=-=-=-=-=-=-= //
-void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEMPlusPchargingEV(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusPpublicLoadPlusPchargingEMPlusPchargingEV(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM ess, PUBLICLOAD pl, UNCONTROLLABLELOAD ucl, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
     
     if (pl.flag)
     {
-        for (int h = 0; h < pl.number; h++)
+        for (int h = 0; h < pl.forceToStop_number; h++)
         {
-            if ((pl.end[h] - bp.sample_time) >= 0)
+            if ((pl.forceToStop_end[h] - bp.sample_time) >= 0)
             {
-                if ((pl.start[h] - bp.sample_time) >= 0)
+                if ((pl.forceToStop_start[h] - bp.sample_time) >= 0)
                 {
-                    for (int i = (pl.start[h] - bp.sample_time); i <= (pl.end[h] - bp.sample_time); i++)
+                    for (int i = (pl.forceToStop_start[h] - bp.sample_time); i <= (pl.forceToStop_end[h] - bp.sample_time); i++)
                     {
-                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_publicLoad + to_string(h + 1))] = pl.power[h];
+                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(h + 1))] = pl.forceToStop_power[h];
                     }
                 }
-                else if ((pl.start[h] - bp.sample_time) < 0)
+                else if ((pl.forceToStop_start[h] - bp.sample_time) < 0)
                 {
-                    for (int i = 0; i <= (pl.end[h] - bp.sample_time); i++)
+                    for (int i = 0; i <= (pl.forceToStop_end[h] - bp.sample_time); i++)
                     {
-                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_publicLoad + to_string(h + 1))] = pl.power[h];
+                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(h + 1))] = pl.forceToStop_power[h];
+                    }
+                }
+            }
+        }
+        for (int h = 0; h < pl.interrupt_number; h++)
+        {
+            if ((pl.interrupt_end[h] - bp.sample_time) >= 0)
+            {
+                if ((pl.interrupt_start[h] - bp.sample_time) >= 0)
+                {
+                    for (int i = (pl.interrupt_start[h] - bp.sample_time); i <= (pl.interrupt_end[h] - bp.sample_time); i++)
+                    {
+                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(h + 1))] = pl.interrupt_power[h];
+                    }
+                }
+                else if ((pl.interrupt_start[h] - bp.sample_time) < 0)
+                {
+                    for (int i = 0; i <= (pl.interrupt_end[h] - bp.sample_time); i++)
+                    {
+                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(h + 1))] = pl.interrupt_power[h];
+                    }
+                }
+            }
+        }
+        for (int h = 0; h < pl.periodic_number; h++)
+        {
+            if ((pl.periodic_end[h] - bp.sample_time) >= 0)
+            {
+                if ((pl.periodic_start[h] - bp.sample_time) >= 0)
+                {
+                    for (int i = (pl.periodic_start[h] - bp.sample_time); i <= (pl.periodic_end[h] - bp.sample_time); i++)
+                    {
+                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(h + 1))] = pl.periodic_power[h];
+                    }
+                }
+                else if ((pl.periodic_start[h] - bp.sample_time) < 0)
+                {
+                    for (int i = 0; i <= (pl.periodic_end[h] - bp.sample_time); i++)
+                    {
+                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(h + 1))] = pl.periodic_power[h];
                     }
                 }
             }
@@ -282,10 +384,7 @@ void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusP
             coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, bp.str_Psell)] = 1.0;
 
         glp_set_row_name(mip, (bp.bnd_row_num + i), "");
-        if (bp.solar[i + bp.sample_time] - bp.load_model[i + bp.sample_time] < 0)
-            glp_set_row_bnds(mip, (bp.bnd_row_num + i), GLP_FX, bp.solar[i + bp.sample_time] - bp.load_model[i + bp.sample_time], bp.solar[i + bp.sample_time] - bp.load_model[i + bp.sample_time]);
-        else
-            glp_set_row_bnds(mip, (bp.bnd_row_num + i), GLP_DB, -0.0001, bp.solar[i + bp.sample_time] - bp.load_model[i + bp.sample_time]);
+        glp_set_row_bnds(mip, (bp.bnd_row_num + i), GLP_FX, bp.solar[i + bp.sample_time] - bp.load_model[i + bp.sample_time] - ucl.power_array[i + bp.sample_time], bp.solar[i + bp.sample_time] - bp.load_model[i + bp.sample_time] - ucl.power_array[i + bp.sample_time]);
     }
     bp.coef_row_num += row_num_maxAddition;
     bp.bnd_row_num += row_num_maxAddition;

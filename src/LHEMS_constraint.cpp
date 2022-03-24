@@ -43,46 +43,29 @@ void summation_interruptLoadRa_biggerThan_Qa(INTERRUPTLOAD irl, BASEPARAMETER &b
 	saving_coefAndBnds_rowNum(bp.coef_row_num, row_num_maxAddition, bp.bnd_row_num, row_num_maxAddition);
 }
 
-// =-=-=-=-=-=-=- demand response -=-=-=-=-=-=-= //
-void pgrid_smallerThan_alphaPgridMax(BASEPARAMETER &bp, DEMANDRESPONSE dr, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+// =-=-=-=-=-=-=- dr -=-=-=-=-=-=-= //
+void pgrid_smallerThan_Pavg(BASEPARAMETER &bp, DEMANDRESPONSE dr, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
 	functionPrint(__func__);
 
 	for (int i = 0; i < bp.remain_timeblock; i++)
 	{
-		coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, bp.str_Pgrid)] = 1.0;
-		coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, dr.str_alpha)] = -bp.Pgrid_max;
-
-		glp_set_row_name(mip, bp.bnd_row_num + i, "");
-		glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_UP, 0.0, 0.0);
-	}
-	bp.coef_row_num += row_num_maxAddition;
-	bp.bnd_row_num += row_num_maxAddition;
-	saving_coefAndBnds_rowNum(bp.coef_row_num, row_num_maxAddition, bp.bnd_row_num, row_num_maxAddition);
-}
-
-void alpha_between_oneminusDu_and_one(BASEPARAMETER &bp, DEMANDRESPONSE dr, int *participate_array, float **coefficient, glp_prob *mip, int row_num_maxAddition)
-{
-	functionPrint(__func__);
-
-	for (int i = 0; i < bp.remain_timeblock; i++)
-	{
-		coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, dr.str_alpha)] = 1.0;
-
-		glp_set_row_name(mip, bp.bnd_row_num + i, "");
-		glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_FX, 1.0, 1.0);
-		if (bp.sample_time + i < dr.endTime)
+		if (dr.startTime - bp.sample_time >= 0)
 		{
-			if (bp.sample_time + i >= dr.startTime)
+			for (int i = (dr.startTime - bp.sample_time); i <= (dr.endTime - bp.sample_time); i++)
 			{
-				if (1 - participate_array[bp.sample_time + i - dr.startTime] == 0)
-				{
-					glp_set_row_name(mip, bp.bnd_row_num + i, "");
-					glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_DB, (1 - participate_array[bp.sample_time + i - dr.startTime]), 1.0);
-					// glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_DB, 0.0, 1.0);
-				}
+				coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, bp.str_Pgrid)] = 1.0;
 			}
 		}
+		else if (dr.startTime - bp.sample_time < 0)
+		{
+			for (int i = 0; i <= (dr.endTime - bp.sample_time); i++)
+			{
+				coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, bp.str_Pgrid)] = 1.0;
+			}
+		}
+		glp_set_row_name(mip, bp.bnd_row_num + i, "");
+		glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_UP, 0.0, dr.household_CBL);
 	}
 	bp.coef_row_num += row_num_maxAddition;
 	bp.bnd_row_num += row_num_maxAddition;

@@ -23,24 +23,20 @@ class WEBDRIVER:
         self.DHEMSFifty="DHEMS_FiftyHousehold"
         self.user_value="root"
         self.password_value="fuzzy314"
-        self.EV_flag=""
-        self.EM_flag=""
         self.nonEmpty_table_array=[]
         self.backupTable_array = {
             'rowCount': [
                 xpath.rowCount_backup_BaseParameter, xpath.rowCount_backup_EM_Parameter, xpath.rowCount_backup_EM_user_number, 
                 xpath.rowCount_backup_EM_user_result, xpath.rowCount_backup_EV_Parameter, xpath.rowCount_backup_EV_user_number, 
-                xpath.rowCount_backup_EV_user_result, xpath.rowCount_backup_GHEMS, xpath.rowCount_backup_LHEMS, xpath.rowCount_backup_totalLoad
+                xpath.rowCount_backup_EV_user_result, xpath.rowCount_backup_GHEMS, xpath.rowCount_backup_GHEMS_ucLoad, 
+                xpath.rowCount_backup_LHEMS, xpath.rowCount_backup_LHEMS_cost, xpath.rowCount_backup_totalLoad
             ],
             'table': [
                 xpath.text_backup_BaseParameter, xpath.text_backup_EM_Parameter, xpath.text_backup_EM_user_number, 
                 xpath.text_backup_EM_user_result, xpath.text_backup_EV_Parameter, xpath.text_backup_EV_user_number, 
-                xpath.text_backup_EV_user_result, xpath.text_backup_GHEMS, xpath.text_backup_LHEMS, xpath.text_backup_totalLoad
+                xpath.text_backup_EV_user_result, xpath.text_backup_GHEMS, xpath.text_backup_GHEMS_ucLoad, 
+                xpath.text_backup_LHEMS, xpath.text_backup_LHEMS_cost, xpath.text_backup_totalLoad
             ],    
-            'name': [
-                xpath.str_BaseParameter, xpath.str_EM_Parameter, xpath.str_EM_user_number, 
-                xpath.str_EM_user_result, xpath.str_EV_Parameter, xpath.str_EV_user_number, 
-                xpath.str_EV_user_result, xpath.str_GHEMS_control_status, xpath.str_LHEMS_control_status, xpath.str_totalLoad_model],        
         }
         # setting driver then open browser
         options = Options()
@@ -94,7 +90,6 @@ class WEBDRIVER:
 
     def checkBackupRowCountIsZero(self):        
         try:
-            # if self.chrome.find_element_by_xpath(xpath.rowCount_backup_BaseParameter):
             self.nonEmpty_table_array=self.backupTable_array["table"].copy()
             target_array2 = self.backupTable_array["rowCount"].copy()
             for target_table in self.backupTable_array['rowCount']:
@@ -148,11 +143,10 @@ class WEBDRIVER:
         self.chrome.execute_script("document.documentElement.scrollTop=10000")
         self.chrome.find_element_by_xpath(xpath.submit_export).click()
 
-    def importTable(self):
-        for import_name, import_table in zip(self.backupTable_array['name'], self.backupTable_array['table']):
-            self.gotoTable(import_table)
-            self.gotoImport(import_name)
-            sleep(1)
+    def importTable(self, target_table, import_file_name):
+        self.gotoTable(target_table)
+        self.gotoImport(import_file_name)
+        sleep(1)
             
     class Backup_img(Enum):
         RECOVER = 1
@@ -205,11 +199,8 @@ class WEBDRIVER:
 
         chart_sequence = {
             'file_name' : ["cost.jpg", "status.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg"],
-            'file_xpath' : [xpath.LHEMS_table, xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15]
+            'file_xpath' : [xpath.backup_LHEMS_table, xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15]
         }
-        # don't screenshot cost img because we don't show cost info in backup_LHEMS.html
-        chart_sequence['file_xpath'].pop(0)
-        chart_sequence['file_name'].pop(0)
         chart_sequence['file_xpath'].reverse()
         chart_sequence['file_name'].reverse()
         for i in range (householdTotal):
@@ -246,21 +237,73 @@ if __name__ == "__main__":
     
     url = URL()
     xpath = Xpath()
-    screenshot_path=r"12.EMEV\both_discharging\grid500_ess150rate0.7\summer_price\cloudy\SOCinit0.3_dr5"
+    
+    # text target path
+    print(f"Please text your target path which after C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\")
+    screenshot_path = input()
     screenshot_path += "\\"
+    print(f"Do you want to re-screenshot figures? (Y/N)")
+    re_screenshot_flag = input().upper()
+    if re_screenshot_flag == 'Y':
+        print(f"Please choose RECOVER:1 / SAVEAS:2 (1/2)")
+        re_screenshot_type = input()
+    else:
+        re_screenshot_type = 0
+    print(f"------------------------------")
+    print(f"Your target folder => {screenshot_path} \nre-screenshot reply => {re_screenshot_flag} \nscreenshot-type => {re_screenshot_type}")
+    print(f"------------------------------")
+
     db = WEBDRIVER(url=url.phpmyadmin, screenshot_path=screenshot_path)
     db.loginPHPMyAdmin()
     db.choose_DHEMS_DB(xpath.btn_DHEMS_group, xpath.text_DB_DHMES_fiftyHousehold)
     db.verifyBackupTablesIsEmpty()
-    db.importTable()
+
+    EM_flag = False if 'noEM' in screenshot_path else True
+    EV_flag = False if 'noEV' in screenshot_path else True
+    
+    db.importTable(xpath.text_backup_BaseParameter, xpath.str_BaseParameter)
+    if EM_flag:
+        db.importTable(xpath.text_backup_EM_Parameter, xpath.str_EM_Parameter)
+        db.importTable(xpath.text_backup_EM_user_number, xpath.str_EM_user_number)
+        db.importTable(xpath.text_backup_EM_user_result, xpath.str_EM_user_result)
+    if EV_flag:
+        db.importTable(xpath.text_backup_EV_Parameter, xpath.str_EV_Parameter)
+        db.importTable(xpath.text_backup_EV_user_number, xpath.str_EV_user_number)
+        db.importTable(xpath.text_backup_EV_user_result, xpath.str_EV_user_result)
+    db.importTable(xpath.text_backup_GHEMS, xpath.str_GHEMS_control_status)
+    db.importTable(xpath.text_backup_GHEMS_ucLoad, xpath.str_GHEMS_ucLoad)
+    db.importTable(xpath.text_backup_LHEMS, xpath.str_LHEMS_control_status)
+    db.importTable(xpath.text_backup_LHEMS_cost, xpath.str_LHEMS_cost)
+    db.importTable(xpath.text_backup_totalLoad, xpath.str_totalLoad_model)
     # go to backup LHEMS & GHEMS and screenshot
     # DEL old and save new => Backup_img.RECOVER; SAVE another new => Backup_img.SAVEAS
-    webpage = WEBDRIVER(url=url.DHEMS_web_backup_GHEMS, screenshot_path=screenshot_path)
-    webpage.re_screenshot_file("LHEMS.jpg", xpath.LHEMS_loadSum, webpage.Backup_img.RECOVER)
-    webpage.re_screenshot_file("GHEMS_Price.jpg", xpath.GHEMS_Price, webpage.Backup_img.RECOVER)
-    webpage.re_screenshot_file("GHEMS_SOC.jpg", xpath.GHEMS_SOC, webpage.Backup_img.RECOVER)
-    webpage.re_screenshot_file("GHEMS_loadModel.jpg", xpath.GHEMS_loadModel, webpage.Backup_img.RECOVER)
-    webpage.re_screenshot_file("GHEMS_EMchargingSOC.jpg", xpath.GHEMS_EMchargingSOC, webpage.Backup_img.RECOVER)
-    webpage.re_screenshot_file("GHEMS_EVchargingSOC.jpg", xpath.GHEMS_EVchargingSOC, webpage.Backup_img.RECOVER)
-    webpage.re_screenshot_file("GHEMS_table.jpg", xpath.GHEMS_table, webpage.Backup_img.RECOVER)
-    webpage.re_screenshot_everyHousehold_eachLoad_file(webpage.Backup_img.RECOVER)
+    if re_screenshot_flag == 'Y':
+        if re_screenshot_type == 0:
+            print("Step >> DO NOT screenshot the figures... ")
+        elif re_screenshot_type == 1:
+            print("Step >> RECOVER screenshot figures...")
+            webpage = WEBDRIVER(url=url.DHEMS_web_backup_GHEMS, screenshot_path=screenshot_path)
+            webpage.re_screenshot_file("LHEMS.jpg", xpath.LHEMS_loadSum, webpage.Backup_img.RECOVER)
+            webpage.re_screenshot_file("GHEMS_Price.jpg", xpath.GHEMS_Price, webpage.Backup_img.RECOVER)
+            webpage.re_screenshot_file("GHEMS_SOC.jpg", xpath.GHEMS_SOC, webpage.Backup_img.RECOVER)
+            webpage.re_screenshot_file("GHEMS_loadModel.jpg", xpath.GHEMS_loadModel, webpage.Backup_img.RECOVER)
+            if EM_flag:
+                webpage.re_screenshot_file("GHEMS_EMchargingSOC.jpg", xpath.GHEMS_EMchargingSOC, webpage.Backup_img.RECOVER)
+            if EV_flag:
+                webpage.re_screenshot_file("GHEMS_EVchargingSOC.jpg", xpath.GHEMS_EVchargingSOC, webpage.Backup_img.RECOVER)
+            webpage.re_screenshot_file("GHEMS_table.jpg", xpath.GHEMS_table, webpage.Backup_img.RECOVER)
+            webpage.re_screenshot_everyHousehold_eachLoad_file(webpage.Backup_img.RECOVER)
+
+        elif re_screenshot_type == 2:
+            print("Step >> SAVEAS screenshot figures...")
+            webpage = WEBDRIVER(url=url.DHEMS_web_backup_GHEMS, screenshot_path=screenshot_path)
+            webpage.re_screenshot_file("LHEMS.jpg", xpath.LHEMS_loadSum, webpage.Backup_img.SAVEAS)
+            webpage.re_screenshot_file("GHEMS_Price.jpg", xpath.GHEMS_Price, webpage.Backup_img.SAVEAS)
+            webpage.re_screenshot_file("GHEMS_SOC.jpg", xpath.GHEMS_SOC, webpage.Backup_img.SAVEAS)
+            webpage.re_screenshot_file("GHEMS_loadModel.jpg", xpath.GHEMS_loadModel, webpage.Backup_img.SAVEAS)
+            if EM_flag:
+                webpage.re_screenshot_file("GHEMS_EMchargingSOC.jpg", xpath.GHEMS_EMchargingSOC, webpage.Backup_img.SAVEAS)
+            if EV_flag:
+                webpage.re_screenshot_file("GHEMS_EVchargingSOC.jpg", xpath.GHEMS_EVchargingSOC, webpage.Backup_img.SAVEAS)
+            webpage.re_screenshot_file("GHEMS_table.jpg", xpath.GHEMS_table, webpage.Backup_img.SAVEAS)
+            webpage.re_screenshot_everyHousehold_eachLoad_file(webpage.Backup_img.SAVEAS)

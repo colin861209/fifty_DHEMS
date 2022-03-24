@@ -224,39 +224,26 @@ void update_status_to_MySQLTable(string table_name, float *status_value, string 
 	sent_query();
 }
 
-float **getPublicLoad(bool publicLoad_flag, int publicLoad_num)
+float **getPublicLoad(int group_number, int publicLoad_num)
 {
 	float **info = new float *[publicLoad_num];
 	for (int i = 0; i < publicLoad_num; i++)
 		info[i] = new float[4];
 
-	if (publicLoad_flag)
+	for (int i = 0; i < publicLoad_num; i++)
 	{
-		for (int i = 0; i < publicLoad_num; i++)
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT public_loads FROM load_list WHERE group_id = '%d' LIMIT %d, %d", group_number, i, i + 1);
+		char *seo_time = turn_value_to_string(0);
+		char *token = strtok(seo_time, "~");
+		int j = 0;
+		while (token != NULL)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT public_loads FROM load_list WHERE group_id = 5 LIMIT %d, %d", i, i + 1);
-			char *seo_time = turn_value_to_string(0);
-			char *token = strtok(seo_time, "~");
-			int j = 0;
-			while (token != NULL)
-			{
-				info[i][j] = atof(token);
-				j++;
-				token = strtok(NULL, "~");
-			}
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = 5 LIMIT %d, %d", i, i + 1);
-			info[i][j] = turn_value_to_float(0);
+			info[i][j] = atof(token);
+			j++;
+			token = strtok(NULL, "~");
 		}
-	}
-	else
-	{
-		for (int i = 0; i < publicLoad_num; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				info[i][j] = 0.0;
-			}
-		}
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = '%d' LIMIT %d, %d", group_number, i, i + 1);
+		info[i][j] = turn_value_to_float(0);
 	}
 	return info;
 }
