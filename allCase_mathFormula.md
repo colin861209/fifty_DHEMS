@@ -13,33 +13,78 @@
 
 $$
 \min_{\substack {
-    P_{grid}^{j}, j=0,...,J-1 \\ 
-    \mu_{grid}^{j}, j=0,...,J-1 \\
-    P_{sell}^{j}, j=0,...,J-1 \\ 
-    P_{ESS}^{j}, j=0,...,J-1 \\
-    P_{FC}^{j}, j=0,...,J-1 \\ 
-    \mu_{FC}^{j}, j=0,...,J-1 \\
-    P_{FC\_ON}^{j}, j=0,...,J-1 \\
-    P_{FC\_OFF}^{j}, j=0,...,J-1 \\
-    z_{i}^{j}, i=0,...,M-1,~j=0,...,J-1 \\
-    \lambda_{i}^{j}, i=0,...,M-1,~j=0,...,J-1 \\
-    r_{ca}^{j}, j=0,...,J-1,~ca \in A_{c1} \\
-    r_{em,n}^{c,j}, m=1,...,M,j=0,...,J-1 \\
-    r_{em,n}^{d,j}, m=1,...,M,j=0,...,J-1 \\
-    \mu_{em,n}^{j}, m=1,...,M,j=0,...,J-1 \\
-    r_{ev,n}^{c,j}, v=1,...,V,j=0,...,J-1 \\
-    r_{ev,n}^{d,j}, v=1,...,V,j=0,...,J-1 \\
-    \mu_{ev,n}^{j}, v=1,...,V,j=0,...,J-1 \\
+    P_{grid}^{j}, ~j=0,...,J-1 \\ 
+    \mu_{grid}^{j}, ~j=0,...,J-1 \\
+    P_{sell}^{j}, ~j=0,...,J-1 \\ 
+    P_{ESS}^{j}, ~j=0,...,J-1 \\
+    P_{FC}^{j}, ~j=0,...,J-1 \\ 
+    \mu_{FC}^{j}, ~j=0,...,J-1 \\
+    P_{FC\_ON}^{j}, ~j=0,...,J-1 \\
+    P_{FC\_OFF}^{j}, ~j=0,...,J-1 \\
+    z_{i}^{j}, i=0,...,I-1,~j=0,...,J-1 \\
+    \lambda_{i}^{j}, i=0,...,I-1,~j=0,...,J-1 \\
+    r_{p}^{j}, j=0,...,J-1,~p \in A_{d1} \cup A_{d2} \cup A_{d3} \\
+    r_{em,n}^{c,j}, ~m=1,...,M, ~j=0,...,J-1 \\
+    r_{em,n}^{d,j}, ~m=1,...,M, ~j=0,...,J-1 \\
+    \mu_{em,n}^{j}, ~m=1,...,M, ~j=0,...,J-1 \\
+    r_{ev,n}^{c,j}, ~v=1,...,V, ~j=0,...,J-1 \\
+    r_{ev,n}^{d,j}, ~v=1,...,V, ~j=0,...,J-1 \\
+    \mu_{ev,n}^{j}, ~v=1,...,V, ~j=0,...,J-1 \\
 }}
 \sum_{j=k}^{J-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} - \sum_{j=k}^{J-1}\rho_{b}^{j}(\sum_{m=1}^{M} P_{m}^{d,max}r_{em,m}^{d,j} + \sum_{v=1}^{V} P_{v}^{d,max}r_{ev,v}^{d,j})T_{s} -
-\sum_{j=\tau_{r}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}
-\quad
-\begin{aligned}
-  \tau_{r}=\tau_{r}^{s},& if \quad k<\tau_{r}^{s}\\
-  \tau_{r}=k,& if \quad \tau_{r}^{s}\leq k<\tau_{r}^{e}\\
-\end{aligned}
+\sum_{j=\tau_{r}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s},
+\quad if \quad k<\tau_{r}^{s}
 $$
- 
+
+$$
+\min_{\substack {
+    P_{grid}^{j}, ~j=0,...,J-1 \\ 
+    \mu_{grid}^{j}, ~j=0,...,J-1 \\
+    P_{sell}^{j}, ~j=0,...,J-1 \\ 
+    P_{ESS}^{j}, ~j=0,...,J-1 \\
+    P_{FC}^{j}, ~j=0,...,J-1 \\ 
+    \mu_{FC}^{j}, ~j=0,...,J-1 \\
+    P_{FC\_ON}^{j}, ~j=0,...,J-1 \\
+    P_{FC\_OFF}^{j}, ~j=0,...,J-1 \\
+    z_{i}^{j}, i=0,...,I-1,~j=0,...,J-1 \\
+    \lambda_{i}^{j}, i=0,...,I-1,~j=0,...,J-1 \\
+    r_{p}^{j}, j=0,...,J-1,~p \in A_{d1} \cup A_{d2} \cup A_{d3} \\
+    r_{em,n}^{c,j}, ~m=1,...,M, ~j=0,...,J-1 \\
+    r_{em,n}^{d,j}, ~m=1,...,M, ~j=0,...,J-1 \\
+    \mu_{em,n}^{j}, ~m=1,...,M, ~j=0,...,J-1 \\
+    r_{ev,n}^{c,j}, ~v=1,...,V, ~j=0,...,J-1 \\
+    r_{ev,n}^{d,j}, ~v=1,...,V, ~j=0,...,J-1 \\
+    \mu_{ev,n}^{j}, ~v=1,...,V, ~j=0,...,J-1 \\
+}}
+\sum_{j=k}^{J-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} - \sum_{j=k}^{J-1}\rho_{b}^{j}(\sum_{m=1}^{M} P_{m}^{d,max}r_{em,m}^{d,j} + \sum_{v=1}^{V} P_{v}^{d,max}r_{ev,v}^{d,j})T_{s} -
+\sum_{j=k}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s},
+\quad if \quad \tau_{r}^{s}\leq k\leq\tau_{r}^{e} 
+$$
+
+$$
+\min_{\substack {
+    P_{grid}^{j}, ~j=0,...,J-1 \\ 
+    \mu_{grid}^{j}, ~j=0,...,J-1 \\
+    P_{sell}^{j}, ~j=0,...,J-1 \\ 
+    P_{ESS}^{j}, ~j=0,...,J-1 \\
+    P_{FC}^{j}, ~j=0,...,J-1 \\ 
+    \mu_{FC}^{j}, ~j=0,...,J-1 \\
+    P_{FC\_ON}^{j}, ~j=0,...,J-1 \\
+    P_{FC\_OFF}^{j}, ~j=0,...,J-1 \\
+    z_{i}^{j}, i=0,...,I-1,~j=0,...,J-1 \\
+    \lambda_{i}^{j}, i=0,...,I-1,~j=0,...,J-1 \\
+    r_{p}^{j}, j=0,...,J-1,~p \in A_{d1} \cup A_{d2} \cup A_{d3} \\
+    r_{em,n}^{c,j}, ~m=1,...,M, ~j=0,...,J-1 \\
+    r_{em,n}^{d,j}, ~m=1,...,M, ~j=0,...,J-1 \\
+    \mu_{em,n}^{j}, ~m=1,...,M, ~j=0,...,J-1 \\
+    r_{ev,n}^{c,j}, ~v=1,...,V, ~j=0,...,J-1 \\
+    r_{ev,n}^{d,j}, ~v=1,...,V, ~j=0,...,J-1 \\
+    \mu_{ev,n}^{j}, ~v=1,...,V, ~j=0,...,J-1 \\
+}}
+\sum_{j=k}^{J-1} \rho_{b}^{j} (P^{j}_{grid} - P_{sell}^{j})T_{s} - \sum_{j=k}^{J-1}\rho_{b}^{j}(\sum_{m=1}^{M} P_{m}^{d,max}r_{em,m}^{d,j} + \sum_{v=1}^{V} P_{v}^{d,max}r_{ev,v}^{d,j})T_{s},
+\quad if \quad k>\tau_{r}^{e} 
+$$
+
 * Deamnd Response
     * $d$ 抑低用電日
     * $P_{grid}^{j,d}$ 第d天第j時刻的市電功率
@@ -55,11 +100,11 @@ $$
     
     $$ E_{s} \leq \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} (P_{grid}^{avg} - P_{grid}^{j})T_{s} $$
   
-    $$ \sum_{v=1}^{V}r_{ev, v}^{c, j}P_{ev, v}^{c, max} + \sum_{m=1}^{M}r_{ev, m}^{c, j}P_{em, m}^{c, max} \leq P_{grid}^{j, max}-P_{discharge}^{max}+P_{pv}^{j} \quad j=k...J-1 $$
+    $$ \sum_{v=1}^{V}r_{ev, v}^{c, j}P_{ev, v}^{c, max} + \sum_{m=1}^{M}r_{ev, m}^{c, j}P_{em, m}^{c, max} \leq P_{grid}^{j, max}-P_{discharge}^{max}+P_{pv}^{j}, \quad j=k...J-1 $$
 
 * Blanced Function
     
-    $$ P^{j}_{grid} + P^{j}_{PV} + P^{j}_{FC} - P^{j}_{sell} - P^{j}_{ESS} = \sum_{m=1}^{M}(r_{em, m}^{c, j}P_{m}^{c,max}-r_{em, m}^{d, j}P_{m}^{d,max}) + \sum_{v=1}^{V}(r_{ev, v}^{c, j}P_{v}^{c,max}-r_{ev, v}^{d, j}P_{v}^{d,max}) + \sum_{ca \in A_{c1}} P_{ca}^{j} + \sum_{u=1}^{U}(\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} + \sum_{a \in A_{uc}} P_{u, uc}^{j}) $$
+    $$ P^{j}_{grid} + P^{j}_{PV} + P^{j}_{FC} - P^{j}_{sell} - P^{j}_{ESS} = \sum_{m=1}^{M}(r_{em, m}^{c, j}P_{m}^{c,max}-r_{em, m}^{d, j}P_{m}^{d,max}) + \sum_{v=1}^{V}(r_{ev, v}^{c, j}P_{v}^{c,max}-r_{ev, v}^{d, j}P_{v}^{d,max}) + \sum_{p \in A_{d1} \cup A_{d2} \cup A_{d3}} P_{p}^{j} + \sum_{u=1}^{U}(\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} + \sum_{a \in A_{uc}} P_{u, uc}^{j}) $$
 
 * Grid & Sell
   <!-- * $P_{u, grid}^{j}$ 第 u 個住戶在第 j 個時刻消耗的市電功率 -->
@@ -68,7 +113,9 @@ $$
     * $P_{grid}^{j, max}$ 社區第j時刻的市電最大功率限制
     * Formula
     
-    $$ P_{grid}^{j,max} = \sum_{u=1}^{U} \alpha_{u}^{j} P_{u, grid}^{j,max} $$
+    $$ P_{grid}^{j, max} = P_{grid}^{max}, \qquad \forall j \in [0, J-1]\backslash[\tau_{r}^{s}, \tau_{r}^{e}] $$
+    
+    $$ P_{grid}^{j, max} = P_{grid}^{avg}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
 
     * Variable
     
@@ -137,22 +184,30 @@ $$
 
 * Community Public Load
     * Formula
-    $$ P_{ca}^{j} =
+    $$ P_{p}^{j} =
       \left\{ 
         \begin{array}{c}
-          r_{ca}^{j} P_{ca}^{max}, \qquad &\forall k \in [\tau_{ca}^{s}, \tau_{ca}^{e}]\\
+          r_{p}^{j} P_{p}^{max}, \qquad &\forall k \in [\tau_{p}^{s}, \tau_{p}^{e}]\\
           0 \qquad, \qquad &otherwise
         \end{array}
       \right.
     $$
     * Variable
-      $$ r_{ca}^{j} \in \{0,1\}, \qquad \forall j \in [\tau_{ca}^{s}, \tau_{ca}^{e}] $$
+      $$ r_{p}^{j} \in \{0,1\}, \qquad \forall j \in [\tau_{p}^{s}, \tau_{p}^{e}] $$
 
-      $$ r_{ca}^{j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{ca}^{s}, \tau_{ca}^{e}] $$
+      $$ r_{p}^{j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{p}^{s}, \tau_{p}^{e}] $$
       
-      $$ \forall ca \in A_{c1} $$
+      $$ \forall p \in A_{d1} \cup A_{d2} \cup A_{d3} $$
     * Constraint
-      $$ \sum_{k=0}^{J-1} r_{ca}^{j} \geq Q_{ca} - |d|, \qquad \forall d \in [\tau_{ca}^{s}, \tau_{ca}^{e}] \cap [\tau_{r}^{s}, \tau_{r}^{e}] $$
+      * Force To Stop
+      $$ r_{p}^{j} = 0, \qquad \forall j \in [\tau_{p}^{s}, \tau_{p}^{e}] \cap [\tau_{r}^{s}, \tau_{r}^{e}], \quad \forall p \in A_{d1} $$
+
+      * Interrupt
+      $$ \sum_{j=0}^{J-1} \geq Q_{p},\quad \forall p \in A_{d1} \cup A_{d2} $$
+
+      * Periodic
+      $$ \sum_{j=\tau_{p}^{s, l}}^{\tau_{p}^{e, l}} r_{p}^{j} \geq Q_{p, l}, \quad l=1,2,...,L,\quad \forall p \in A_{d3} $$
+
   ---
 * Electric Motor
     * $r_{em, m}^{c, j}$ 第n充電柱在第j時刻的可充電旗標
@@ -163,22 +218,22 @@ $$
     * $\tau_{em, m}^{e}$ 第n充電柱離場電動機車時刻
     * Variable
     
-      $$ r_{em, m}^{c, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,N] $$
+      $$ r_{em, m}^{c, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,M] $$
 
-      $$ r_{em, m}^{c, j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,N] $$
+      $$ r_{em, m}^{c, j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,M] $$
 
-      $$ r_{em, m}^{d, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,N] $$
+      $$ r_{em, m}^{d, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,M] $$
 
-      $$ r_{em, m}^{d, j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,N] $$
+      $$ r_{em, m}^{d, j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,M] $$
 
     * Constraint
-      $$ r_{em,m}^{c,j} \leq \mu_{em, m}^{j}, \qquad \forall m \in [0,N] $$
+      $$ r_{em,m}^{c,j} \leq \mu_{em, m}^{j}, \qquad \forall m \in [0,M] $$
 
-      $$ r_{em,m}^{d,j} \leq (1-\mu_{em, m}^{j}), \qquad \forall m \in [0,N] $$
+      $$ r_{em,m}^{d,j} \leq (1-\mu_{em, m}^{j}), \qquad \forall m \in [0,M] $$
 
-      $$ SOC_{em}^{min} \leq SOC_{em, m}^{j-1} + (\frac{P_{m}^{c, max}r_{em, m}^{c,j}T_{s}}{E_{m}^{cap}} - \frac{P_{m}^{d, max}r_{em, m}^{d, j}T_{s}}{E_{m}^{cap}}), \qquad \forall m \in [0,N] $$
+      $$ SOC_{em}^{min} \leq SOC_{em, m}^{j-1} + (\frac{P_{m}^{c, max}r_{em, m}^{c,j}T_{s}}{E_{m}^{cap}} - \frac{P_{m}^{d, max}r_{em, m}^{d, j}T_{s}}{E_{m}^{cap}}), \qquad \forall m \in [0,M] $$
       
-      $$ SOC_{em}^{threshold} \leq SOC_{em, m}^{j-1} + \sum_{j=\tau_{em, m}^{s}}^{\tau_{em, m}^{e}-1} (\frac{P_{m}^{c, max}r_{em, m}^{c,j}T_{s}}{E_{m}^{cap}} - \frac{P_{m}^{d, max}r_{em, m}^{d, j}T_{s}}{E_{m}^{cap}}), \qquad \forall m \in [0,N] $$
+      $$ SOC_{em}^{threshold} \leq SOC_{em, m}^{j-1} + \sum_{j=\tau_{em, m}^{s}}^{\tau_{em, m}^{e}-1} (\frac{P_{m}^{c, max}r_{em, m}^{c,j}T_{s}}{E_{m}^{cap}} - \frac{P_{m}^{d, max}r_{em, m}^{d, j}T_{s}}{E_{m}^{cap}}), \qquad \forall m \in [0,M] $$
   ---
 * Electric Vehicle
     * $r_{ev, v}^{c, j}$ 第v充電柱在第j時刻的可充電旗標
@@ -210,38 +265,38 @@ $$
     $$ P_{ESS}^{j} = \sum_{u=1}^{U} \beta_{u}^{j} P_{u,ESS}^{j} $$
     $$ P_{u,discharge}^{max} \leq P_{u,ESS}^{j} \leq P_{u,charge}^{max} $$
     $$ 0 \leq \beta_{u}^{j} \leq 1 $$ -->
+---
+  * FC
 
-  <!-- * FC -->
+    $$ 0 \leq P^{j}_{FC} \leq P_{FC\_max}$$
 
-    <!-- $$ 0 \leq P^{j}_{FC} \leq P_{FC\_max}$$ -->
+    $$ P^{j}_{FC\_ON} + P^{j}_{FC\_OFF} = P^{j}_{FC}$$
 
-    <!-- $$ P^{j}_{FC\_ON} + P^{j}_{FC\_OFF} = P^{j}_{FC}$$ -->
+    $$ P^{j}_{FC\_ON} \leq \mu^{j}_{FC}P_{FC\_max}$$
 
-    <!-- $$ P^{j}_{FC\_ON} \leq \mu^{j}_{FC}P_{FC\_max}$$ -->
+    $$ \mu^{j}_{FC}P_{FC\_min} \leq P^{j}_{FC\_ON}$$
 
-    <!-- $$ \mu^{j}_{FC}P_{FC\_min} \leq P^{j}_{FC\_ON}$$ -->
+    $$ P^{j}_{FC\_OFF} \leq [1 - \mu^{j}_{FC}]P_{FC\_OFF}$$
 
-    <!-- $$ P^{j}_{FC\_OFF} \leq [1 - \mu^{j}_{FC}]P_{FC\_OFF}$$ -->
+    $$ 0 \leq \lambda^{j}_{i} \leq z^{j}_{i} \quad i=0,1,...,m-1$$
 
-    <!-- $$ 0 \leq \lambda^{j}_{i} \leq z^{j}_{i} \quad i=0,1,...,m-1$$ -->
+    $$ \sum_{i=0}^{m-1} z^{j}_{i} =1$$
 
-    <!-- $$ \**sum_**{i=0}^{m-1} z^{j}_{i} =1$$ -->
-
-    <!-- $$ \begin{aligned}
+    $$ \begin{aligned}
     P^{j}_{FC} &= 0 \cdot z^{j}_{0} \\
     &+ 0.35 \cdot z^{j}_{1} + (1.545-0.35) \cdot \lambda^{j}_{1} \\
     &+ 1.545 \cdot z^{j}_{2} + (2.740-1.545) \cdot \lambda^{j}_{2} \\
     &+ 3.935 \cdot z^{j}_{3} + (3.935-2.740) \cdot \lambda^{j}_{3} \\
     &+ 5.130 \cdot z^{j}_{4} + (5.130-3.935) \cdot \lambda^{j}_{4} \\
-    \end{aligned} $$ -->
+    \end{aligned} $$
 
-    <!-- $$ \begin{aligned}
+    $$ \begin{aligned}
     P^{j}_{FCT} &= 0 \cdot z^{j}_{0} \\
     &+ 0.6283 \cdot z^{j}_{1} + (3.0617-0.6283) \cdot \lambda^{j}_{1} \\
     &+ 3.0617 \cdot z^{j}_{2} + (5.8717-3.0617) \cdot \lambda^{j}_{2} \\
     &+ 5.8717 \cdot z^{j}_{3} + (9.0692-8.8717) \cdot \lambda^{j}_{3} \\
     &+ 9.0692 \cdot z^{j}_{4} + (12.8214-9.0692) \cdot \lambda^{j}_{4} \\
-    \end{aligned} $$ -->
+    \end{aligned} $$
 
 ## Home Enerage Management System (HEMS)
 * $u$ 代表第u個家庭
@@ -249,57 +304,65 @@ $$
 * $j$ 代表第j個時刻
 * $P^{j}_{u,grid}$ 第 u 個住戶在第 j 個時刻消耗的市電功率
 
-$$ \min_{\substack{
+$$ 
+\min_{\substack{
     r_{u,a}^{j},~j=0,...,J-1,~a \in A_{u, c1} \cup A_{u, c2} \cup A_{u, c3}\\ 
     \delta_{u,a}^{j},~j=0,...,J-1,~a \in A_{u, c2} \cup A_{u, c3}\\ 
     P_{u, a}^{j},~j=0,...,J-1,~a \in A_{u, c3}\\
     P_{u, grid}^{j},~j=0,...,J-1\\
-    \alpha_{u}^{j}, j=0,..., J-1
 }}
-\sum_{j=k}^{J-1} \rho_{b}^{j}P^{j}_{u,grid} T_{s} +
-\sum_{j=\tau_{r}}^{\tau_{r}^{e}-1} D_{u}^{j}\rho_{f}^{j}P^{j}_{u,grid} T_{s},
-\quad 
-\begin{aligned}
-  \tau_{r}=\tau_{r}^{s},& if \quad k<\tau_{r}^{s}\\
-  \tau_{r}=k,&if \quad \tau_{r}^{s}\leq k<\tau_{r}^{e}\\ 
-\end{aligned}
+\sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid}+DCL_{u}^{j}) T_{s} -
+\sum_{j=\tau_{r}}^{\tau_{r}^{e}} D_{u}^{j}\rho_{f}^{j}(P_{u,grid}^{avg}-P^{j}_{u,grid}) T_{s},
+\quad if \quad k<\tau_{r}^{s}
+$$
+
+$$
+\min_{\substack{
+    r_{u,a}^{j},~j=0,...,J-1,~a \in A_{u, c1} \cup A_{u, c2} \cup A_{u, c3}\\ 
+    \delta_{u,a}^{j},~j=0,...,J-1,~a \in A_{u, c2} \cup A_{u, c3}\\ 
+    P_{u, a}^{j},~j=0,...,J-1,~a \in A_{u, c3}\\
+    P_{u, grid}^{j},~j=0,...,J-1\\
+}}
+\sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid}+DCL_{u}^{j}) T_{s} -
+\sum_{j=k}^{\tau_{r}^{e}} D_{u}^{j}\rho_{f}^{j}(P_{u,grid}^{avg}-P^{j}_{u,grid}) T_{s},
+\quad if \quad \tau_{r}^{s}\leq k \leq \tau_{r}^{e}
+$$
+
+$$
+\min_{\substack{
+    r_{u,a}^{j},~j=0,...,J-1,~a \in A_{u, c1} \cup A_{u, c2} \cup A_{u, c3}\\ 
+    \delta_{u,a}^{j},~j=0,...,J-1,~a \in A_{u, c2} \cup A_{u, c3}\\ 
+    P_{u, a}^{j},~j=0,...,J-1,~a \in A_{u, c3}\\
+    P_{u, grid}^{j},~j=0,...,J-1\\
+}}
+\sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid}+DCL_{u}^{j}) T_{s},
+\quad if \quad  k > \tau_{r}^{e}
 $$
 
 <!-- HEMS Constraint -->
+* Comfort level
+  
+  $$ w_{u,a}^{j}=
+  \left\{ 
+      \begin{array}
+        r\frac{j-\tau_{u,a}^{s_{i},c}}{\tau_{u,a}^{e_{i},c}-\tau_{u,a}^{s_{i},c}}+(c+1),if\quad & j\in[\tau_{u,a}^{s_{i},c},\tau_{u,a}^{e_{i},c}],i=1...m_{c},c=1...n_{a}\\
+        \infty \qquad, \qquad &otherwise
+      \end{array}
+    \right.
+  $$
+
+  $$
+  DCL_{u}^{j} = \sum_{a=1}^{A}vw_{u,a}^{j}r_{u,a}^{j}
+  $$
 * Demand response
     
 	* $D_{u}^{j}$: 住戶u在j時刻是否參與輔助服務
-	* $\alpha_{u}^{j}$: 住戶 u 在 j 時刻最大市電縮小百分比
     * Formula
 
     $$ D_{u}^{j} \in \{0, 1\} $$
 
-    <!-- $$ P_{s}=E_{s}/T_{s} $$
-    
-    $$ P_{s}^{j}=\frac{P_{s}}{\tau_{r}^{e}-\tau_{r}^{s}-1}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
-    
-    $$ P_{s}^{j}=\sum_{u=1}^{U}\frac{D_{u}^{j}}{\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1}D_{u}^{j}}P_{s}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$ -->
-    
-    * Variable
-    
-    $$ \alpha_{u}^{j} \in [0, 1] $$
-    
-    <!-- $$ \omega_{u}^{j} = \frac{D_{u}^{j}P_{u, grid}^{j}}{\sum_{u=1}^{U} D_{u}^{j}P_{u, grid}^{j}}  $$
-    
-    $$ \omega_{u}^{j} =
-    \left\{ 
-      \begin{array}{c}
-        \frac{P_{u, grid}^{j}}{\sum_{u=1}^{U} D_{u}^{j}P_{u, grid}^{j}}, &\qquad D_{u}^{j} = 1\\
-        0 \qquad,&\qquad D_{u}^{j} = 0
-      \end{array}
-    \right.
-    $$ -->
-
-    * constraint
-    
-    $$ (1-D_{u}^{j}) \leq \alpha_{u}^{j} \leq 1, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
-    
-    $$ \alpha_{u}^{j} = 1, \qquad  \forall j \in [0, J-1] \backslash  [\tau_{r}^{s}, \tau_{r}^{e}] $$
+    $$ P_{u,max}^{d}= \max_{j=\tau_{r}^{s},...,\tau_{r}^{e}}P_{u,grid}^{j,d}, \quad d=1,...,5 $$
+    $$ P_{u,grid}^{avg} = \frac{\sum_{d=1}^{D} P_{u,max}^{d}} {D} $$
 
 * Balanced Function
 	* $A_{u,uc}$第u個住戶的不可控負載類型
@@ -310,12 +373,13 @@ $$
 * Pgrid
     * Variable 
     
-    $$ 0 \leq P_{u, grid}^{j} \leq P_{u, grid}^{max} $$
-    *  Constraint
+    $$ P_{u,grid}^{j, max} = P_{u,grid}^{max}, \qquad \forall j \in [0, J-1]\backslash[\tau_{r}^{s}, \tau_{r}^{e}] $$
+    
+    $$ P_{grid}^{j, max} = P_{u,grid}^{avg}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
   
-    $$ 0 \leq P_{u,grid}^{j} \leq \alpha_{u}^{j}P_{u, grid}^{max} $$
+    $$ 0 \leq P_{u,grid}^{j} \leq P_{u, grid}^{j,max} $$
 
-<!-- * Battery
+* Battery
   
   $$ P_{u,charge}^{max} = \frac{P_{charge}^{max}}{U}$$
   
@@ -329,7 +393,7 @@ $$
 
   $$ SOC_{j-1} + \sum_{j=k}^{J-1} \frac{P^{j}_{u,ESS}T_{s}}{C_{ESS}V_{u,ESS}} \geq SOC^{threshold} $$
 
-  $$ SOC_{j} = SOC_{j-1} + \frac {P^{j}_{u,ESS}T_{s}}{C_{ESS}V_{u,ESS}} $$ -->
+  $$ SOC_{j} = SOC_{j-1} + \frac {P^{j}_{u,ESS}T_{s}}{C_{ESS}V_{u,ESS}} $$
 
 * Loads Constraint
   <!-- Uncontrollable load Constraint -->
@@ -378,33 +442,40 @@ $$
 ## CEMS & HEMS Cost
 
 ##### HEMS
-* $T_{u}^{price}$ 各住戶原始購買市電電費
-  $$ T_{u}^{price} = \sum_{j=0}^{J-1}\rho^{j}P_{u,grid}^{j}T_{s} $$
+* $T_{u, price}$ 各住戶原始購買市電電費
+  $$ T_{u, price}^{j} = \rho^{j}P_{u,grid}^{j}T_{s} $$
+  $$ T_{u, price} = \sum_{j=0}^{J-1}T_{u, price}^{j} $$
 
-* $O_{u}^{ca, cost}$ 各住戶公設花費
-  $$ O_{u}^{ca, cost} = \frac{O_{ca}^{cost}}{U} $$
+* $O_{u}^{ cost}$ 各住戶公設花費
+  $$ O_{u, ca}^{cost} = \frac{O_{ca}^{cost}}{U} $$
 
-* $T_{u}^{total, price}$ 各住戶原始總花費
-  $$ T_{u}^{total, price} = T_{u}^{price}+O_{u}^{ca, cost} $$
+* $T_{u, price}^{total}$ 各住戶原始總花費
+  $$ T_{u, price}^{total} = T_{u, price}+O_{u, ca}^{cost} $$
 
-* $O_{u}^{cost}$ 各住戶最佳化市電花費
-  $$ O_{u}^{cost} = \frac{T_{u}^{total, price}}{\sum_{u=1}^{U}T_{u}^{total, price}} \times O_{total}^{cost} $$
+* $O_{u, cost}$ 各住戶最佳化市電花費
+  $$ O_{u, cost} = \sum_{j=0}^{J-1}(\frac{T_{u, price}^{j}}{\sum_{u=1}^{U}T_{u, price}^{j}} \times O_{total}^{j, cost}) $$
 
-* $O_{u}^{dr, feedback}$ 各住戶輔助服務回饋
-  $$ O_{u}^{dr, feedback} = \frac{\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} D_{u}^{j}}{\sum_{u=1}^{U}\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1}D_{u}^{j}} \times O_{dr}^{feedback} $$
+* $O_{u, dr}^{feedback}$ 各住戶輔助服務回饋
+  $$ C_{u}^{j} = D_{u}^{j}\rho_{f}^{j}(P_{u, grid}^{avg}-P_{u, grid}^{j})T_{s} $$
+  $$ O_{u, dr}^{feedback} = \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}}(\frac{ C_{u}^{j}}{\sum_{u=1}^{U}C_{u}^{j}} \times O_{dr}^{j,feedback}) $$
 
-* $O_{u}^{total, cost}$ 各住戶最佳化總花費
-  $$ O_{u}^{total, cost} = O_{u}^{cost} - O_{u}^{dr, feedback} $$
+* $O_{u, cost}^{total}$ 各住戶最佳化總花費
+  $$ O_{u, cost}^{total} = O_{u, cost} - O_{u, dr}^{feedback} $$
 
 * $\eta_{u}^{cost}$ 各住戶節省電費比
-  $$ \eta_{u}^{cost} = \frac{T_{u}^{total, price}-O_{u}^{total, cost}}{T_{u}^{total, price}} $$
+  $$ \eta_{u}^{cost} = \frac{T_{u, price}^{total}-O_{u, cost}^{total}}{T_{u, price}^{total}} $$
 
 ##### CEMS
 * $O_{ca}^{cost}$ 社區公設花費
   $$ O_{ca}^{cost} = \sum_{j=0}^{J-1}\rho^{j}P_{ca}^{j}T_{s} $$
 
 * $O_{total}^{cost}$ 社區總市電花費
-  $$ O_{total}^{cost} = \sum_{j=0}^{J-1}\rho^{j}P_{grid}^{j}T_{s} $$
+  $$ O_{total}^{j, cost} = \rho^{j}P_{grid}^{j}T_{s} $$
+  $$ O_{total}^{cost} = \sum_{j=0}^{J-1}O_{total}^{j, cost} $$
 
 * $O_{dr}^{feedback}$ 社區輔助服務回饋
-  $$ O_{dr}^{feedback} = \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}-1} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s}$$
+  $$ O_{dr}^{j, feedback} = \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s} $$
+  $$ O_{dr}^{feedback} = \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}}O_{dr}^{j, feedback} $$
+
+* $O_{comm}^{total}$ 社區最終花費
+  $$ O_{comm}^{total} = O_{total}^{cost} - O_{dr}^{feedback} $$
