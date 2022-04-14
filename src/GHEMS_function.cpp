@@ -43,9 +43,27 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		float **f_publicLoad = getPublicLoad(5, pl.forceToStop_number);
 		for (int i = 0; i < pl.forceToStop_number; i++)
 		{
+			int decrease_ot = 0, start, end;
 			pl.forceToStop_start[i] = int(f_publicLoad[i][0]);
 			pl.forceToStop_end[i] = int(f_publicLoad[i][1]) - 1;
-			pl.forceToStop_operation_time[i] = int(f_publicLoad[i][2]);
+			if (dr.mode != 0)
+			{
+				if (pl.forceToStop_end[i] >= dr.startTime)
+				{
+					if (pl.forceToStop_start[i] <= dr.startTime)
+						start = dr.startTime;
+					else
+						start = pl.forceToStop_start[i]	;
+					
+					if (pl.forceToStop_end[i] + 1 >= dr.endTime)
+						end = dr.endTime;
+					else
+						end = pl.forceToStop_end[i] + 1;
+					
+					decrease_ot = end - start;
+				}
+			}
+			pl.forceToStop_operation_time[i] = int(f_publicLoad[i][2]) - decrease_ot;
 			pl.forceToStop_power[i] = f_publicLoad[i][3];
 		}
 		int *f_buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.forceToStop_number, pl.str_forceToStop_publicLoad);
@@ -67,23 +85,6 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		}
 		int *i_buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.interrupt_number, pl.str_interrupt_publicLoad);
 		pl.interrupt_remain_operation_time = count_publicLoads_RemainOperateTime(pl.interrupt_number, pl.interrupt_operation_time, i_buff);
-		
-		// periodic public load
-		pl.periodic_start.assign(pl.periodic_number, 0);
-		pl.periodic_end.assign(pl.periodic_number, 0);
-		pl.periodic_operation_time.assign(pl.periodic_number, 0);
-		pl.periodic_remain_operation_time.assign(pl.periodic_number, 0);
-		pl.periodic_power.assign(pl.periodic_number, 0);
-		float **p_publicLoad = getPublicLoad(7, pl.periodic_number);
-		for (int i = 0; i < pl.periodic_number; i++)
-		{
-			pl.periodic_start[i] = int(p_publicLoad[i][0]);
-			pl.periodic_end[i] = int(p_publicLoad[i][1]) - 1;
-			pl.periodic_operation_time[i] = int(p_publicLoad[i][2]);
-			pl.periodic_power[i] = p_publicLoad[i][3];
-		}
-		int *p_buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.periodic_number, pl.str_periodic_publicLoad);
-		pl.periodic_remain_operation_time = count_publicLoads_RemainOperateTime(pl.periodic_number, pl.periodic_operation_time, p_buff);
 	}
 	
 	if (em.flag && em.can_charge_amount)
@@ -120,7 +121,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 
 	// sum by 'row_num_maxAddition' in every constraint below
 	int rowTotal = 0;
-	if (pl.flag) { rowTotal += pl.forceToStop_number + pl.interrupt_number + pl.periodic_number; }
+	if (pl.flag) { rowTotal += pl.forceToStop_number + pl.interrupt_number; }
 	if (bp.Pgrid_flag) { rowTotal += bp.remain_timeblock; }
 	if (bp.Psell_flag)	{ rowTotal += bp.remain_timeblock * 2;}
 	if (ess.flag) { rowTotal += bp.remain_timeblock * 4 + 1; }
@@ -154,7 +155,6 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	{
 		summation_forceToStopPublicLoadRa_biggerThan_QaMinusD(bp, dr, pl, coefficient, mip, pl.forceToStop_number);
 		summation_interruptPublicLoadRa_biggerThan_Qa(bp, dr, pl, coefficient, mip, pl.interrupt_number);
-		summation_periodicPublicLoadRa_biggerThan_Qa(bp, dr, pl, coefficient, mip, pl.periodic_number);
 	}
 
 	if (bp.Pgrid_flag)
@@ -569,11 +569,6 @@ void setting_GLPK_columnBoundary(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMA
 				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
 				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_BV);
 			}		
-			for (int j = 1; j <= pl.periodic_number; j++)
-			{
-				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
-				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_BV);
-			}
 		}
 		if (bp.Pgrid_flag == 1)
 		{
@@ -1027,14 +1022,6 @@ void calculateCostInfo(BASEPARAMETER bp, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECT
 				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_interrupt_publicLoad+to_string(j+1)).c_str());
 				int status_tmp = turn_value_to_int(0);
 				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = '6' LIMIT %d, %d", j, j + 1);
-				float power_tmp = turn_value_to_float(0);
-				publicLoad[i] += status_tmp * power_tmp;
-			}
-			for (int j = 0; j < pl.periodic_number; j++)
-			{
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_periodic_publicLoad+to_string(j+1)).c_str());
-				int status_tmp = turn_value_to_int(0);
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = '7' LIMIT %d, %d", j, j + 1);
 				float power_tmp = turn_value_to_float(0);
 				publicLoad[i] += status_tmp * power_tmp;
 			}

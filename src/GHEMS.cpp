@@ -143,14 +143,10 @@ int main(int argc, const char **argv)
 		pl.forceToStop_number = turn_value_to_int(0);
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = '6' ");
 		pl.interrupt_number = turn_value_to_int(0);
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = '7' ");
-		pl.periodic_number = turn_value_to_int(0);
 		for (int i = 0; i < pl.forceToStop_number; i++)
 			bp.variable_name.push_back(pl.str_forceToStop_publicLoad + to_string(i + 1));
 		for (int i = 0; i < pl.interrupt_number; i++)
 			bp.variable_name.push_back(pl.str_interrupt_publicLoad + to_string(i + 1));
-		for (int i = 0; i < pl.periodic_number; i++)
-			bp.variable_name.push_back(pl.str_periodic_publicLoad + to_string(i + 1));
 	}
 	if (bp.Pgrid_flag == 1)
 		bp.variable_name.push_back(bp.str_Pgrid);
