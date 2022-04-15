@@ -26,6 +26,7 @@ int main(void)
 	INTERRUPTLOAD irl;
     UNINTERRUPTLOAD uirl;
 	VARYINGLOAD varl;
+	UNCONTROLLABLELOAD ucl;
 
 	if (!connect_mysql("DHEMS_fiftyHousehold"))
 		messagePrint(__LINE__, "Failed to Connect MySQL");
@@ -92,7 +93,12 @@ int main(void)
 	varl.flag = flag_receive("LHEMS_flag", varl.str_varying);
 	bp.Pgrid_flag = flag_receive("LHEMS_flag", bp.str_Pgrid);
 	ess.flag = flag_receive("LHEMS_flag", ess.str_Pess);
-
+	ucl.flag = value_receive("BaseParameter", "parameter_name", "uncontrollable_load_flag");
+	if (ucl.flag)
+	{
+		ucl.generate_flag = value_receive("BaseParameter", "parameter_name", "generate_uncontrollable_load_flag");
+	}
+	
 	// =-=-=-=-=-=-=- Define variable name and use in GLPK -=-=-=-=-=-=-= //
 	// Most important thing, helping in GLPK big matrix setting
 	if (irl.flag == 1)
@@ -142,7 +148,7 @@ int main(void)
 	string simulate_price = turn_value_to_string(0);
 	bp.price = get_allDay_price(bp.time_block, simulate_price);
 	
-	float *uncontrollable_load = rand_operationTime(bp, distributed_group_num);
+	HEMS_UCload_rand_operationTime(bp, ucl, distributed_group_num);
 	init_totalLoad_flag_and_table(bp, distributed_group_num);
 
 	// =-=-=-=-=-=-=- get each hosueholds' loads info -=-=-=-=-=-=-= //
@@ -231,7 +237,7 @@ int main(void)
 		time_tmp.clear();
 	}
 
-	optimization(bp, ess, dr, comlv, irl, uirl, varl, uncontrollable_load, distributed_group_num);
+	optimization(bp, ess, dr, comlv, irl, uirl, varl, ucl.power_array, distributed_group_num);
 
 	update_loadModel(bp, irl, uirl, varl, distributed_group_num);
 	calculateCostInfo(bp);
@@ -256,7 +262,12 @@ int main(void)
 	printf("LINE %d: next distributed household_id = %d\n", __LINE__, bp.distributed_household_id);
 	printf("LINE %d: next real household_id = %d\n", __LINE__, (distributed_group_num - 1) * bp.distributed_householdTotal + bp.distributed_household_id);
 	update_distributed_group("household_id", bp.distributed_household_id, "group_id", distributed_group_num);
-
+	
+	if (bp.sample_time == 95)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET `value` = '0' WHERE `parameter_name` = 'generate_uncontrollable_load_flag'");
+		sent_query();
+	}
 	mysql_close(mysql_con);
 	return 0;
 }

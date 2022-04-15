@@ -1284,7 +1284,8 @@ void Global_UCload_rand_operationTime(BASEPARAMETER bp, UNCONTROLLABLELOAD &ucl)
 	functionPrint(__func__);
 
 	float *result = new float[bp.time_block];
-	
+	for (int i = 0; i < bp.time_block; i++)
+		result[i] = 0.0;
 	
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE `group_id` = 8");
 	ucl.number =  turn_value_to_int(0);

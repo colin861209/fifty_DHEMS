@@ -47,18 +47,36 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	init_VaryingLoads_OperateTimeAndPower(bp, varl);
 	putValues_VaryingLoads_OperateTimeAndPower(bp, varl);
 
-	// float *weighting_array;
 	int *participate_array;
 	if (dr.mode != 0)
 	{
-		// weighting_array = household_alpha_upperBnds(bp, dr, distributed_group_num);
 		participate_array = household_participation(dr, bp.household_id, "LHEMS_demand_response_participation");
+		bp.Pgrid_max_array.assign(bp.remain_timeblock, bp.Pgrid_max);
+		if (bp.sample_time - dr.startTime >= 0)
+		{
+			for (int j = 0; j < dr.endTime - bp.sample_time; j++)
+			{
+				if (participate_array[j + (bp.sample_time - dr.startTime)])
+				{
+					bp.Pgrid_max_array[j] = dr.household_CBL;
+				}
+			}
+		}
+		else if (bp.sample_time - dr.startTime < 0)
+		{
+			for (int j = dr.startTime - bp.sample_time; j < dr.endTime - bp.sample_time; j++)
+			{
+				if (participate_array[j - (dr.startTime - bp.sample_time)])
+				{
+					bp.Pgrid_max_array[j] = dr.household_CBL;
+				}
+			}
+		}
 	}
 
 	// sum by 'row_num_maxAddition' in every constraint below
 	int rowTotal = 0;
 	if (irl.flag) { rowTotal += irl.number; }
-	if (dr.mode != 0) { rowTotal += bp.remain_timeblock; }
 	rowTotal += bp.remain_timeblock;
 	if (ess.flag) { rowTotal += bp.remain_timeblock * 4 + 1; }
 	if (uirl.flag)
@@ -114,11 +132,6 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	if (irl.flag)
 	{
 		summation_interruptLoadRa_biggerThan_Qa(irl, bp, coefficient, mip, irl.number);
-	}
-
-	if (dr.mode != 0)
-	{
-		pgrid_smallerThan_Pavg(bp, dr, coefficient, mip, bp.remain_timeblock);
 	}
 
 	// (Balanced function) Pgrid j - Pess j = sum(Pa j) + Puc j
@@ -323,7 +336,10 @@ void setting_LHEMS_columnBoundary(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYI
 		}
 		if (bp.Pgrid_flag)
 		{
-			glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + i * bp.variable), GLP_DB, 0.0, bp.Pgrid_max);
+			if (dr.mode == 0)
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + i * bp.variable), GLP_DB, 0.0, bp.Pgrid_max);
+			else
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + i * bp.variable), GLP_DB, 0.0, bp.Pgrid_max_array[i]);
 			glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + i * bp.variable), GLP_CV);
 		}
 		if (ess.flag)
@@ -700,14 +716,17 @@ void update_loadModel(BASEPARAMETER bp, INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl,
 	}
 }
 
-float *rand_operationTime(BASEPARAMETER bp, int distributed_group_num)
+void HEMS_UCload_rand_operationTime(BASEPARAMETER bp, UNCONTROLLABLELOAD &ucl, int distributed_group_num)
 {
 	functionPrint(__func__);
 	float *result = new float[bp.time_block];
 	for (int i = 0; i < bp.time_block; i++)
 		result[i] = 0.0;
 
-	if (value_receive("BaseParameter", "parameter_name", "uncontrollable_load_flag") == 0)
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = 4");
+	ucl.number = turn_value_to_int(0);
+
+	if (!ucl.flag)
 	{
 		update_distributed_group("uncontrollable_load_flag", 0, "group_id", distributed_group_num);
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `household%d` = '0.0' ", bp.household_id);
@@ -717,149 +736,75 @@ float *rand_operationTime(BASEPARAMETER bp, int distributed_group_num)
 			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `totalLoad` = '0.0' ");
 			sent_query();
 		}
-		return result;
-	}
-
-	srand(time(NULL));
-	if (bp.sample_time == 0)
-	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = 4");
-		int uncontrollableLoad_num = turn_value_to_int(0);
-		for (int i = 0; i < uncontrollableLoad_num; i++)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT uncontrollable_loads, power1 FROM load_list WHERE group_id = 4 LIMIT %d, %d", i, i + 1);
-			fetch_row_value();
-			char *seo_time = mysql_row[0];
-			float power = atof(mysql_row[1]);
-			char *tmp;
-			tmp = strtok(seo_time, "~");
-			vector<int> time_seperate;
-			while (tmp != NULL)
-			{
-				time_seperate.push_back(atoi(tmp));
-				tmp = strtok(NULL, "~");
-			}
-
-			int operate_count = 0;
-			for (int i = time_seperate[0]; i < time_seperate[1] - 1; i++)
-			{
-				if (operate_count != time_seperate[2])
-				{
-					int operate_tmp = rand() % 2;
-					float operate_power = operate_tmp * power;
-					operate_count += operate_tmp;
-					result[i] += operate_power;
-				}
-			}
-			time_seperate.clear();
-		}
-		for (int i = 0; i < bp.time_block; i++)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `household%d` = '%.1f' WHERE `time_block` = %d;", bp.household_id, result[i], i);
-			sent_query();
-		}
-		if (bp.distributed_household_id == bp.distributed_householdTotal)
-		{
-			update_distributed_group("uncontrollable_load_flag", 1, "group_id", distributed_group_num);
-			if (get_distributed_group("COUNT(group_id) = SUM(uncontrollable_load_flag)"))
-			{
-				for (int j = 0; j < bp.time_block; j++)
-				{
-					float power_total = 0.0;
-					for (int i = 1; i <= bp.householdTotal; i++)
-					{
-						snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d FROM `LHEMS_uncontrollable_load` WHERE time_block = %d", i, j);
-						power_total += turn_value_to_float(0);
-					}
-					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `totalLoad` = '%.1f' WHERE `time_block` = %d;", power_total, j);
-					sent_query();
-				}
-			}
-		}
+		ucl.power_array = result;
 	}
 	else
-	{
+	{	
+		if (ucl.generate_flag)
+		{
+			srand(time(NULL));
+			if (bp.sample_time == 0)
+			{
+				for (int i = 0; i < ucl.number; i++)
+				{
+					snprintf(sql_buffer, sizeof(sql_buffer), "SELECT uncontrollable_loads, power1 FROM load_list WHERE group_id = 4 LIMIT %d, %d", i, i + 1);
+					fetch_row_value();
+					char *seo_time = mysql_row[0];
+					float power = atof(mysql_row[1]);
+					char *tmp;
+					tmp = strtok(seo_time, "~");
+					vector<int> time_seperate;
+					while (tmp != NULL)
+					{
+						time_seperate.push_back(atoi(tmp));
+						tmp = strtok(NULL, "~");
+					}
+
+					int operate_count = 0;
+					for (int i = time_seperate[0]; i < time_seperate[1] - 1; i++)
+					{
+						if (operate_count != time_seperate[2])
+						{
+							int operate_tmp = rand() % 2;
+							float operate_power = operate_tmp * power;
+							operate_count += operate_tmp;
+							result[i] += operate_power;
+						}
+					}
+					time_seperate.clear();
+				}
+				for (int i = 0; i < bp.time_block; i++)
+				{
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `household%d` = '%.1f' WHERE `time_block` = %d;", bp.household_id, result[i], i);
+					sent_query();
+				}
+				if (bp.distributed_household_id == bp.distributed_householdTotal)
+				{
+					update_distributed_group("uncontrollable_load_flag", 1, "group_id", distributed_group_num);
+					if (get_distributed_group("COUNT(group_id) = SUM(uncontrollable_load_flag)"))
+					{
+						for (int j = 0; j < bp.time_block; j++)
+						{
+							float power_total = 0.0;
+							for (int i = 1; i <= bp.householdTotal; i++)
+							{
+								snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d FROM `LHEMS_uncontrollable_load` WHERE time_block = %d", i, j);
+								power_total += turn_value_to_float(0);
+							}
+							snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `totalLoad` = '%.1f' WHERE `time_block` = %d;", power_total, j);
+							sent_query();
+						}
+					}
+				}
+			}
+		}
 		for (int i = 0; i < bp.time_block; i++)
 		{
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `household%d` FROM `LHEMS_uncontrollable_load` WHERE `time_block` = %d;", bp.household_id, i);
 			result[i] = turn_value_to_float(0);
 		}
+		ucl.power_array = result;
 	}
-
-	return result;
-}
-
-float *household_alpha_upperBnds(BASEPARAMETER bp, DEMANDRESPONSE dr, int distributed_group_num)
-{
-	functionPrint(__func__);
-
-	float *result = new float[dr.endTime - dr.startTime];
-	string sql_table = "LHEMS_history_control_status";
-
-	if (bp.sample_time == 0)
-	{
-		update_distributed_group("demand_response_alpha_flag", 0, "group_id", distributed_group_num);
-		snprintf(sql_buffer, sizeof(sql_buffer), "DELETE FROM `demand_response_alpha` WHERE household_id = %d", bp.household_id);
-		sent_query();
-		if (bp.distributed_household_id == bp.distributed_householdTotal)
-			update_distributed_group("demand_response_alpha_flag", 1, "group_id", distributed_group_num);
-	}
-
-	// =-=-=-=-=-=-=- calculate weighting then turn to alpha -=-=-=-=-=-=-= //
-	for (int i = dr.startTime; i < dr.endTime; i++)
-	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `%s` WHERE `equip_name` = '%s'", i, sql_table.c_str(), bp.str_Pgrid.c_str());
-		float total_load = turn_value_to_float(0);
-		// total load = 0 while all households' Pgrid = 0, when result[] = 0/0 will be nan
-		if (total_load != 0)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `%s` WHERE `equip_name` = '%s' && `household_id` = %d", i, sql_table.c_str(), bp.str_Pgrid.c_str(), bp.household_id);
-			float each_household_load = turn_value_to_float(0);
-			result[i - dr.startTime] = each_household_load / total_load;
-		}
-		else
-		{
-			result[i - dr.startTime] = 0.0;
-		}
-
-		printf("\thousehold %d timeblock %d weighting %.3f\n", bp.household_id, i, result[i - dr.startTime]);
-		result[i - dr.startTime] = (bp.Pgrid_max - result[i - dr.startTime] * dr.minDecrease_power) / bp.Pgrid_max;
-	}
-	if (bp.sample_time != 0)
-	{
-		if (bp.sample_time - dr.endTime < 0)
-		{
-			if (bp.sample_time <= dr.startTime)
-			{
-				for (int i = 0; i < dr.endTime - dr.startTime; i++)
-				{
-					printf("\tUpdate household %d timeblock %d alpha %.3f\n", bp.household_id, i + dr.startTime, result[i]);
-					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `demand_response_alpha` SET A%d = %.3f WHERE household_id = %d AND dr_timeblock = %d", bp.sample_time, result[i], bp.household_id, i + dr.startTime);
-					sent_query();
-				}
-			}
-			else if (bp.sample_time > dr.startTime)
-			{
-				for (int i = 0; i < dr.endTime - bp.sample_time; i++)
-				{
-					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `demand_response_alpha` SET A%d = %.3f WHERE household_id = %d AND dr_timeblock = %d", bp.sample_time, result[i + bp.sample_time - dr.startTime], bp.household_id, i + bp.sample_time);
-					sent_query();
-					printf("\tUpdate household %d timeblock %d alpha %.3f\n", bp.household_id, i + bp.sample_time, result[i + bp.sample_time - dr.startTime]);
-				}
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < dr.endTime - dr.startTime; i++)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO demand_response_alpha (A0, dr_timeblock, household_id) VALUES('%.3f', %d, '%d');", result[i], i + dr.startTime, bp.household_id);
-			sent_query();
-			printf("\tInsert household %d timeblock %d alpha %.3f\n", bp.household_id, i + dr.startTime, result[i]);
-		}
-	}
-
-	return result;
 }
 
 int *household_participation(DEMANDRESPONSE dr, int household_id, string table)

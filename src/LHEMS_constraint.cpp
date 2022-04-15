@@ -43,35 +43,6 @@ void summation_interruptLoadRa_biggerThan_Qa(INTERRUPTLOAD irl, BASEPARAMETER &b
 	saving_coefAndBnds_rowNum(bp.coef_row_num, row_num_maxAddition, bp.bnd_row_num, row_num_maxAddition);
 }
 
-// =-=-=-=-=-=-=- dr -=-=-=-=-=-=-= //
-void pgrid_smallerThan_Pavg(BASEPARAMETER &bp, DEMANDRESPONSE dr, float **coefficient, glp_prob *mip, int row_num_maxAddition)
-{
-	functionPrint(__func__);
-
-	for (int i = 0; i < bp.remain_timeblock; i++)
-	{
-		if (dr.startTime - bp.sample_time >= 0)
-		{
-			for (int i = (dr.startTime - bp.sample_time); i <= (dr.endTime - bp.sample_time); i++)
-			{
-				coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, bp.str_Pgrid)] = 1.0;
-			}
-		}
-		else if (dr.startTime - bp.sample_time < 0)
-		{
-			for (int i = 0; i <= (dr.endTime - bp.sample_time); i++)
-			{
-				coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, bp.str_Pgrid)] = 1.0;
-			}
-		}
-		glp_set_row_name(mip, bp.bnd_row_num + i, "");
-		glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_UP, 0.0, dr.household_CBL);
-	}
-	bp.coef_row_num += row_num_maxAddition;
-	bp.bnd_row_num += row_num_maxAddition;
-	saving_coefAndBnds_rowNum(bp.coef_row_num, row_num_maxAddition, bp.bnd_row_num, row_num_maxAddition);
-}
-
 // =-=-=-=-=-=-=- balanced equation -=-=-=-=-=-=-= //
 void pgridMinusPess_equalTo_ploadPlusPuncontrollLoad(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, BASEPARAMETER &bp, ENERGYSTORAGESYSTEM ess, float *uncontrollable_load, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {

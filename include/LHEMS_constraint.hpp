@@ -3,8 +3,6 @@
 
 // interrupt load
 void summation_interruptLoadRa_biggerThan_Qa(INTERRUPTLOAD irl, BASEPARAMETER &bp, float **coefficient, glp_prob *mip, int row_num_maxAddition);
-// dr
-void pgrid_smallerThan_Pavg(BASEPARAMETER &bp, DEMANDRESPONSE dr, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 // balanced equation
 void pgridMinusPess_equalTo_ploadPlusPuncontrollLoad(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, BASEPARAMETER &bp, ENERGYSTORAGESYSTEM ess, float *uncontrollable_load, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 // ess
