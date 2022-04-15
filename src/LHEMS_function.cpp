@@ -258,7 +258,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 				if ((i > irl.number + uirl.number) && (i <= bp.app_count)) //sometimes varying load will have weird, use power model instead of varying load
 				{
 					s[j] = glp_mip_col_val(mip, l);
-					if (s[j] == varl.power_tmp[0][0] || s[j] == varl.power_tmp[0][1] || s[j] == varl.power_tmp[0][2])
+					if (s[j] == varl.power_tmp[i - (irl.number + uirl.number + 1)][0] || s[j] == varl.power_tmp[i - (irl.number + uirl.number + 1)][1] || s[j] == varl.power_tmp[i - (irl.number + uirl.number + 1)][2])
 						s[j] = 1.0;
 				}
 				h = (h + bp.variable);
@@ -281,7 +281,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 				if ((i > irl.number + uirl.number) && (i <= bp.app_count)) //sometimes varying load will have weird, use power model instead of varying load
 				{
 					s[j + bp.sample_time] = glp_mip_col_val(mip, l);
-					if (s[j + bp.sample_time] == varl.power_tmp[0][0] || s[j + bp.sample_time] == varl.power_tmp[0][1] || s[j + bp.sample_time] == varl.power_tmp[0][2])
+					if (s[j + bp.sample_time] == varl.power_tmp[i - (irl.number + uirl.number + 1)][0] || s[j + bp.sample_time] == varl.power_tmp[i - (irl.number + uirl.number + 1)][1] || s[j + bp.sample_time] == varl.power_tmp[i - (irl.number + uirl.number + 1)][2])
 						s[j + bp.sample_time] = 1.0;
 				}
 				h = (h + bp.variable);
