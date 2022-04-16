@@ -507,13 +507,13 @@ void varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(VARYINGLOAD var
 }
 
 // =-=-=-=-=-=-=- objective function -=-=-=-=-=-=-= //
-void setting_LHEMS_objectiveFunction(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, BASEPARAMETER bp, DEMANDRESPONSE dr, COMFORTLEVEL comlv, float* price, int *participate_array, glp_prob *mip)
+void setting_LHEMS_objectiveFunction(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, BASEPARAMETER bp, DEMANDRESPONSE dr, COMFORTLEVEL comlv, glp_prob *mip)
 {
 	functionPrint(__func__);
 	
 	for (int j = 0; j < bp.remain_timeblock; j++)
 	{
-		glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), price[j + bp.sample_time] * bp.delta_T);
+		glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), bp.price[j + bp.sample_time] * bp.delta_T);
 		
 		if (comlv.flag)
 		{	
@@ -538,14 +538,14 @@ void setting_LHEMS_objectiveFunction(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VA
 		{
 			for (int j = 0; j < dr.endTime - bp.sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), (price[j + bp.sample_time] + participate_array[j + (bp.sample_time - dr.startTime)] * dr.feedback_price) * bp.delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), (bp.price[j + bp.sample_time] + dr.participate_array[j + (bp.sample_time - dr.startTime)] * dr.feedback_price) * bp.delta_T);
 			}
 		}
 		else if (bp.sample_time - dr.startTime < 0)
 		{
 			for (int j = dr.startTime - bp.sample_time; j < dr.endTime - bp.sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), (price[j + bp.sample_time] + participate_array[j - (dr.startTime - bp.sample_time)] * dr.feedback_price) * bp.delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), (bp.price[j + bp.sample_time] + dr.participate_array[j - (dr.startTime - bp.sample_time)] * dr.feedback_price) * bp.delta_T);
 			}
 		}
 	}

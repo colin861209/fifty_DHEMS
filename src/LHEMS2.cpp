@@ -65,12 +65,25 @@ int main(void)
 	bp.remain_timeblock = bp.time_block - bp.sample_time;
 	messagePrint(__LINE__, "sample time from database = ", 'I', bp.sample_time);
 
+	
+	// =-=-=-=-=-=-=- get HEMS flag -=-=-=-=-=-=-= //
+	irl.flag = flag_receive("LHEMS_flag", irl.str_interrupt);
+	uirl.flag = flag_receive("LHEMS_flag", uirl.str_uninterrupt);
+	varl.flag = flag_receive("LHEMS_flag", varl.str_varying);
+	bp.Pgrid_flag = flag_receive("LHEMS_flag", bp.str_Pgrid);
+	ess.flag = flag_receive("LHEMS_flag", ess.str_Pess);
+	ucl.flag = value_receive("BaseParameter", "parameter_name", "uncontrollable_load_flag");
+	if (ucl.flag)
+	{
+		ucl.generate_flag = value_receive("BaseParameter", "parameter_name", "generate_uncontrollable_load_flag");
+	}
+
 	// =-=-=-=-=-=-=- get load_list loads category's amount -=-=-=-=-=-=-= //
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = 1");
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = %d", irl.group_id);
 	irl.number = turn_value_to_int(0);
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = 2");
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = %d", uirl.group_id);
 	uirl.number = turn_value_to_int(0);
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = 3");
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = %d", varl.group_id);
 	varl.number = turn_value_to_int(0);
 	bp.app_count = irl.number + uirl.number + varl.number;
 
@@ -87,16 +100,6 @@ int main(void)
 		dr.customer_baseLine = dr_info[4];
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT MAX(household%d) FROM `LHEMS_demand_response_CBL` WHERE `time_block` BETWEEN %d AND %d AND `comfort_level_flag` = %d", bp.household_id, dr.startTime, dr.endTime - 1, comlv.flag);
 		dr.household_CBL = turn_value_to_float(0);
-	}
-	irl.flag = flag_receive("LHEMS_flag", irl.str_interrupt);
-	uirl.flag = flag_receive("LHEMS_flag", uirl.str_uninterrupt);
-	varl.flag = flag_receive("LHEMS_flag", varl.str_varying);
-	bp.Pgrid_flag = flag_receive("LHEMS_flag", bp.str_Pgrid);
-	ess.flag = flag_receive("LHEMS_flag", ess.str_Pess);
-	ucl.flag = value_receive("BaseParameter", "parameter_name", "uncontrollable_load_flag");
-	if (ucl.flag)
-	{
-		ucl.generate_flag = value_receive("BaseParameter", "parameter_name", "generate_uncontrollable_load_flag");
 	}
 	
 	// =-=-=-=-=-=-=- Define variable name and use in GLPK -=-=-=-=-=-=-= //
@@ -242,10 +245,10 @@ int main(void)
 	update_loadModel(bp, irl, uirl, varl, distributed_group_num);
 	calculateCostInfo(bp);
 
-	printf("LINE %d: sample_time = %d\n", __LINE__, bp.sample_time);
+	messagePrint(__LINE__, "sample_time = ", 'I', bp.sample_time);
 	if (bp.distributed_household_id == bp.distributed_householdTotal)
 	{
-		printf("LINE %d: next sample_time = %d\n\n", __LINE__, bp.sample_time + 1);
+		messagePrint(__LINE__, "next sample_time = ", 'I', bp.sample_time + 1);
 		update_distributed_group("next_simulate_timeblock", bp.sample_time + 1, "group_id", distributed_group_num);
 		if (get_distributed_group("SUM(next_simulate_timeblock) / COUNT(group_id)") == bp.sample_time + 1)
 		{
@@ -259,10 +262,10 @@ int main(void)
 	else
 		bp.distributed_household_id = 1;
 
-	printf("LINE %d: next distributed household_id = %d\n", __LINE__, bp.distributed_household_id);
-	printf("LINE %d: next real household_id = %d\n", __LINE__, (distributed_group_num - 1) * bp.distributed_householdTotal + bp.distributed_household_id);
+	messagePrint(__LINE__, "next distributed household_id = ", 'I', bp.distributed_household_id);
+	messagePrint(__LINE__, "next real household_id = ", 'I', (distributed_group_num - 1) * bp.distributed_householdTotal + bp.distributed_household_id);
 	update_distributed_group("household_id", bp.distributed_household_id, "group_id", distributed_group_num);
-	
+
 	if (bp.sample_time == 95)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET `value` = '0' WHERE `parameter_name` = 'generate_uncontrollable_load_flag'");

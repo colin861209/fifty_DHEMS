@@ -7,6 +7,7 @@ using namespace std;
 
 typedef struct 
 {
+    int group_id = 1;
     bool flag;
     int number;
     int *start;
@@ -19,6 +20,7 @@ typedef struct
 
 typedef struct 
 {
+    int group_id = 2;
     bool flag;
     int number;
     int *start;
@@ -33,6 +35,7 @@ typedef struct
 
 typedef struct 
 {
+    int group_id = 3;
     bool flag;
     int number;
     int *start;

@@ -17,6 +17,6 @@ void summation_varyingDelta_equalTo_one(VARYINGLOAD varl, BASEPARAMETER &bp, flo
 void uninterruptRajToN_biggerThan_uninterruptDelta(UNINTERRUPTLOAD uirl, BASEPARAMETER &bp, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void varyingRajToN_biggerThan_varyingDelta(VARYINGLOAD varl, BASEPARAMETER &bp, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(VARYINGLOAD varl, BASEPARAMETER &bp, int *buff, int buff_shift_length, float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void setting_LHEMS_objectiveFunction(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, BASEPARAMETER bp, DEMANDRESPONSE dr, COMFORTLEVEL comlv, float* price, int *participate_array, glp_prob *mip);
+void setting_LHEMS_objectiveFunction(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, BASEPARAMETER bp, DEMANDRESPONSE dr, COMFORTLEVEL comlv, glp_prob *mip);
 
 #endif

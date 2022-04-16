@@ -7,22 +7,26 @@ using namespace std;
 
 typedef struct 
 {
+	// flag
 	bool flag;
 	string str_publicLoad = "publicLoad";
-	int forceToStop_number;
-	vector<int> forceToStop_start;
-	vector<int> forceToStop_end;
-	vector<int> forceToStop_operation_time;
-	vector<int> forceToStop_remain_operation_time;
-	vector<float> forceToStop_power;
-	string str_forceToStop_publicLoad = "forceToStop_publicLoad";
-	int interrupt_number;
-	vector<int> interrupt_start;
-	vector<int> interrupt_end;
-	vector<int> interrupt_operation_time;
-	vector<int> interrupt_remain_operation_time;
-	vector<float> interrupt_power;
-	string str_interrupt_publicLoad = "interrupt_publicLoad";
+	// Type of public load
+	int stoppable_group_id = 5;
+	int stoppable_number;
+	vector<int> stoppable_start;
+	vector<int> stoppable_end;
+	vector<int> stoppable_operation_time;
+	vector<int> stoppable_remain_operation_time;
+	vector<float> stoppable_power;
+	string str_stoppable_publicLoad = "stoppable_publicLoad";
+	int deferrable_group_id = 6;
+	int deferrable_number;
+	vector<int> deferrable_start;
+	vector<int> deferrable_end;
+	vector<int> deferrable_operation_time;
+	vector<int> deferrable_remain_operation_time;
+	vector<float> deferrable_power;
+	string str_deferrable_publicLoad = "deferrable_publicLoad";
 } PUBLICLOAD;
 
 typedef struct 
@@ -42,7 +46,6 @@ typedef struct
     string str_charging = "EM_charging";
 	string str_discharging = "EM_discharging";
 	string str_mu = "EM_mu";
-	string table_title = "EM_";
 } ELECTRICMOTOR;
 
 typedef struct 

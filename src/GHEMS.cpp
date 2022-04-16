@@ -139,14 +139,14 @@ int main(int argc, const char **argv)
 
 	if (pl.flag == 1)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = '5'");
-		pl.forceToStop_number = turn_value_to_int(0);
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = '6' ");
-		pl.interrupt_number = turn_value_to_int(0);
-		for (int i = 0; i < pl.forceToStop_number; i++)
-			bp.variable_name.push_back(pl.str_forceToStop_publicLoad + to_string(i + 1));
-		for (int i = 0; i < pl.interrupt_number; i++)
-			bp.variable_name.push_back(pl.str_interrupt_publicLoad + to_string(i + 1));
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = '%d'", pl.stoppable_group_id);
+		pl.stoppable_number = turn_value_to_int(0);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = '%d'", pl.deferrable_group_id);
+		pl.deferrable_number = turn_value_to_int(0);
+		for (int i = 0; i < pl.stoppable_number; i++)
+			bp.variable_name.push_back(pl.str_stoppable_publicLoad + to_string(i + 1));
+		for (int i = 0; i < pl.deferrable_number; i++)
+			bp.variable_name.push_back(pl.str_deferrable_publicLoad + to_string(i + 1));
 	}
 	if (bp.Pgrid_flag == 1)
 		bp.variable_name.push_back(bp.str_Pgrid);
@@ -255,8 +255,8 @@ int main(int argc, const char **argv)
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `BaseParameter` SET value = (SELECT A%d FROM GHEMS_control_status where equip_name = '%s') WHERE parameter_name = 'now_SOC'", bp.sample_time, ess.str_SOC.c_str());
 	sent_query();
 
-	printf("LINE %d: sample_time = %d\n", __LINE__, bp.sample_time);
-	printf("LINE %d: next sample_time = %d\n\n", __LINE__, bp.sample_time + 1);
+	messagePrint(__LINE__, "sample_time = ", 'I', bp.sample_time);
+	messagePrint(__LINE__, "next sample_time = ", 'I', bp.sample_time + 1);
 
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = '%d' WHERE parameter_name = 'Global_next_simulate_timeblock' ", bp.sample_time + 1);
 	sent_query();

@@ -12,9 +12,6 @@
 #include "LHEMS_constraint.hpp"
 #include "scheduling_parameter.hpp"
 
-int coef_row_num = 0, bnd_row_num = 1;
-char column[400] = "A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A29,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95";
-
 void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, COMFORTLEVEL comlv, INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, float *uncontrollable_load, int distributed_group_num)
 {
 	functionPrint(__func__);
@@ -47,16 +44,15 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	init_VaryingLoads_OperateTimeAndPower(bp, varl);
 	putValues_VaryingLoads_OperateTimeAndPower(bp, varl);
 
-	int *participate_array;
 	if (dr.mode != 0)
 	{
-		participate_array = household_participation(dr, bp.household_id, "LHEMS_demand_response_participation");
+		dr.participate_array = household_participation(dr, bp.household_id, "LHEMS_demand_response_participation");
 		bp.Pgrid_max_array.assign(bp.remain_timeblock, bp.Pgrid_max);
 		if (bp.sample_time - dr.startTime >= 0)
 		{
 			for (int j = 0; j < dr.endTime - bp.sample_time; j++)
 			{
-				if (participate_array[j + (bp.sample_time - dr.startTime)])
+				if (dr.participate_array[j + (bp.sample_time - dr.startTime)])
 				{
 					bp.Pgrid_max_array[j] = dr.household_CBL;
 				}
@@ -66,7 +62,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		{
 			for (int j = dr.startTime - bp.sample_time; j < dr.endTime - bp.sample_time; j++)
 			{
-				if (participate_array[j - (dr.startTime - bp.sample_time)])
+				if (dr.participate_array[j - (dr.startTime - bp.sample_time)])
 				{
 					bp.Pgrid_max_array[j] = dr.household_CBL;
 				}
@@ -169,7 +165,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(varl, bp, buff, irl.number + uirl.number, coefficient, mip, bp.remain_timeblock);
 	}
 
-	setting_LHEMS_objectiveFunction(irl, uirl, varl, bp, dr, comlv, bp.price, participate_array, mip);
+	setting_LHEMS_objectiveFunction(irl, uirl, varl, bp, dr, comlv, mip);
 
 	int *ia = new int[rowTotal * colTotal + 1];
 	int *ja = new int[rowTotal * colTotal + 1];
@@ -264,11 +260,11 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 				h = (h + bp.variable);
 				l = (l + bp.variable);
 			}
-			insert_status_into_MySQLTable("LHEMS_control_status", column, s, "equip_name", bp.variable_name[i - 1], "household_id", bp.household_id);
+			insert_status_into_MySQLTable("LHEMS_control_status", bp.str_sql_allTimeblock, s, "equip_name", bp.variable_name[i - 1], "household_id", bp.household_id);
 		}
 		else
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, bp.variable_name[i - 1].c_str(), bp.household_id);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, bp.variable_name[i - 1].c_str(), bp.household_id);
 			fetch_row_value();
 			for (int k = 0; k < bp.sample_time; k++)
 			{
@@ -293,7 +289,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 			{
 				s[j] = 0;
 			}
-			insert_status_into_MySQLTable("LHEMS_real_status", column, s, "equip_name", bp.variable_name[i - 1], "household_id", bp.household_id);
+			insert_status_into_MySQLTable("LHEMS_real_status", bp.str_sql_allTimeblock, s, "equip_name", bp.variable_name[i - 1], "household_id", bp.household_id);
 		}
 	}
 
@@ -455,7 +451,7 @@ void countUninterruptAndVaryingLoads_Flag(BASEPARAMETER bp, UNINTERRUPTLOAD &uir
 		for (int i = 0; i < uirl.number; i++)
 		{
 			flag = 0;
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (uirl.str_uninterDelta + to_string(i + 1)).c_str(), bp.household_id);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, (uirl.str_uninterDelta + to_string(i + 1)).c_str(), bp.household_id);
 			fetch_row_value();
 			for (int j = 0; j < bp.sample_time; j++)
 			{
@@ -466,7 +462,7 @@ void countUninterruptAndVaryingLoads_Flag(BASEPARAMETER bp, UNINTERRUPTLOAD &uir
 		for (int i = 0; i < varl.number; i++)
 		{
 			flag = 0;
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (varl.str_varyingDelta + to_string(i + 1)).c_str(), bp.household_id);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, (varl.str_varyingDelta + to_string(i + 1)).c_str(), bp.household_id);
 			fetch_row_value();
 			for (int j = 0; j < bp.sample_time; j++)
 			{
@@ -491,7 +487,7 @@ void countLoads_AlreadyOpenedTimes(BASEPARAMETER bp, int *buff)
 		{
 			coun = 0;
 
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, bp.variable_name[i].c_str(), bp.household_id);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, bp.variable_name[i].c_str(), bp.household_id);
 			fetch_row_value();
 			for (int j = 0; j < bp.sample_time; j++)
 			{
@@ -665,7 +661,7 @@ void update_loadModel(BASEPARAMETER bp, INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl,
 
 	for (int i = 0; i < irl.number; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (irl.str_interrupt + to_string(i + 1)).c_str(), bp.household_id);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, (irl.str_interrupt + to_string(i + 1)).c_str(), bp.household_id);
 		fetch_row_value();
 		for (int j = bp.sample_time; j < bp.time_block; j++)
 		{
@@ -674,7 +670,7 @@ void update_loadModel(BASEPARAMETER bp, INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl,
 	}
 	for (int i = 0; i < uirl.number; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (uirl.str_uninterrupt + to_string(i + 1)).c_str(), bp.household_id);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, (uirl.str_uninterrupt + to_string(i + 1)).c_str(), bp.household_id);
 		fetch_row_value();
 		for (int j = bp.sample_time; j < bp.time_block; j++)
 		{
@@ -683,7 +679,7 @@ void update_loadModel(BASEPARAMETER bp, INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl,
 	}
 	for (int i = 0; i < varl.number; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (varl.str_varyingPsi + to_string(i + 1)).c_str(), bp.household_id);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, (varl.str_varyingPsi + to_string(i + 1)).c_str(), bp.household_id);
 		fetch_row_value();
 		for (int j = bp.sample_time; j < bp.time_block; j++)
 		{
@@ -723,7 +719,7 @@ void HEMS_UCload_rand_operationTime(BASEPARAMETER bp, UNCONTROLLABLELOAD &ucl, i
 	for (int i = 0; i < bp.time_block; i++)
 		result[i] = 0.0;
 
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = 4");
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = %d", ucl.hems_group_id);
 	ucl.number = turn_value_to_int(0);
 
 	if (!ucl.flag)
@@ -979,7 +975,7 @@ void calculateCostInfo(BASEPARAMETER bp)
 
 	if (bp.sample_time == 0)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `LHEMS_cost` (household_id, origin_grid_price, %s) VALUES('%d','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, bp.household_id, gridPrice_total, gridPrice_tmp[0], gridPrice_tmp[1], gridPrice_tmp[2], gridPrice_tmp[3], gridPrice_tmp[4], gridPrice_tmp[5], gridPrice_tmp[6], gridPrice_tmp[7], gridPrice_tmp[8], gridPrice_tmp[9], gridPrice_tmp[10], gridPrice_tmp[11], gridPrice_tmp[12], gridPrice_tmp[13], gridPrice_tmp[14], gridPrice_tmp[15], gridPrice_tmp[16], gridPrice_tmp[17], gridPrice_tmp[18], gridPrice_tmp[19], gridPrice_tmp[20], gridPrice_tmp[21], gridPrice_tmp[22], gridPrice_tmp[23], gridPrice_tmp[24], gridPrice_tmp[25], gridPrice_tmp[26], gridPrice_tmp[27], gridPrice_tmp[28], gridPrice_tmp[29], gridPrice_tmp[30], gridPrice_tmp[31], gridPrice_tmp[32], gridPrice_tmp[33], gridPrice_tmp[34], gridPrice_tmp[35], gridPrice_tmp[36], gridPrice_tmp[37], gridPrice_tmp[38], gridPrice_tmp[39], gridPrice_tmp[40], gridPrice_tmp[41], gridPrice_tmp[42], gridPrice_tmp[43], gridPrice_tmp[44], gridPrice_tmp[45], gridPrice_tmp[46], gridPrice_tmp[47], gridPrice_tmp[48], gridPrice_tmp[49], gridPrice_tmp[50], gridPrice_tmp[51], gridPrice_tmp[52], gridPrice_tmp[53], gridPrice_tmp[54], gridPrice_tmp[55], gridPrice_tmp[56], gridPrice_tmp[57], gridPrice_tmp[58], gridPrice_tmp[59], gridPrice_tmp[60], gridPrice_tmp[61], gridPrice_tmp[62], gridPrice_tmp[63], gridPrice_tmp[64], gridPrice_tmp[65], gridPrice_tmp[66], gridPrice_tmp[67], gridPrice_tmp[68], gridPrice_tmp[69], gridPrice_tmp[70], gridPrice_tmp[71], gridPrice_tmp[72], gridPrice_tmp[73], gridPrice_tmp[74], gridPrice_tmp[75], gridPrice_tmp[76], gridPrice_tmp[77], gridPrice_tmp[78], gridPrice_tmp[79], gridPrice_tmp[80], gridPrice_tmp[81], gridPrice_tmp[82], gridPrice_tmp[83], gridPrice_tmp[84], gridPrice_tmp[85], gridPrice_tmp[86], gridPrice_tmp[87], gridPrice_tmp[88], gridPrice_tmp[89], gridPrice_tmp[90], gridPrice_tmp[91], gridPrice_tmp[92], gridPrice_tmp[93], gridPrice_tmp[94], gridPrice_tmp[95]);
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `LHEMS_cost` (household_id, origin_grid_price, %s) VALUES('%d','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", bp.str_sql_allTimeblock, bp.household_id, gridPrice_total, gridPrice_tmp[0], gridPrice_tmp[1], gridPrice_tmp[2], gridPrice_tmp[3], gridPrice_tmp[4], gridPrice_tmp[5], gridPrice_tmp[6], gridPrice_tmp[7], gridPrice_tmp[8], gridPrice_tmp[9], gridPrice_tmp[10], gridPrice_tmp[11], gridPrice_tmp[12], gridPrice_tmp[13], gridPrice_tmp[14], gridPrice_tmp[15], gridPrice_tmp[16], gridPrice_tmp[17], gridPrice_tmp[18], gridPrice_tmp[19], gridPrice_tmp[20], gridPrice_tmp[21], gridPrice_tmp[22], gridPrice_tmp[23], gridPrice_tmp[24], gridPrice_tmp[25], gridPrice_tmp[26], gridPrice_tmp[27], gridPrice_tmp[28], gridPrice_tmp[29], gridPrice_tmp[30], gridPrice_tmp[31], gridPrice_tmp[32], gridPrice_tmp[33], gridPrice_tmp[34], gridPrice_tmp[35], gridPrice_tmp[36], gridPrice_tmp[37], gridPrice_tmp[38], gridPrice_tmp[39], gridPrice_tmp[40], gridPrice_tmp[41], gridPrice_tmp[42], gridPrice_tmp[43], gridPrice_tmp[44], gridPrice_tmp[45], gridPrice_tmp[46], gridPrice_tmp[47], gridPrice_tmp[48], gridPrice_tmp[49], gridPrice_tmp[50], gridPrice_tmp[51], gridPrice_tmp[52], gridPrice_tmp[53], gridPrice_tmp[54], gridPrice_tmp[55], gridPrice_tmp[56], gridPrice_tmp[57], gridPrice_tmp[58], gridPrice_tmp[59], gridPrice_tmp[60], gridPrice_tmp[61], gridPrice_tmp[62], gridPrice_tmp[63], gridPrice_tmp[64], gridPrice_tmp[65], gridPrice_tmp[66], gridPrice_tmp[67], gridPrice_tmp[68], gridPrice_tmp[69], gridPrice_tmp[70], gridPrice_tmp[71], gridPrice_tmp[72], gridPrice_tmp[73], gridPrice_tmp[74], gridPrice_tmp[75], gridPrice_tmp[76], gridPrice_tmp[77], gridPrice_tmp[78], gridPrice_tmp[79], gridPrice_tmp[80], gridPrice_tmp[81], gridPrice_tmp[82], gridPrice_tmp[83], gridPrice_tmp[84], gridPrice_tmp[85], gridPrice_tmp[86], gridPrice_tmp[87], gridPrice_tmp[88], gridPrice_tmp[89], gridPrice_tmp[90], gridPrice_tmp[91], gridPrice_tmp[92], gridPrice_tmp[93], gridPrice_tmp[94], gridPrice_tmp[95]);
 		sent_query();
 	}
 	else
