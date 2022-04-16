@@ -7,7 +7,7 @@
 #include <mysql.h>
 #include <iostream> //504~513 sample_time ��b�iGLPK�e�A�o�˹L�@�Ѥ~���|�n���s��
 #include "SQLFunction.hpp"
-#include "fifty_LHEMS_function.hpp"
+#include "LHEMS_function.hpp"
 // use function 'find_variableName_position' needs
 #include <string>
 #include <vector>

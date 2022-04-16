@@ -7,7 +7,7 @@
 #include <mysql/mysql.h>
 #include <iostream>
 #include "SQLFunction.hpp"
-#include "fifty_LHEMS_function.hpp"
+#include "LHEMS_function.hpp"
 #include "scheduling_parameter.hpp"
 #include "LHEMS_constraint.hpp"
 
