@@ -984,3 +984,108 @@ void calculateCostInfo(BASEPARAMETER bp)
 		sent_query();
 	}
 }
+
+void getLoads_startEndOperationTime_and_power(INTERRUPTLOAD &irl, BASEPARAMETER bp)
+{
+	const string str_joinTwoLoadListTable = "`load_list` INNER JOIN load_list_select ON load_list.number=load_list_select.number";
+	char *s_time = new char[3];
+	char *token = strtok(s_time, "-");
+	vector<int> time_tmp;
+	irl.start = new int[irl.number];
+	irl.end = new int[irl.number];
+	irl.ot = new int[irl.number];
+	irl.reot = new int[irl.number];
+	irl.power = new float[irl.number];
+
+	for (int i = 0; i < irl.number; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT load_list.household%d_startEndOperationTime FROM %s WHERE load_list_select.group_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", bp.household_id, str_joinTwoLoadListTable.c_str(), irl.group_id, bp.household_id, i);
+		char *seo_time = turn_value_to_string(0);
+		token = strtok(seo_time, "~");
+		while (token != NULL)
+		{
+			time_tmp.push_back(atoi(token));
+			token = strtok(NULL, "~");
+		}
+		irl.start[i] = time_tmp[0];
+		irl.end[i] = time_tmp[1] - 1;
+		irl.ot[i] = time_tmp[2];
+		irl.reot[i] = 0;
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT load_list.power1 FROM %s WHERE load_list_select.group_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", str_joinTwoLoadListTable.c_str(), irl.group_id, bp.household_id, i);
+		irl.power[i] = turn_value_to_float(0);
+		time_tmp.clear();
+	}
+}
+
+void getLoads_startEndOperationTime_and_power(UNINTERRUPTLOAD &uirl, BASEPARAMETER bp)
+{
+	const string str_joinTwoLoadListTable = "`load_list` INNER JOIN load_list_select ON load_list.number=load_list_select.number";
+	char *s_time = new char[3];
+	char *token = strtok(s_time, "-");
+	vector<int> time_tmp;
+	uirl.start = new int[uirl.number];
+	uirl.end = new int[uirl.number];
+	uirl.ot = new int[uirl.number];
+	uirl.reot = new int[uirl.number];
+	uirl.power = new float[uirl.number];
+	uirl.continuous_flag = new bool[uirl.number];
+
+	for (int i = 0; i < uirl.number; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT load_list.household%d_startEndOperationTime FROM %s WHERE load_list_select.group_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", bp.household_id, str_joinTwoLoadListTable.c_str(), uirl.group_id, bp.household_id, i);
+		char *seo_time = turn_value_to_string(0);
+		token = strtok(seo_time, "~");
+		while (token != NULL)
+		{
+			time_tmp.push_back(atoi(token));
+			token = strtok(NULL, "~");
+		}
+		uirl.start[i] = time_tmp[0];
+		uirl.end[i] = time_tmp[1] - 1;
+		uirl.ot[i] = time_tmp[2];
+		uirl.reot[i] = 0;
+		uirl.continuous_flag[i] = 0;
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT load_list.power1 FROM %s WHERE load_list_select.group_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", str_joinTwoLoadListTable.c_str(), uirl.group_id, bp.household_id, i);
+		uirl.power[i] = turn_value_to_float(0);
+		time_tmp.clear();
+	}
+}
+
+void getLoads_startEndOperationTime_and_power(VARYINGLOAD &varl, BASEPARAMETER bp)
+{
+	const string str_joinTwoLoadListTable = "`load_list` INNER JOIN load_list_select ON load_list.number=load_list_select.number";
+	char *s_time = new char[3];
+	char *token = strtok(s_time, "-");
+	vector<int> time_tmp;
+	varl.start = new int[varl.number];
+	varl.end = new int[varl.number];
+	varl.ot = new int[varl.number];
+	varl.reot = new int[varl.number];
+	varl.block_tmp = NEW2D(varl.number, 3, int);
+	varl.power_tmp = NEW2D(varl.number, 3, float);
+	varl.continuous_flag = new bool[varl.number];
+	
+	for (int i = 0; i < varl.number; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT load_list.household%d_startEndOperationTime FROM %s WHERE load_list_select.group_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", bp.household_id, str_joinTwoLoadListTable.c_str(), varl.group_id, bp.household_id, i);
+		char *seo_time = turn_value_to_string(0);
+		token = strtok(seo_time, "~");
+		while (token != NULL)
+		{
+			time_tmp.push_back(atoi(token));
+			token = strtok(NULL, "~");
+		}
+		varl.start[i] = time_tmp[0];
+		varl.end[i] = time_tmp[1] - 1;
+		varl.ot[i] = time_tmp[2];
+		varl.reot[i] = 0;
+		varl.continuous_flag[i] = 0;
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT load_list.power1, load_list.power2, load_list.power3, load_list.block1, load_list.block2, load_list.block3 FROM %s WHERE load_list_select.group_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", str_joinTwoLoadListTable.c_str(), varl.group_id, bp.household_id, i);
+		fetch_row_value();
+		for (int z = 0; z < 3; z++)
+			varl.power_tmp[i][z] = turn_float(z);
+		for (int z = 0; z < 3; z++)
+			varl.block_tmp[i][z] = turn_int(z + 3);
+		time_tmp.clear();
+	}
+}

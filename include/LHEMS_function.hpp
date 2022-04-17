@@ -63,6 +63,10 @@ typedef struct
 } COMFORTLEVEL;
 
 int determine_realTimeOrOneDayMode_andGetSOC(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM &ess, int real_time, int distributed_group_num);
+// Load's function
+void getLoads_startEndOperationTime_and_power(INTERRUPTLOAD &irl, BASEPARAMETER bp);
+void getLoads_startEndOperationTime_and_power(UNINTERRUPTLOAD &uirl, BASEPARAMETER bp);
+void getLoads_startEndOperationTime_and_power(VARYINGLOAD &varl, BASEPARAMETER bp);
 void countUninterruptAndVaryingLoads_Flag(BASEPARAMETER bp, UNINTERRUPTLOAD &uirl, VARYINGLOAD &varl);
 void countLoads_AlreadyOpenedTimes(BASEPARAMETER bp, int *buff);
 void count_interruptLoads_RemainOperateTime(INTERRUPTLOAD &irl, int *buff);

@@ -79,13 +79,17 @@ int main(void)
 	}
 
 	// =-=-=-=-=-=-=- get load_list loads category's amount -=-=-=-=-=-=-= //
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = %d", irl.group_id);
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(household%d) FROM load_list_select WHERE group_id = %d", bp.household_id, irl.group_id);
 	irl.number = turn_value_to_int(0);
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = %d", uirl.group_id);
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(household%d) FROM load_list_select WHERE group_id = %d", bp.household_id, uirl.group_id);
 	uirl.number = turn_value_to_int(0);
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM load_list WHERE group_id = %d", varl.group_id);
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(household%d) FROM load_list_select WHERE group_id = %d", bp.household_id, varl.group_id);
 	varl.number = turn_value_to_int(0);
 	bp.app_count = irl.number + uirl.number + varl.number;
+	// =-=-=-=-=-=-=- get each hosueholds' loads info -=-=-=-=-=-=-= //
+	getLoads_startEndOperationTime_and_power(irl, bp);
+	getLoads_startEndOperationTime_and_power(uirl, bp);
+	getLoads_startEndOperationTime_and_power(varl, bp);
 
 	// =-=-=-=-=-=-=- get demand response -=-=-=-=-=-=-= //
 	dr.mode = value_receive("BaseParameter", "parameter_name", "dr_mode");
@@ -153,92 +157,6 @@ int main(void)
 	
 	HEMS_UCload_rand_operationTime(bp, ucl, distributed_group_num);
 	init_totalLoad_flag_and_table(bp, distributed_group_num);
-
-	// =-=-=-=-=-=-=- get each hosueholds' loads info -=-=-=-=-=-=-= //
-	irl.start = new int[irl.number];
-	irl.end = new int[irl.number];
-	irl.ot = new int[irl.number];
-	irl.reot = new int[irl.number];
-	irl.power = new float[irl.number];
-
-	uirl.start = new int[uirl.number];
-	uirl.end = new int[uirl.number];
-	uirl.ot = new int[uirl.number];
-	uirl.reot = new int[uirl.number];
-	uirl.power = new float[uirl.number];
-	uirl.continuous_flag = new bool[uirl.number];
-
-	varl.start = new int[varl.number];
-	varl.end = new int[varl.number];
-	varl.ot = new int[varl.number];
-	varl.reot = new int[varl.number];
-	varl.block_tmp = NEW2D(varl.number, 3, int);
-	varl.power_tmp = NEW2D(varl.number, 3, float);
-	varl.continuous_flag = new bool[varl.number];
-
-	char *s_time = new char[3];
-	char *token = strtok(s_time, "-");
-	vector<int> time_tmp;
-	for (int i = 0; i < irl.number; i++)
-	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d_startEndOperationTime FROM load_list WHERE group_id = 1 and number = %d", bp.household_id, i + 1);
-		char *seo_time = turn_value_to_string(0);
-		token = strtok(seo_time, "~");
-		while (token != NULL)
-		{
-			time_tmp.push_back(atoi(token));
-			token = strtok(NULL, "~");
-		}
-		irl.start[i] = time_tmp[0];
-		irl.end[i] = time_tmp[1] - 1;
-		irl.ot[i] = time_tmp[2];
-		irl.reot[i] = 0;
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = 1 and number = %d", i + 1);
-		irl.power[i] = turn_value_to_float(0);
-		time_tmp.clear();
-	}
-	for (int i = 0; i < uirl.number; i++)
-	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d_startEndOperationTime FROM load_list WHERE group_id = 2 and number = %d", bp.household_id, i + 1 + irl.number);
-		char *seo_time = turn_value_to_string(0);
-		token = strtok(seo_time, "~");
-		while (token != NULL)
-		{
-			time_tmp.push_back(atoi(token));
-			token = strtok(NULL, "~");
-		}
-		uirl.start[i] = time_tmp[0];
-		uirl.end[i] = time_tmp[1] - 1;
-		uirl.ot[i] = time_tmp[2];
-		uirl.reot[i] = 0;
-		uirl.continuous_flag[i] = 0;
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = 2 and number = %d", i + 1 + irl.number);
-		uirl.power[i] = turn_value_to_float(0);
-		time_tmp.clear();
-	}
-	for (int i = 0; i < varl.number; i++)
-	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d_startEndOperationTime FROM load_list WHERE group_id = 3 and number = %d", bp.household_id, i + 1 + irl.number + uirl.number);
-		char *seo_time = turn_value_to_string(0);
-		token = strtok(seo_time, "~");
-		while (token != NULL)
-		{
-			time_tmp.push_back(atoi(token));
-			token = strtok(NULL, "~");
-		}
-		varl.start[i] = time_tmp[0];
-		varl.end[i] = time_tmp[1] - 1;
-		varl.ot[i] = time_tmp[2];
-		varl.reot[i] = 0;
-		varl.continuous_flag[i] = 0;
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1, power2, power3, block1, block2, block3 FROM load_list WHERE group_id = 3 and number = %d", i + 1 + irl.number + uirl.number);
-		fetch_row_value();
-		for (int z = 0; z < 3; z++)
-			varl.power_tmp[i][z] = turn_float(z);
-		for (int z = 0; z < 3; z++)
-			varl.block_tmp[i][z] = turn_int(z + 3);
-		time_tmp.clear();
-	}
 
 	optimization(bp, ess, dr, comlv, irl, uirl, varl, ucl.power_array, distributed_group_num);
 
