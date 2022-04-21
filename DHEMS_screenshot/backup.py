@@ -29,13 +29,13 @@ class WEBDRIVER:
                 xpath.rowCount_backup_BaseParameter, xpath.rowCount_backup_EM_Parameter, xpath.rowCount_backup_EM_user_number, 
                 xpath.rowCount_backup_EM_user_result, xpath.rowCount_backup_EV_Parameter, xpath.rowCount_backup_EV_user_number, 
                 xpath.rowCount_backup_EV_user_result, xpath.rowCount_backup_GHEMS, xpath.rowCount_backup_GHEMS_ucLoad, 
-                xpath.rowCount_backup_LHEMS, xpath.rowCount_backup_LHEMS_cost, xpath.rowCount_backup_totalLoad
+                xpath.rowCount_backup_LHEMS, xpath.rowCount_backup_LHEMS_cost, xpath.rowCount_backup_LHEMS_ucLoad, xpath.rowCount_backup_totalLoad
             ],
             'table': [
                 xpath.text_backup_BaseParameter, xpath.text_backup_EM_Parameter, xpath.text_backup_EM_user_number, 
                 xpath.text_backup_EM_user_result, xpath.text_backup_EV_Parameter, xpath.text_backup_EV_user_number, 
                 xpath.text_backup_EV_user_result, xpath.text_backup_GHEMS, xpath.text_backup_GHEMS_ucLoad, 
-                xpath.text_backup_LHEMS, xpath.text_backup_LHEMS_cost, xpath.text_backup_totalLoad
+                xpath.text_backup_LHEMS, xpath.text_backup_LHEMS_cost, xpath.text_backup_LHEMS_ucLoad, xpath.text_backup_totalLoad
             ],    
         }
         # setting driver then open browser
@@ -198,8 +198,8 @@ class WEBDRIVER:
         self.chrome.find_element_by_xpath(xpath.backup_range_bar_go).click()
 
         chart_sequence = {
-            'file_name' : ["cost.jpg", "status.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg"],
-            'file_xpath' : [xpath.backup_LHEMS_table, xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15]
+            'file_name' : ["cost.jpg", "status.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg", "16.jpg", "17.jpg", "18.jpg", "19.jpg", "20.jpg", "21.jpg", "22.jpg", "23.jpg"],
+            'file_xpath' : [xpath.LHEMS_table, xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15, xpath.LHEMS_load16, xpath.LHEMS_load17, xpath.LHEMS_load18, xpath.LHEMS_load19, xpath.LHEMS_load20, xpath.LHEMS_load21, xpath.LHEMS_load22, xpath.LHEMS_load23]
         }
         chart_sequence['file_xpath'].reverse()
         chart_sequence['file_name'].reverse()
@@ -224,8 +224,11 @@ class WEBDRIVER:
                     pass
                 for file_xpath, file_name in zip(chart_sequence['file_xpath'], chart_sequence['file_name']):
                     element = self.chrome.find_element_by_xpath(file_xpath)
-                    self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
-                    element.screenshot(self.screenshot_path + id + file_name)
+                    if "none" in element.get_attribute("style"):
+                        pass
+                    else:
+                        self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
+                        element.screenshot(self.screenshot_path + id + file_name)
                 # go to page bottom to click next household button
                 self.chrome.execute_script("document.documentElement.scrollTop=10000")
                 self.chrome.find_element_by_xpath(xpath.LHEMS_nextHousehold_btn).click()
@@ -239,7 +242,7 @@ if __name__ == "__main__":
     xpath = Xpath()
     
     # text target path
-    print(f"Please text your target path which after C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\")
+    print(f"Please text your target path which after C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\...")
     screenshot_path = input()
     screenshot_path += "\\"
     print(f"Do you want to re-screenshot figures? (Y/N)")
@@ -260,6 +263,7 @@ if __name__ == "__main__":
 
     EM_flag = False if 'noEM' in screenshot_path else True
     EV_flag = False if 'noEV' in screenshot_path else True
+    HEMS_ucLoad_flag = False if 'noHEMSuc' in screenshot_path else True
     
     db.importTable(xpath.text_backup_BaseParameter, xpath.str_BaseParameter)
     if EM_flag:
@@ -274,13 +278,13 @@ if __name__ == "__main__":
     db.importTable(xpath.text_backup_GHEMS_ucLoad, xpath.str_GHEMS_ucLoad)
     db.importTable(xpath.text_backup_LHEMS, xpath.str_LHEMS_control_status)
     db.importTable(xpath.text_backup_LHEMS_cost, xpath.str_LHEMS_cost)
+    if HEMS_ucLoad_flag:
+        db.importTable(xpath.text_backup_LHEMS_ucLoad, xpath.str_LHEMS_ucLoad)
     db.importTable(xpath.text_backup_totalLoad, xpath.str_totalLoad_model)
     # go to backup LHEMS & GHEMS and screenshot
     # DEL old and save new => Backup_img.RECOVER; SAVE another new => Backup_img.SAVEAS
     if re_screenshot_flag == 'Y':
-        if re_screenshot_type == 0:
-            print("Step >> DO NOT screenshot the figures... ")
-        elif re_screenshot_type == 1:
+        if re_screenshot_type == 1:
             print("Step >> RECOVER screenshot figures...")
             webpage = WEBDRIVER(url=url.DHEMS_web_backup_GHEMS, screenshot_path=screenshot_path)
             webpage.re_screenshot_file("LHEMS.jpg", xpath.LHEMS_loadSum, webpage.Backup_img.RECOVER)
@@ -293,7 +297,6 @@ if __name__ == "__main__":
                 webpage.re_screenshot_file("GHEMS_EVchargingSOC.jpg", xpath.GHEMS_EVchargingSOC, webpage.Backup_img.RECOVER)
             webpage.re_screenshot_file("GHEMS_table.jpg", xpath.GHEMS_table, webpage.Backup_img.RECOVER)
             webpage.re_screenshot_everyHousehold_eachLoad_file(webpage.Backup_img.RECOVER)
-
         elif re_screenshot_type == 2:
             print("Step >> SAVEAS screenshot figures...")
             webpage = WEBDRIVER(url=url.DHEMS_web_backup_GHEMS, screenshot_path=screenshot_path)
@@ -307,3 +310,5 @@ if __name__ == "__main__":
                 webpage.re_screenshot_file("GHEMS_EVchargingSOC.jpg", xpath.GHEMS_EVchargingSOC, webpage.Backup_img.SAVEAS)
             webpage.re_screenshot_file("GHEMS_table.jpg", xpath.GHEMS_table, webpage.Backup_img.SAVEAS)
             webpage.re_screenshot_everyHousehold_eachLoad_file(webpage.Backup_img.SAVEAS)
+    else:
+        print("Step >> DO NOT screenshot the figures... ")
