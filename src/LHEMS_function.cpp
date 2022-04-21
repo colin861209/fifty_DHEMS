@@ -982,7 +982,7 @@ void calculateCostInfo(BASEPARAMETER bp)
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM `LHEMS_control_status` WHERE equip_name = '%s' AND household_id = '%d'", i, bp.str_Pgrid.c_str(), bp.household_id);
 		gridPrice_tmp.push_back(turn_value_to_float(0) * bp.price[i] * bp.delta_T);
 	}
-	float gridPrice_total = accumulate(gridPrice_tmp.begin(), gridPrice_tmp.end(), 0);
+	float gridPrice_total = accumulate(gridPrice_tmp.begin(), gridPrice_tmp.end(), 0.0);
 
 	if (bp.sample_time == 0)
 	{

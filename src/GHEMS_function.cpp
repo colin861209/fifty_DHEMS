@@ -1132,7 +1132,7 @@ void updateSingleHouseholdCost(BASEPARAMETER bp, DEMANDRESPONSE dr)
 				C_uj[i] = participate * dr.feedback_price * (P_uavg - P_ugrid) * bp.delta_T;
 			}
 
-			float sum_C_uj = accumulate(C_uj.begin(), C_uj.end(), 0);
+			float sum_C_uj = accumulate(C_uj.begin(), C_uj.end(), 0.0);
 
 			for (int i = 0; i < householdTotal; i++)
 			{
