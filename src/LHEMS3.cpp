@@ -102,8 +102,6 @@ int main(void)
 		dr.minDecrease_power = dr_info[2];
 		dr.feedback_price = dr_info[3];
 		dr.customer_baseLine = dr_info[4];
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT MAX(household%d) FROM `LHEMS_demand_response_CBL` WHERE `time_block` BETWEEN %d AND %d AND `comfort_level_flag` = %d", bp.household_id, dr.startTime, dr.endTime - 1, comlv.flag);
-		dr.household_CBL = turn_value_to_float(0);
 	}
 	
 	// =-=-=-=-=-=-=- Define variable name and use in GLPK -=-=-=-=-=-=-= //

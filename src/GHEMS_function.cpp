@@ -1121,6 +1121,7 @@ void updateSingleHouseholdCost(BASEPARAMETER bp, DEMANDRESPONSE dr)
 				float P_uavg = turn_value_to_float(0);
 				
 				// D_{u}^{j}
+				// NOTE: Change formula
 				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM `LHEMS_demand_response_participation` WHERE household_id = %d", j, i + 1);
 				int participate = turn_value_to_int(0);
 
@@ -1291,14 +1292,6 @@ void Global_UCload_rand_operationTime(BASEPARAMETER bp, UNCONTROLLABLELOAD &ucl)
 	
 	if (!ucl.flag)
 	{
-		for (int i = 0; i < ucl.number; i++)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `GHEMS_uncontrollable_load` SET `uncontrollable_load%d` = '0.0' ", i + 1);
-			sent_query();		
-		}
-		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `GHEMS_uncontrollable_load` SET `totalLoad` = '0.0' ");
-		sent_query();
-		
 		ucl.power_array = result;
 	}
 	else

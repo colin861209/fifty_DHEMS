@@ -46,15 +46,17 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 
 	if (dr.mode != 0)
 	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT MAX(household%d) FROM `LHEMS_demand_response_CBL` WHERE `time_block` BETWEEN %d AND %d AND `comfort_level_flag` = %d", bp.household_id, dr.startTime, dr.endTime - 1, comlv.flag);
+		dr.household_CBL = turn_value_to_float(0);
 		dr.participate_array = household_participation(dr, bp.household_id, "LHEMS_demand_response_participation");
 		bp.Pgrid_max_array.assign(bp.remain_timeblock, bp.Pgrid_max);
 		if (bp.sample_time - dr.startTime >= 0)
 		{
 			for (int j = 0; j < dr.endTime - bp.sample_time; j++)
 			{
-				if (dr.participate_array[j + (bp.sample_time - dr.startTime)])
+				if (dr.participate_array[j + (bp.sample_time - dr.startTime)] != 0)
 				{
-					bp.Pgrid_max_array[j] = dr.household_CBL;
+					bp.Pgrid_max_array[j] = dr.household_CBL * dr.participate_array[j + (bp.sample_time - dr.startTime)];
 				}
 			}
 		}
@@ -62,9 +64,9 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		{
 			for (int j = dr.startTime - bp.sample_time; j < dr.endTime - bp.sample_time; j++)
 			{
-				if (dr.participate_array[j - (dr.startTime - bp.sample_time)])
+				if (dr.participate_array[j - (dr.startTime - bp.sample_time)] != 0)
 				{
-					bp.Pgrid_max_array[j] = dr.household_CBL;
+					bp.Pgrid_max_array[j] = dr.household_CBL * dr.participate_array[j + (bp.sample_time - dr.startTime)];
 				}
 			}
 		}
@@ -233,10 +235,26 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	{
 		if (z == 0.0)
 		{
-			display_coefAndBnds_rowNum();
-			printf("Error > sol is 0, No Solution, give up the solution\n");
-			printf("%.2f\n", glp_mip_col_val(mip, find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1));
-			return;
+			int count = 0;
+			for (int i = 0; i < irl.number; i++)
+			{
+				count += irl.reot[i];
+			}
+			for (int i = 0; i < uirl.number; i++)
+			{
+				count += uirl.reot[i];
+			}
+			for (int i = 0; i < varl.number; i++)
+			{
+				count += varl.reot[i];
+			}
+			if (count != 0)
+			{
+				display_coefAndBnds_rowNum();
+				printf("Error > sol is 0, No Solution, give up the solution\n");
+				printf("%.2f\n", glp_mip_col_val(mip, find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1));
+				return;
+			}
 		}
 	}
 
@@ -725,13 +743,6 @@ void HEMS_UCload_rand_operationTime(BASEPARAMETER bp, UNCONTROLLABLELOAD &ucl, i
 	if (!ucl.flag)
 	{
 		update_distributed_group("uncontrollable_load_flag", 0, "group_id", distributed_group_num);
-		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `household%d` = '0.0' ", bp.household_id);
-		sent_query();
-		if (bp.distributed_household_id == bp.distributed_householdTotal)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `totalLoad` = '0.0' ");
-			sent_query();
-		}
 		ucl.power_array = result;
 	}
 	else
@@ -803,19 +814,19 @@ void HEMS_UCload_rand_operationTime(BASEPARAMETER bp, UNCONTROLLABLELOAD &ucl, i
 	}
 }
 
-int *household_participation(DEMANDRESPONSE dr, int household_id, string table)
+float *household_participation(DEMANDRESPONSE dr, int household_id, string table)
 {
 	functionPrint(__func__);
 
-	int *result = new int[dr.endTime - dr.startTime];
+	float *result = new float[dr.endTime - dr.startTime];
 
 	// =-=-=-=-=-=-=- calculate weighting then turn to alpha -=-=-=-=-=-=-= //
 	for (int i = dr.startTime; i < dr.endTime; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `%s` WHERE `household_id` = %d", i, table.c_str(), household_id);
-		result[i - dr.startTime] = turn_value_to_int(0);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM `%s` WHERE `household_id` = %d", i, table.c_str(), household_id);
+		result[i - dr.startTime] = ceil(turn_value_to_float(0));
 
-		printf("\thousehold %d timeblock %d status %d\n", household_id, i, result[i - dr.startTime]);
+		printf("\thousehold %d timeblock %d status %.2f\n", household_id, i, result[i - dr.startTime]);
 	}
 
 	return result;

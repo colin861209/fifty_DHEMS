@@ -91,7 +91,7 @@ typedef struct
 	int minDecrease_power;
 	int customer_baseLine;
 	// LHEMS
-	int *participate_array;
+	float *participate_array;
 	float household_CBL;
 } DEMANDRESPONSE;
 
