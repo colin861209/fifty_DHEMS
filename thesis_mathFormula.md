@@ -15,7 +15,7 @@ $$
 \min_{\substack {
     P_{grid}^{j}, ~j=0,...,J-1 \\ 
     P_{ESS}^{j}, ~j=0,...,J-1 \\
-    r_{p}^{j}, ~j=0,...,J-1, ~p \in A_{d1} \cup A_{d2} \cup A_{d3} \\
+    r_{p}^{j}, ~j=0,...,J-1, ~p \in A_{s} \cup A_{d} \\
     r_{em,n}^{c,j}, ~m=1,...,M, ~j=0,...,J-1 \\
     r_{em,n}^{d,j}, ~m=1,...,M, ~j=0,...,J-1 \\
     \mu_{em,n}^{j}, ~m=1,...,M, ~j=0,...,J-1 \\
@@ -25,7 +25,7 @@ $$
 }}
 \sum_{j=k}^{J-1} \rho_{b}^{j} P^{j}_{grid}T_{s} - 
 \sum_{j=k}^{J-1}\rho_{b}^{j}(\sum_{m=1}^{M} P_{m}^{d,max}r_{em,m}^{d,j} + \sum_{v=1}^{V} P_{v}^{d,max}r_{ev,v}^{d,j})T_{s} -
-\sum_{j=\tau_{r}}^{\tau_{r}^{e}} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s},
+\sum_{j=\tau_{r}}^{\tau_{r}^{e}} \rho_{f}^{j} (\bar{P}_{base}-P^{j}_{grid}) T_{s},
 \quad if \quad k < \tau_{r}^{s}
 $$
 
@@ -33,7 +33,7 @@ $$
 \min_{\substack {
     P_{grid}^{j}, j=0,...,J-1 \\ 
     P_{ESS}^{j}, j=0,...,J-1 \\
-    r_{p}^{j}, j=0,...,J-1,~p \in A_{d1} \cup A_{d2} \cup A_{d3} \\
+    r_{p}^{j}, j=0,...,J-1,~p \in A_{s} \cup A_{d} \\
     r_{em,n}^{c,j}, ~m=1,...,M, ~j=0,...,J-1 \\
     r_{em,n}^{d,j}, ~m=1,...,M, ~j=0,...,J-1 \\
     \mu_{em,n}^{j}, ~m=1,...,M, ~j=0,...,J-1 \\
@@ -43,7 +43,7 @@ $$
 }}
 \sum_{j=k}^{J-1} \rho_{b}^{j} P^{j}_{grid}T_{s} - 
 \sum_{j=k}^{J-1}\rho_{b}^{j}(\sum_{m=1}^{M} P_{m}^{d,max}r_{em,m}^{d,j} + \sum_{v=1}^{V} P_{v}^{d,max}r_{ev,v}^{d,j})T_{s} -
-\sum_{j=k}^{\tau_{r}^{e}} \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s},
+\sum_{j=k}^{\tau_{r}^{e}} \rho_{f}^{j} (\bar{P}_{base}-P^{j}_{grid}) T_{s},
 \quad if \quad \tau_{r}^{s} \leq k \leq \tau_{r}^{e}
 $$
 
@@ -51,7 +51,7 @@ $$
 \min_{\substack {
     P_{grid}^{j}, j=0,...,J-1 \\ 
     P_{ESS}^{j}, j=0,...,J-1 \\
-    r_{p}^{j}, j=0,...,J-1,~p \in A_{d1} \cup A_{d2} \cup A_{d3} \\
+    r_{p}^{j}, j=0,...,J-1,~p \in A_{s} \cup A_{d} \\
     r_{em,n}^{c,j}, ~m=1,...,M, ~j=0,...,J-1 \\
     r_{em,n}^{d,j}, ~m=1,...,M, ~j=0,...,J-1 \\
     \mu_{em,n}^{j}, ~m=1,...,M, ~j=0,...,J-1 \\
@@ -65,38 +65,34 @@ $$
 $$
 
 * Deamnd Response
-    * $d$ 抑低用電日
-    * $P_{grid}^{j,d}$ 第d天第j時刻的市電功率
-    * $P_{max}^{d}$ 第d天抑低用電時段市電最大功率
-    * $P_{grid}^{avg}$ 抑低用電時段平均值 (基準用電容量 CBL)
+    * $n$ 抑低用電日
+    * $\bar{P}_{base}$ 抑低用電時段平均值 (基準用電容量 CBL)
     * $E_{s}$ 輔助服務時段最少降載度數
+
     * Formula
-    
-    $$ P_{max}^{d}= \max_{j=\tau_{r}^{s},...,\tau_{r}^{e}}P_{grid}^{j,d}, \quad d=1,...,5 $$
-    
-    $$ P_{grid}^{avg} = \frac{\sum_{d=1}^{D} P_{max}^{d}} {D} $$
-  
+    $$ \bar{P}_{base} = \frac{1}{N}\frac{1}{(\tau_{r}^{e} - \tau_{r}^{s})}\sum_{n=1}^{N}\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}} P_{-n}^{j} $$
+
     * Constraint
-    
-    $$ E_{s} \leq \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}} (P_{grid}^{avg} - P_{grid}^{j})T_{s} $$
+    $$ E_{s} \leq \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}} (\bar{P}_{base} - P_{grid}^{j})T_{s} $$
   
     $$ \sum_{v=1}^{V}r_{ev, v}^{c, j}P_{ev, v}^{c, max} + \sum_{m=1}^{M}r_{ev, m}^{c, j}P_{em, m}^{c, max} \leq P_{grid}^{j, max}-P_{discharge}^{j,max}+P_{pv}^{j}, \quad j=k...J-1 $$
 
 * Blanced Function
     
-    $$ P^{j}_{grid} + P^{j}_{PV} - P^{j}_{ESS} = \sum_{m=1}^{M}(r_{em, m}^{c, j}P_{m}^{c,max}-r_{em, m}^{d, j}P_{m}^{d,max}) + \sum_{v=1}^{V}(r_{ev, v}^{c, j}P_{v}^{c,max}-r_{ev, v}^{d, j}P_{v}^{d,max}) + \sum_{p \in A_{d1} \cup A_{d2} \cup A_{d2}} P_{p}^{j} + \sum_{a \in A_{uc}}P_{uc}^{j} + \sum_{u=1}^{U}\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} $$
+    $$ P^{j}_{grid} + P^{j}_{PV} - P^{j}_{ESS} = \sum_{m=1}^{M}(r_{em, m}^{c, j}P_{m}^{c,max}-r_{em, m}^{d, j}P_{m}^{d,max}) + \sum_{v=1}^{V}(r_{ev, v}^{c, j}P_{v}^{c,max}-r_{ev, v}^{d, j}P_{v}^{d,max}) + \sum_{p \in A_{s} \cup A_{d}} P_{p}^{j} + \sum_{a \in A_{uc}}P_{uc}^{j} + \sum_{u=1}^{U}\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} $$
 
 * Grid & Sell
     * $P_{grid}^{j, max}$ 社區第j時刻的市電最大功率限制
-    * Formula
-    
-    $$ P_{grid}^{j, max} = P_{grid}^{max}, \qquad \forall j \in [0, J-1]\backslash[\tau_{r}^{s}, \tau_{r}^{e}] $$
-    
-    $$ P_{grid}^{j, max} = P_{grid}^{avg}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
-
     * Variable
     
-    $$ 0 \leq P_{grid}^{j} \leq P_{grid}^{j,max} $$
+    $$ 0 \leq P_{grid}^{j} \leq
+    \left\{ 
+        \begin{array}{c}
+          \bar{P}_{base}, &\quad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}]\\
+          P_{grid}^{max}, & otherwise
+        \end{array}
+      \right.
+    $$
 
 * Battery
   
@@ -117,7 +113,7 @@ $$
     $$ P_{p}^{j} =
       \left\{ 
         \begin{array}{c}
-          r_{p}^{j} P_{p}^{max}, \qquad &\forall k \in [\tau_{p}^{s}, \tau_{p}^{e}]\\
+          r_{p}^{j} P_{p}^{max}, \qquad &\forall j \in [\tau_{p}^{s}, \tau_{p}^{e}]\\
           0 \qquad, \qquad &otherwise
         \end{array}
       \right.
@@ -127,16 +123,18 @@ $$
 
       $$ r_{p}^{j} = 0, \qquad \forall j \in [0,J-1] \backslash [\tau_{p}^{s}, \tau_{p}^{e}] $$
       
-      $$ \forall p \in A_{d1} \cup A_{d2} \cup A_{d3} $$
+      $$ \forall p \in A_{s} \cup A_{d} $$
     * Constraint
-      * Force To Stop
-      $$ r_{p}^{j} = 0, \qquad \forall j \in [\tau_{p}^{s}, \tau_{p}^{e}] \cap [\tau_{r}^{s}, \tau_{r}^{e}], \quad \forall p \in A_{d1} $$
+      * Stoppable
+        * Formula
+        $$ Q_{r} = |[\tau_{p}^{s}, \tau_{p}^{e}] \cap [\tau_{r}^{s}, \tau_{r}^{e}]| $$
+        
+        * Constraint
+        $$ \sum_{j=0}^{J-1}r_{p}^{j} \geq (Q_{p}-Q_{r}),\quad \forall p \in A_{s} $$
 
-      * Interrupt
-      $$ \sum_{j=0}^{J-1} \geq Q_{p},\quad \forall p \in A_{d1} \cup A_{d2} $$
-
-      * Periodic
-      $$ \sum_{j=\tau_{p}^{s, l}}^{\tau_{p}^{e, l}} r_{p}^{j} \geq Q_{p, l}, \quad l=1,2,...,L,\quad \forall p \in A_{d3} $$
+      * Deferrable
+        * Constraint
+        $$ \sum_{j=0}^{J-1}r_{p}^{j} \geq Q_{p},\quad \forall p \in A_{d} $$
 
   ---
 * Electric Motor
@@ -204,7 +202,7 @@ $$ \min_{\substack{
     P_{u, grid}^{j},~j=0,...,J-1\\
 }}
 \sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+DCL_{u}^{j}) -
-\sum_{j=\tau_{r}}^{\tau_{r}^{e}} D_{u}^{j}\rho_{f}^{j}(P_{u, grid}^{avg}-P^{j}_{u,grid}) T_{s},
+\sum_{j=\tau_{r}}^{\tau_{r}^{e}} \alpha_{u}^{j}\rho_{f}^{j}(P_{u, grid}^{avg}-P^{j}_{u,grid}) T_{s},
 \quad if \quad k<\tau_{r}^{s}
 $$
 
@@ -215,7 +213,7 @@ $$ \min_{\substack{
     P_{u, grid}^{j},~j=0,...,J-1\\
 }}
 \sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+DCL_{u}^{j}) -
-\sum_{j=k}^{\tau_{r}^{e}} D_{u}^{j}\rho_{f}^{j}(P_{u, grid}^{avg}-P^{j}_{u,grid}) T_{s},
+\sum_{j=k}^{\tau_{r}^{e}} \alpha_{u}^{j}\rho_{f}^{j}(P_{u, grid}^{avg}-P^{j}_{u,grid}) T_{s},
 \quad if \quad \tau_{r}^{s}\leq k \leq \tau_{r}^{e} 
 $$
 
@@ -240,18 +238,15 @@ $$
     \right.
   $$
 
-  $$
-  DCL_{u}^{j} = \sum_{a=1}^{A}vw_{u,a}^{j}r_{u,a}^{j}
-  $$
+  $$ DCL_{u}^{j} = \sum_{a \in A_{c1} \cup A_{c2} \cup A_{c3}}vw_{u,a}^{j}r_{u,a}^{j} $$
 * Demand response
     
-	* $D_{u}^{j}$: 住戶u在j時刻是否參與輔助服務
+	* $\alpha_{u}^{j}$: 住戶u在j時刻是否參與輔助服務
     * Formula
 
-    $$ D_{u}^{j} \in \{0, 1\} $$
+    $$ \alpha_{u}^{j} \in \{0, 1\} $$
 
-    $$ P_{u,max}^{d}= \max_{j=\tau_{r}^{s},...,\tau_{r}^{e}}P_{u,grid}^{j,d}, \quad d=1,...,5 $$
-    $$ P_{u,grid}^{avg} = \frac{\sum_{d=1}^{D} P_{u,max}^{d}} {D} $$
+    $$ \bar{P}_{u, base} = \frac{1}{N}\frac{1}{(\tau_{r}^{e} - \tau_{r}^{s})}\sum_{n=1}^{N}\sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}} P_{u, -n}^{j} $$
 
 * Balanced Function
 	* $A_{u,uc}$第u個住戶的不可控負載類型
@@ -261,11 +256,16 @@ $$
 
 * Pgrid
     * Variable 
-    $$ P_{u,grid}^{j, max} = P_{u,grid}^{max}, \qquad \forall j \in [0, J-1]\backslash[\tau_{r}^{s}, \tau_{r}^{e}] $$
+  
+    $$ 0 \leq P_{u,grid}^{j} \leq
+    \left\{ 
+        \begin{array}{c}
+          \bar{P}_{u, base}, &if \quad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] \, and \, \alpha_{u}^{j} = 1\\
+          P_{u,grid}^{max}, &otherwise
+        \end{array}
+      \right.
+    $$
     
-    $$ P_{grid}^{j, max} = P_{u,grid}^{avg}, \qquad \forall j \in [\tau_{r}^{s}, \tau_{r}^{e}] $$
-    
-    $$ 0 \leq P_{u, grid}^{j} \leq P_{u, grid}^{j,max} $$
 
 * Loads Constraint
   <!-- Uncontrollable load Constraint -->
@@ -273,7 +273,7 @@ $$
     $$ P_{u,uc}^{j} =
     \left\{ 
       \begin{array}
-        rr_{u,uc}^{j} P_{u,uc}^{}, \qquad &\forall k \in [\tau_{u}^{s}, \tau_{u}^{e}]\\
+        rr_{u,uc}^{j} P_{u,uc}^{}, \qquad &\forall j \in [\tau_{u}^{s}, \tau_{u}^{e}]\\
         0 \qquad, \qquad &otherwise
       \end{array}
     \right.
@@ -287,7 +287,7 @@ $$
     $$ P_{u,a}^{j} =
     \left\{ 
       \begin{array}
-        rr_{u,a}^{j} P_{u,a}^{max}, \qquad &\forall k \in [\tau_{u,a}^{s}, \tau_{u,a}^{e}]\\
+        rr_{u,a}^{j} P_{u,a}^{max}, \qquad &\forall j \in [\tau_{u,a}^{s}, \tau_{u,a}^{e}]\\
         0 \qquad, \qquad &otherwise
       \end{array}
     \right.
@@ -314,40 +314,40 @@ $$
 ## CEMS & HEMS Cost
 
 ##### HEMS
-* $T_{u, price}$ 各住戶原始購買市電電費
-  $$ T_{u, price}^{j} = \rho^{j}P_{u,grid}^{j}T_{s} $$
-  $$ T_{u, price} = \sum_{j=0}^{J-1}T_{u, price}^{j} $$
+* $T_{u, h}^{cost}$ 各住戶原始購買市電電費
+  $$ T_{u, h}^{j} = \rho^{j}P_{u,grid}^{j}T_{s} $$
+  $$ T_{u, h}^{cost} = \sum_{j=0}^{J-1}T_{u, h}^{j} $$
 
-* $O_{u}^{ cost}$ 各住戶公設花費
-  $$ O_{u, ca}^{cost} = \frac{O_{ca}^{cost}}{U} $$
+* $T_{u, p}^{cost}$ 各住戶公設花費
+  $$ T_{u, p}^{cost} = \frac{O_{p}^{cost}}{U} $$
 
 * $T_{u, price}^{total}$ 各住戶原始總花費
-  $$ T_{u, price}^{total} = T_{u, price}+O_{u, ca}^{cost} $$
+  $$ T_{u, price}^{total} = T_{u, h}^{cost}+T_{u, p}^{cost} $$
 
-* $O_{u, cost}$ 各住戶最佳化市電花費
-  $$ O_{u, cost} = \sum_{j=0}^{J-1}(\frac{T_{u, price}^{j}}{\sum_{u=1}^{U}T_{u, price}^{j}} \times O_{total}^{j, cost}) $$
+* $O_{u}^{cost}$ 各住戶最佳化市電花費
+  $$ O_{u}^{cost} = \sum_{j=0}^{J-1}(\frac{T_{u, h}^{j}}{\sum_{u=1}^{U}T_{u, h}^{j}} \times O^{j, cost}) $$
 
 * $O_{u, dr}^{feedback}$ 各住戶輔助服務回饋
-  $$ C_{u}^{j} = D_{u}^{j}\rho_{f}^{j}(P_{u, grid}^{avg}-P_{u, grid}^{j})T_{s} $$
+  $$ C_{u}^{j} = D_{u}^{j}\rho_{f}^{j}(\bar{P}_{u,base}-P_{u, grid}^{j})T_{s} $$
   $$ O_{u, dr}^{feedback} = \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}}(\frac{ C_{u}^{j}}{\sum_{u=1}^{U}C_{u}^{j}} \times O_{dr}^{j,feedback}) $$
 
-* $O_{u, cost}^{total}$ 各住戶最佳化總花費
-  $$ O_{u, cost}^{total} = O_{u, cost} - O_{u, dr}^{feedback} $$
+* $O_{u}^{total}$ 各住戶最佳化總花費
+  $$ O_{u}^{total} = O_{u}^{cost} - O_{u, dr}^{feedback} $$
 
 * $\eta_{u}^{cost}$ 各住戶節省電費比
-  $$ \eta_{u}^{cost} = \frac{T_{u, price}^{total}-O_{u, cost}^{total}}{T_{u, price}^{total}} $$
+  $$ \eta_{u}^{cost} = \frac{T_{u, price}^{total}-O_{u}^{total}}{T_{u, price}^{total}} $$
 
 ##### CEMS
-* $O_{ca}^{cost}$ 社區公設花費
-  $$ O_{ca}^{cost} = \sum_{j=0}^{J-1}\rho^{j}P_{ca}^{j}T_{s} $$
+* $O_{p}^{cost}$ 社區公設花費
+  $$ O_{p}^{cost} = \sum_{j=0}^{J-1}\rho^{j}P_{p}^{j}T_{s} $$
 
-* $O_{total}^{cost}$ 社區總市電花費
-  $$ O_{total}^{j, cost} = \rho^{j}P_{grid}^{j}T_{s} $$
-  $$ O_{total}^{cost} = \sum_{j=0}^{J-1}O_{total}^{j, cost} $$
+* $O^{cost}$ 社區總市電花費
+  $$ O^{j, cost} = \rho^{j}P_{grid}^{j}T_{s} $$
+  $$ O^{cost} = \sum_{j=0}^{J-1}O^{j, cost} $$
 
 * $O_{dr}^{feedback}$ 社區輔助服務回饋
-  $$ O_{dr}^{j, feedback} = \rho_{f}^{j} (P_{grid}^{avg}-P^{j}_{grid}) T_{s} $$
+  $$ O_{dr}^{j, feedback} = \rho_{f}^{j} (\bar{P}_{base}-P^{j}_{grid}) T_{s} $$
   $$ O_{dr}^{feedback} = \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}}O_{dr}^{j, feedback} $$
 
 * $O_{comm}^{total}$ 社區最終花費
-  $$ O_{comm}^{total} = O_{total}^{cost} - O_{dr}^{feedback} $$
+  $$ O_{comm}^{total} = O^{cost} - O_{dr}^{feedback} $$
