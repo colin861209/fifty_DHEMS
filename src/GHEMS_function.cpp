@@ -1123,7 +1123,7 @@ void updateSingleHouseholdCost(BASEPARAMETER bp, DEMANDRESPONSE dr)
 				// D_{u}^{j}
 				// NOTE: Change formula
 				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM `LHEMS_demand_response_participation` WHERE household_id = %d", j, i + 1);
-				int participate = turn_value_to_int(0);
+				int participate = ceil(turn_value_to_float(0));
 
 				// P_{u, grid}^{j}
 				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `A%d` FROM `LHEMS_control_status` WHERE `equip_name` = 'Pgrid' AND `household_id` = %d ", j, i + 1);
