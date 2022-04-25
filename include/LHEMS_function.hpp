@@ -83,7 +83,7 @@ int get_distributed_group(string target, string condition_col = "", int conditio
 void update_distributed_group(string target, int target_value, string condition_col, int condition_num);
 void init_totalLoad_flag_and_table(BASEPARAMETER bp, int distributed_group_num);
 void setting_LHEMS_columnBoundary(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, glp_prob *mip);
-vector<vector<int>> get_comfortLevel_timeInterval(int household_id, int app_count, int total_timeInterval, int comfort_level);
-float **calculate_comfortLevel_weighting(BASEPARAMETER bp, vector<vector<vector<int>>> comfortLevel_startEnd, int comfortLevel, int total_timeInterval);
+vector<vector<int>> get_comfortLevel_timeInterval(BASEPARAMETER bp, int total_timeInterval, int comfort_level);
+void calculate_comfortLevel_weighting(BASEPARAMETER bp, COMFORTLEVEL &comlv, vector<vector<vector<int>>> comfortLevel_startEnd);
 void calculateCostInfo(BASEPARAMETER bp);
 #endif

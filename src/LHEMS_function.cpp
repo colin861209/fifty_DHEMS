@@ -22,9 +22,9 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		// [0~3] = level, [][0~1] = start or end, [][][0~44] = 3 times * 15 appliances
 		for (int i = 0; i < comlv.comfortLevel; i++)
 		{
-			comfortLevel_startEnd.push_back(get_comfortLevel_timeInterval(bp.household_id, bp.app_count, comlv.total_timeInterval, i + 1));
+			comfortLevel_startEnd.push_back(get_comfortLevel_timeInterval(bp, comlv.total_timeInterval, i + 1));
 		}
-		comlv.weighting = calculate_comfortLevel_weighting(bp, comfortLevel_startEnd, comlv.comfortLevel, comlv.total_timeInterval);
+		calculate_comfortLevel_weighting(bp, comlv, comfortLevel_startEnd);
 	}
 
 	countUninterruptAndVaryingLoads_Flag(bp, uirl, varl);
@@ -879,18 +879,19 @@ void update_distributed_group(string target, int target_value, string condition_
 	sent_query();
 }
 
-vector<vector<int>> get_comfortLevel_timeInterval(int household_id, int app_count, int total_timeInterval, int comfort_level)
+vector<vector<int>> get_comfortLevel_timeInterval(BASEPARAMETER bp, int total_timeInterval, int comfort_level)
 {
 	functionPrint(__func__);
 
+	const string str_joinTwoLoadListTable = "`LHEMS_comfort_level` INNER JOIN `load_list_select` ON LHEMS_comfort_level.appliances_num=load_list_select.number";
 	vector<vector<int>> comfortLevel_startEnd;
 	comfortLevel_startEnd.push_back(vector<int>());
 	comfortLevel_startEnd.push_back(vector<int>());
-	for (int j = 0; j < app_count; j++)
+	for (int j = 0; j < bp.app_count; j++)
 	{
 		for (int i = 0; i < total_timeInterval; i++)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT level%d_startEndTime%d FROM LHEMS_comfort_level where household_id = %d AND appliances_num = %d", comfort_level, i + 1, household_id, j + 1);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT LHEMS_comfort_level.level%d_startEndTime%d FROM %s WHERE household_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", comfort_level, i + 1, str_joinTwoLoadListTable.c_str(), bp.household_id, bp.household_id, j);
 			char *timeString = turn_value_to_string(0);
 			if (atoi(timeString) != -999)
 			{
@@ -914,62 +915,60 @@ vector<vector<int>> get_comfortLevel_timeInterval(int household_id, int app_coun
 	return comfortLevel_startEnd;
 }
 
-float **calculate_comfortLevel_weighting(BASEPARAMETER bp, vector<vector<vector<int>>> comfortLevel_startEnd, int comfortLevel, int total_timeInterval)
+void calculate_comfortLevel_weighting(BASEPARAMETER bp, COMFORTLEVEL &comlv, vector<vector<vector<int>>> comfortLevel_startEnd)
 {
 	functionPrint(__func__);
 
 	// float weighting[app_count][time_block] = {0.0};
-	float **weighting = new float *[bp.app_count];
+	comlv.weighting = new float *[bp.app_count];
 	for (int i = 0; i < bp.app_count; i++)
-		weighting[i] = new float[bp.time_block];
+		comlv.weighting[i] = new float[bp.time_block];
 
 	for (int i = 0; i < bp.app_count; i++)
 	{
 		for (int j = 0; j < bp.time_block; j++)
 		{
-			weighting[i][j]	= 0.0;
+			comlv.weighting[i][j] = 0.0;
 		}
 	}
-	
 		
 	for (int i = 0; i < bp.app_count; i++)
 	{
 		for (int j = 0; j < bp.remain_timeblock; j++)
 		{
-			for (int k = 0; k < total_timeInterval; k++)
+			for (int k = 0; k < comlv.total_timeInterval; k++)
 			{
-				int level1_start_time = comfortLevel_startEnd[0][0][i * total_timeInterval + k];
-				int level2_start_time = comfortLevel_startEnd[1][0][i * total_timeInterval + k];
-				int level3_start_time = comfortLevel_startEnd[2][0][i * total_timeInterval + k];
-				int level4_start_time = comfortLevel_startEnd[3][0][i * total_timeInterval + k];
-				int level1_end_time = comfortLevel_startEnd[0][1][i * total_timeInterval + k];
-				int level2_end_time = comfortLevel_startEnd[1][1][i * total_timeInterval + k];
-				int level3_end_time = comfortLevel_startEnd[2][1][i * total_timeInterval + k];
-				int level4_end_time = comfortLevel_startEnd[3][1][i * total_timeInterval + k];
+				int level1_start_time = comfortLevel_startEnd[0][0][i * comlv.total_timeInterval + k];
+				int level2_start_time = comfortLevel_startEnd[1][0][i * comlv.total_timeInterval + k];
+				int level3_start_time = comfortLevel_startEnd[2][0][i * comlv.total_timeInterval + k];
+				int level4_start_time = comfortLevel_startEnd[3][0][i * comlv.total_timeInterval + k];
+				int level1_end_time = comfortLevel_startEnd[0][1][i * comlv.total_timeInterval + k];
+				int level2_end_time = comfortLevel_startEnd[1][1][i * comlv.total_timeInterval + k];
+				int level3_end_time = comfortLevel_startEnd[2][1][i * comlv.total_timeInterval + k];
+				int level4_end_time = comfortLevel_startEnd[3][1][i * comlv.total_timeInterval + k];
 				if (level1_start_time != level1_end_time && (j + bp.sample_time) >= level1_start_time && (j + bp.sample_time) < level1_end_time)
 				{
-					weighting[i][j + bp.sample_time] += (j + bp.sample_time - level1_start_time) / (level1_end_time - level1_start_time);
+					comlv.weighting[i][j + bp.sample_time] += (j + bp.sample_time - level1_start_time) / (level1_end_time - level1_start_time);
 				}
 				else if (level2_start_time != level2_end_time && (j + bp.sample_time) >= level2_start_time && (j + bp.sample_time) < level2_end_time)
 				{
-					weighting[i][j + bp.sample_time] += (j + bp.sample_time - level2_start_time) / (level2_end_time - level2_start_time) + 1;
+					comlv.weighting[i][j + bp.sample_time] += (j + bp.sample_time - level2_start_time) / (level2_end_time - level2_start_time) + 1;
 				}
 				else if (level3_start_time != level3_end_time && (j + bp.sample_time) >= level3_start_time && (j + bp.sample_time) < level3_end_time)
 				{
-					weighting[i][j + bp.sample_time] += (j + bp.sample_time - level3_start_time) / (level3_end_time - level3_start_time) + 2;
+					comlv.weighting[i][j + bp.sample_time] += (j + bp.sample_time - level3_start_time) / (level3_end_time - level3_start_time) + 2;
 				}
 				else if (level4_start_time != level4_end_time && (j + bp.sample_time) >= level4_start_time && (j + bp.sample_time) < level4_end_time)
 				{
-					weighting[i][j + bp.sample_time] += (j + bp.sample_time - level4_start_time) / (level4_end_time - level4_start_time) + 3;
+					comlv.weighting[i][j + bp.sample_time] += (j + bp.sample_time - level4_start_time) / (level4_end_time - level4_start_time) + 3;
 				}
 				else
 				{
-					weighting[i][j + bp.sample_time] += 10;
+					comlv.weighting[i][j + bp.sample_time] += 10;
 				}
 			}
 		}
 	}
-	return weighting;
 }
 
 void calculateCostInfo(BASEPARAMETER bp)
