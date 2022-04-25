@@ -202,7 +202,7 @@ $$ \min_{\substack{
     P_{u, grid}^{j},~j=0,...,J-1\\
 }}
 \sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+DCL_{u}^{j}) -
-\sum_{j=\tau_{r}}^{\tau_{r}^{e}} \alpha_{u}^{j}\rho_{f}^{j}(P_{u, grid}^{avg}-P^{j}_{u,grid}) T_{s},
+\sum_{j=\tau_{r}}^{\tau_{r}^{e}} \alpha_{u}^{j}\rho_{f}^{j}(\bar{P}_{u, base}-P^{j}_{u,grid}) T_{s},
 \quad if \quad k<\tau_{r}^{s}
 $$
 
@@ -213,7 +213,7 @@ $$ \min_{\substack{
     P_{u, grid}^{j},~j=0,...,J-1\\
 }}
 \sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+DCL_{u}^{j}) -
-\sum_{j=k}^{\tau_{r}^{e}} \alpha_{u}^{j}\rho_{f}^{j}(P_{u, grid}^{avg}-P^{j}_{u,grid}) T_{s},
+\sum_{j=k}^{\tau_{r}^{e}} \alpha_{u}^{j}\rho_{f}^{j}(\bar{P}_{u, base}-P^{j}_{u,grid}) T_{s},
 \quad if \quad \tau_{r}^{s}\leq k \leq \tau_{r}^{e} 
 $$
 
