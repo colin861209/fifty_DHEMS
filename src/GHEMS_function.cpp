@@ -26,7 +26,6 @@
 
 float Hydro_Cons = 0.04; // unit kWh/g
 float Hydro_Price = 0.0;
-char column[400] = "A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A29,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95";
 
 void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, PUBLICLOAD pl, UNCONTROLLABLELOAD ucl, ELECTRICMOTOR em, ELECTRICVEHICLE ev)
 {
@@ -34,56 +33,57 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 
 	if (pl.flag)
 	{
-		// force to stop public load
-		pl.forceToStop_start.assign(pl.forceToStop_number, 0);
-		pl.forceToStop_end.assign(pl.forceToStop_number, 0);
-		pl.forceToStop_operation_time.assign(pl.forceToStop_number, 0);
-		pl.forceToStop_remain_operation_time.assign(pl.forceToStop_number, 0);
-		pl.forceToStop_power.assign(pl.forceToStop_number, 0);
-		float **f_publicLoad = getPublicLoad(5, pl.forceToStop_number);
-		for (int i = 0; i < pl.forceToStop_number; i++)
+		// stoppable public load
+		pl.stoppable_start.assign(pl.stoppable_number, 0);
+		pl.stoppable_end.assign(pl.stoppable_number, 0);
+		pl.stoppable_operation_time.assign(pl.stoppable_number, 0);
+		pl.stoppable_remain_operation_time.assign(pl.stoppable_number, 0);
+		pl.stoppable_power.assign(pl.stoppable_number, 0);
+		float **f_publicLoad = getPublicLoad(5, pl.stoppable_number);
+		for (int i = 0; i < pl.stoppable_number; i++)
 		{
-			pl.forceToStop_start[i] = int(f_publicLoad[i][0]);
-			pl.forceToStop_end[i] = int(f_publicLoad[i][1]) - 1;
-			pl.forceToStop_operation_time[i] = int(f_publicLoad[i][2]);
-			pl.forceToStop_power[i] = f_publicLoad[i][3];
+			int decrease_ot = 0, start, end;
+			pl.stoppable_start[i] = int(f_publicLoad[i][0]);
+			pl.stoppable_end[i] = int(f_publicLoad[i][1]) - 1;
+			if (dr.mode != 0)
+			{
+				if (pl.stoppable_end[i] >= dr.startTime)
+				{
+					if (pl.stoppable_start[i] <= dr.startTime)
+						start = dr.startTime;
+					else
+						start = pl.stoppable_start[i]	;
+					
+					if (pl.stoppable_end[i] + 1 >= dr.endTime)
+						end = dr.endTime;
+					else
+						end = pl.stoppable_end[i] + 1;
+					
+					decrease_ot = end - start;
+				}
+			}
+			pl.stoppable_operation_time[i] = int(f_publicLoad[i][2]) - decrease_ot;
+			pl.stoppable_power[i] = f_publicLoad[i][3];
 		}
-		int *f_buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.forceToStop_number, pl.str_forceToStop_publicLoad);
-		pl.forceToStop_remain_operation_time = count_publicLoads_RemainOperateTime(pl.forceToStop_number, pl.forceToStop_operation_time, f_buff);
+		int *f_buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.stoppable_number, pl.str_stoppable_publicLoad);
+		pl.stoppable_remain_operation_time = count_publicLoads_RemainOperateTime(pl.stoppable_number, pl.stoppable_operation_time, f_buff);
 		
-		// interrupt public load
-		pl.interrupt_start.assign(pl.interrupt_number, 0);
-		pl.interrupt_end.assign(pl.interrupt_number, 0);
-		pl.interrupt_operation_time.assign(pl.interrupt_number, 0);
-		pl.interrupt_remain_operation_time.assign(pl.interrupt_number, 0);
-		pl.interrupt_power.assign(pl.interrupt_number, 0);
-		float **i_publicLoad = getPublicLoad(6, pl.interrupt_number);
-		for (int i = 0; i < pl.interrupt_number; i++)
+		// deferrable public load
+		pl.deferrable_start.assign(pl.deferrable_number, 0);
+		pl.deferrable_end.assign(pl.deferrable_number, 0);
+		pl.deferrable_operation_time.assign(pl.deferrable_number, 0);
+		pl.deferrable_remain_operation_time.assign(pl.deferrable_number, 0);
+		pl.deferrable_power.assign(pl.deferrable_number, 0);
+		float **i_publicLoad = getPublicLoad(6, pl.deferrable_number);
+		for (int i = 0; i < pl.deferrable_number; i++)
 		{
-			pl.interrupt_start[i] = int(i_publicLoad[i][0]);
-			pl.interrupt_end[i] = int(i_publicLoad[i][1]) - 1;
-			pl.interrupt_operation_time[i] = int(i_publicLoad[i][2]);
-			pl.interrupt_power[i] = i_publicLoad[i][3];
+			pl.deferrable_start[i] = int(i_publicLoad[i][0]);
+			pl.deferrable_end[i] = int(i_publicLoad[i][1]) - 1;
+			pl.deferrable_operation_time[i] = int(i_publicLoad[i][2]);
+			pl.deferrable_power[i] = i_publicLoad[i][3];
 		}
-		int *i_buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.interrupt_number, pl.str_interrupt_publicLoad);
-		pl.interrupt_remain_operation_time = count_publicLoads_RemainOperateTime(pl.interrupt_number, pl.interrupt_operation_time, i_buff);
-		
-		// periodic public load
-		pl.periodic_start.assign(pl.periodic_number, 0);
-		pl.periodic_end.assign(pl.periodic_number, 0);
-		pl.periodic_operation_time.assign(pl.periodic_number, 0);
-		pl.periodic_remain_operation_time.assign(pl.periodic_number, 0);
-		pl.periodic_power.assign(pl.periodic_number, 0);
-		float **p_publicLoad = getPublicLoad(7, pl.periodic_number);
-		for (int i = 0; i < pl.periodic_number; i++)
-		{
-			pl.periodic_start[i] = int(p_publicLoad[i][0]);
-			pl.periodic_end[i] = int(p_publicLoad[i][1]) - 1;
-			pl.periodic_operation_time[i] = int(p_publicLoad[i][2]);
-			pl.periodic_power[i] = p_publicLoad[i][3];
-		}
-		int *p_buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.periodic_number, pl.str_periodic_publicLoad);
-		pl.periodic_remain_operation_time = count_publicLoads_RemainOperateTime(pl.periodic_number, pl.periodic_operation_time, p_buff);
+		int *i_buff = countPublicLoads_AlreadyOpenedTimes(bp, pl.deferrable_number, pl.str_deferrable_publicLoad);
+		pl.deferrable_remain_operation_time = count_publicLoads_RemainOperateTime(pl.deferrable_number, pl.deferrable_operation_time, i_buff);
 	}
 	
 	if (em.flag && em.can_charge_amount)
@@ -120,7 +120,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 
 	// sum by 'row_num_maxAddition' in every constraint below
 	int rowTotal = 0;
-	if (pl.flag) { rowTotal += pl.forceToStop_number + pl.interrupt_number + pl.periodic_number; }
+	if (pl.flag) { rowTotal += pl.stoppable_number + pl.deferrable_number; }
 	if (bp.Pgrid_flag) { rowTotal += bp.remain_timeblock; }
 	if (bp.Psell_flag)	{ rowTotal += bp.remain_timeblock * 2;}
 	if (ess.flag) { rowTotal += bp.remain_timeblock * 4 + 1; }
@@ -152,9 +152,8 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 
 	if (pl.flag)
 	{
-		summation_forceToStopPublicLoadRa_biggerThan_QaMinusD(bp, dr, pl, coefficient, mip, pl.forceToStop_number);
-		summation_interruptPublicLoadRa_biggerThan_Qa(bp, dr, pl, coefficient, mip, pl.interrupt_number);
-		summation_periodicPublicLoadRa_biggerThan_Qa(bp, dr, pl, coefficient, mip, pl.periodic_number);
+		summation_stoppablePublicLoadRa_biggerThan_QaMinusD(bp, dr, pl, coefficient, mip, pl.stoppable_number);
+		summation_deferrablePublicLoadRa_biggerThan_Qa(bp, dr, pl, coefficient, mip, pl.deferrable_number);
 	}
 
 	if (bp.Pgrid_flag)
@@ -299,7 +298,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		EV_previousSOCPlusSummationPchargeMinusPdischargeTransToSOC_biggerThan_SOCthreshold(bp, ev, coefficient, mip, ev.can_charge_amount);	
 	}
 	
-	setting_GHEMS_ObjectiveFunction(bp, dr, em, ev, bp.price, mip);
+	setting_GHEMS_ObjectiveFunction(bp, dr, em, ev, mip);
 
 	int *ia = new int[rowTotal * colTotal + 1];
 	int *ja = new int[rowTotal * colTotal + 1];
@@ -476,12 +475,12 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 					s[j] = glp_mip_col_val(mip, h);
 					h = (h + bp.variable);
 				}
-				insert_status_into_MySQLTable("GHEMS_control_status", column, s, "equip_name", bp.variable_name[i - 1]);
+				insert_status_into_MySQLTable("GHEMS_control_status", bp.str_sql_allTimeblock, s, "equip_name", bp.variable_name[i - 1]);
 			}
 			else
 			{
 				// =-=-=-=-=-=-=-=-=-=- history about the control status from each control id -=-=-=-=-=-=-=-=-=-= //
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM GHEMS_control_status WHERE equip_name = '%s'", column, bp.variable_name[i - 1].c_str());
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM GHEMS_control_status WHERE equip_name = '%s'", bp.str_sql_allTimeblock, bp.variable_name[i - 1].c_str());
 				fetch_row_value();
 				for (int k = 0; k < bp.sample_time; k++)
 				{
@@ -500,7 +499,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 				{
 					s[j] = 0;
 				}
-				insert_status_into_MySQLTable("GHEMS_real_status", column, s, "equip_name", bp.variable_name[i - 1]);
+				insert_status_into_MySQLTable("GHEMS_real_status", bp.str_sql_allTimeblock, s, "equip_name", bp.variable_name[i - 1]);
 			}
 		}
 	}
@@ -516,12 +515,12 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 					s[j] = glp_mip_col_val(mip, h);
 					h = (h + bp.variable);
 				}
-				insert_status_into_MySQLTable("GHEMS_control_status", column, s, "equip_name", bp.variable_name[i - 1]);
+				insert_status_into_MySQLTable("GHEMS_control_status", bp.str_sql_allTimeblock, s, "equip_name", bp.variable_name[i - 1]);
 			}
 			else
 			{
 				// =-=-=-=-=-=-=-=-=-=- history about the control status from each control id -=-=-=-=-=-=-=-=-=-= //
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM GHEMS_control_status WHERE equip_name = '%s'", column, bp.variable_name[i - 1].c_str());
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM GHEMS_control_status WHERE equip_name = '%s'", bp.str_sql_allTimeblock, bp.variable_name[i - 1].c_str());
 				fetch_row_value();
 				for (int k = 0; k < bp.sample_time; k++)
 				{
@@ -540,7 +539,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 				{
 					s[j] = 0;
 				}
-				insert_status_into_MySQLTable("GHEMS_real_status", column, s, "equip_name", bp.variable_name[i - 1]);
+				insert_status_into_MySQLTable("GHEMS_real_status", bp.str_sql_allTimeblock, s, "equip_name", bp.variable_name[i - 1]);
 			}
 		}
 	}
@@ -559,21 +558,16 @@ void setting_GLPK_columnBoundary(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMA
 	{
 		if (pl.flag == 1)
 		{
-			for (int j = 1; j <= pl.forceToStop_number; j++)
+			for (int j = 1; j <= pl.stoppable_number; j++)
 			{
-				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
-				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_BV);
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, pl.str_stoppable_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
+				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, pl.str_stoppable_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_BV);
 			}
-			for (int j = 1; j <= pl.interrupt_number; j++)
+			for (int j = 1; j <= pl.deferrable_number; j++)
 			{
-				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
-				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_BV);
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, pl.str_deferrable_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
+				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, pl.str_deferrable_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_BV);
 			}		
-			for (int j = 1; j <= pl.periodic_number; j++)
-			{
-				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
-				glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(j)) + 1 + i * bp.variable), GLP_BV);
-			}
 		}
 		if (bp.Pgrid_flag == 1)
 		{
@@ -816,47 +810,47 @@ void updateTableCost(BASEPARAMETER bp, float *totalLoad, float *totalLoad_price,
 
 	if (bp.sample_time == 0)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, "public_load_power", publicLoad[0], publicLoad[1], publicLoad[2], publicLoad[3], publicLoad[4], publicLoad[5], publicLoad[6], publicLoad[7], publicLoad[8], publicLoad[9], publicLoad[10], publicLoad[11], publicLoad[12], publicLoad[13], publicLoad[14], publicLoad[15], publicLoad[16], publicLoad[17], publicLoad[18], publicLoad[19], publicLoad[20], publicLoad[21], publicLoad[22], publicLoad[23], publicLoad[24], publicLoad[25], publicLoad[26], publicLoad[27], publicLoad[28], publicLoad[29], publicLoad[30], publicLoad[31], publicLoad[32], publicLoad[33], publicLoad[34], publicLoad[35], publicLoad[36], publicLoad[37], publicLoad[38], publicLoad[39], publicLoad[40], publicLoad[41], publicLoad[42], publicLoad[43], publicLoad[44], publicLoad[45], publicLoad[46], publicLoad[47], publicLoad[48], publicLoad[49], publicLoad[50], publicLoad[51], publicLoad[52], publicLoad[53], publicLoad[54], publicLoad[55], publicLoad[56], publicLoad[57], publicLoad[58], publicLoad[59], publicLoad[60], publicLoad[61], publicLoad[62], publicLoad[63], publicLoad[64], publicLoad[65], publicLoad[66], publicLoad[67], publicLoad[68], publicLoad[69], publicLoad[70], publicLoad[71], publicLoad[72], publicLoad[73], publicLoad[74], publicLoad[75], publicLoad[76], publicLoad[77], publicLoad[78], publicLoad[79], publicLoad[80], publicLoad[81], publicLoad[82], publicLoad[83], publicLoad[84], publicLoad[85], publicLoad[86], publicLoad[87], publicLoad[88], publicLoad[89], publicLoad[90], publicLoad[91], publicLoad[92], publicLoad[93], publicLoad[94], publicLoad[95]);
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", bp.str_sql_allTimeblock, "public_load_power", publicLoad[0], publicLoad[1], publicLoad[2], publicLoad[3], publicLoad[4], publicLoad[5], publicLoad[6], publicLoad[7], publicLoad[8], publicLoad[9], publicLoad[10], publicLoad[11], publicLoad[12], publicLoad[13], publicLoad[14], publicLoad[15], publicLoad[16], publicLoad[17], publicLoad[18], publicLoad[19], publicLoad[20], publicLoad[21], publicLoad[22], publicLoad[23], publicLoad[24], publicLoad[25], publicLoad[26], publicLoad[27], publicLoad[28], publicLoad[29], publicLoad[30], publicLoad[31], publicLoad[32], publicLoad[33], publicLoad[34], publicLoad[35], publicLoad[36], publicLoad[37], publicLoad[38], publicLoad[39], publicLoad[40], publicLoad[41], publicLoad[42], publicLoad[43], publicLoad[44], publicLoad[45], publicLoad[46], publicLoad[47], publicLoad[48], publicLoad[49], publicLoad[50], publicLoad[51], publicLoad[52], publicLoad[53], publicLoad[54], publicLoad[55], publicLoad[56], publicLoad[57], publicLoad[58], publicLoad[59], publicLoad[60], publicLoad[61], publicLoad[62], publicLoad[63], publicLoad[64], publicLoad[65], publicLoad[66], publicLoad[67], publicLoad[68], publicLoad[69], publicLoad[70], publicLoad[71], publicLoad[72], publicLoad[73], publicLoad[74], publicLoad[75], publicLoad[76], publicLoad[77], publicLoad[78], publicLoad[79], publicLoad[80], publicLoad[81], publicLoad[82], publicLoad[83], publicLoad[84], publicLoad[85], publicLoad[86], publicLoad[87], publicLoad[88], publicLoad[89], publicLoad[90], publicLoad[91], publicLoad[92], publicLoad[93], publicLoad[94], publicLoad[95]);
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'publicLoad' ", publicLoad_sum);
 		sent_query();
 
-		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, "public_load_price", publicLoad_price[0], publicLoad_price[1], publicLoad_price[2], publicLoad_price[3], publicLoad_price[4], publicLoad_price[5], publicLoad_price[6], publicLoad_price[7], publicLoad_price[8], publicLoad_price[9], publicLoad_price[10], publicLoad_price[11], publicLoad_price[12], publicLoad_price[13], publicLoad_price[14], publicLoad_price[15], publicLoad_price[16], publicLoad_price[17], publicLoad_price[18], publicLoad_price[19], publicLoad_price[20], publicLoad_price[21], publicLoad_price[22], publicLoad_price[23], publicLoad_price[24], publicLoad_price[25], publicLoad_price[26], publicLoad_price[27], publicLoad_price[28], publicLoad_price[29], publicLoad_price[30], publicLoad_price[31], publicLoad_price[32], publicLoad_price[33], publicLoad_price[34], publicLoad_price[35], publicLoad_price[36], publicLoad_price[37], publicLoad_price[38], publicLoad_price[39], publicLoad_price[40], publicLoad_price[41], publicLoad_price[42], publicLoad_price[43], publicLoad_price[44], publicLoad_price[45], publicLoad_price[46], publicLoad_price[47], publicLoad_price[48], publicLoad_price[49], publicLoad_price[50], publicLoad_price[51], publicLoad_price[52], publicLoad_price[53], publicLoad_price[54], publicLoad_price[55], publicLoad_price[56], publicLoad_price[57], publicLoad_price[58], publicLoad_price[59], publicLoad_price[60], publicLoad_price[61], publicLoad_price[62], publicLoad_price[63], publicLoad_price[64], publicLoad_price[65], publicLoad_price[66], publicLoad_price[67], publicLoad_price[68], publicLoad_price[69], publicLoad_price[70], publicLoad_price[71], publicLoad_price[72], publicLoad_price[73], publicLoad_price[74], publicLoad_price[75], publicLoad_price[76], publicLoad_price[77], publicLoad_price[78], publicLoad_price[79], publicLoad_price[80], publicLoad_price[81], publicLoad_price[82], publicLoad_price[83], publicLoad_price[84], publicLoad_price[85], publicLoad_price[86], publicLoad_price[87], publicLoad_price[88], publicLoad_price[89], publicLoad_price[90], publicLoad_price[91], publicLoad_price[92], publicLoad_price[93], publicLoad_price[94], publicLoad_price[95]);
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", bp.str_sql_allTimeblock, "public_load_price", publicLoad_price[0], publicLoad_price[1], publicLoad_price[2], publicLoad_price[3], publicLoad_price[4], publicLoad_price[5], publicLoad_price[6], publicLoad_price[7], publicLoad_price[8], publicLoad_price[9], publicLoad_price[10], publicLoad_price[11], publicLoad_price[12], publicLoad_price[13], publicLoad_price[14], publicLoad_price[15], publicLoad_price[16], publicLoad_price[17], publicLoad_price[18], publicLoad_price[19], publicLoad_price[20], publicLoad_price[21], publicLoad_price[22], publicLoad_price[23], publicLoad_price[24], publicLoad_price[25], publicLoad_price[26], publicLoad_price[27], publicLoad_price[28], publicLoad_price[29], publicLoad_price[30], publicLoad_price[31], publicLoad_price[32], publicLoad_price[33], publicLoad_price[34], publicLoad_price[35], publicLoad_price[36], publicLoad_price[37], publicLoad_price[38], publicLoad_price[39], publicLoad_price[40], publicLoad_price[41], publicLoad_price[42], publicLoad_price[43], publicLoad_price[44], publicLoad_price[45], publicLoad_price[46], publicLoad_price[47], publicLoad_price[48], publicLoad_price[49], publicLoad_price[50], publicLoad_price[51], publicLoad_price[52], publicLoad_price[53], publicLoad_price[54], publicLoad_price[55], publicLoad_price[56], publicLoad_price[57], publicLoad_price[58], publicLoad_price[59], publicLoad_price[60], publicLoad_price[61], publicLoad_price[62], publicLoad_price[63], publicLoad_price[64], publicLoad_price[65], publicLoad_price[66], publicLoad_price[67], publicLoad_price[68], publicLoad_price[69], publicLoad_price[70], publicLoad_price[71], publicLoad_price[72], publicLoad_price[73], publicLoad_price[74], publicLoad_price[75], publicLoad_price[76], publicLoad_price[77], publicLoad_price[78], publicLoad_price[79], publicLoad_price[80], publicLoad_price[81], publicLoad_price[82], publicLoad_price[83], publicLoad_price[84], publicLoad_price[85], publicLoad_price[86], publicLoad_price[87], publicLoad_price[88], publicLoad_price[89], publicLoad_price[90], publicLoad_price[91], publicLoad_price[92], publicLoad_price[93], publicLoad_price[94], publicLoad_price[95]);
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'publicLoadSpend(threeLevelPrice)' ", publicLoad_priceSum);
 		sent_query();
 
-		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, "total_load_power", totalLoad[0], totalLoad[1], totalLoad[2], totalLoad[3], totalLoad[4], totalLoad[5], totalLoad[6], totalLoad[7], totalLoad[8], totalLoad[9], totalLoad[10], totalLoad[11], totalLoad[12], totalLoad[13], totalLoad[14], totalLoad[15], totalLoad[16], totalLoad[17], totalLoad[18], totalLoad[19], totalLoad[20], totalLoad[21], totalLoad[22], totalLoad[23], totalLoad[24], totalLoad[25], totalLoad[26], totalLoad[27], totalLoad[28], totalLoad[29], totalLoad[30], totalLoad[31], totalLoad[32], totalLoad[33], totalLoad[34], totalLoad[35], totalLoad[36], totalLoad[37], totalLoad[38], totalLoad[39], totalLoad[40], totalLoad[41], totalLoad[42], totalLoad[43], totalLoad[44], totalLoad[45], totalLoad[46], totalLoad[47], totalLoad[48], totalLoad[49], totalLoad[50], totalLoad[51], totalLoad[52], totalLoad[53], totalLoad[54], totalLoad[55], totalLoad[56], totalLoad[57], totalLoad[58], totalLoad[59], totalLoad[60], totalLoad[61], totalLoad[62], totalLoad[63], totalLoad[64], totalLoad[65], totalLoad[66], totalLoad[67], totalLoad[68], totalLoad[69], totalLoad[70], totalLoad[71], totalLoad[72], totalLoad[73], totalLoad[74], totalLoad[75], totalLoad[76], totalLoad[77], totalLoad[78], totalLoad[79], totalLoad[80], totalLoad[81], totalLoad[82], totalLoad[83], totalLoad[84], totalLoad[85], totalLoad[86], totalLoad[87], totalLoad[88], totalLoad[89], totalLoad[90], totalLoad[91], totalLoad[92], totalLoad[93], totalLoad[94], totalLoad[95]);
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", bp.str_sql_allTimeblock, "total_load_power", totalLoad[0], totalLoad[1], totalLoad[2], totalLoad[3], totalLoad[4], totalLoad[5], totalLoad[6], totalLoad[7], totalLoad[8], totalLoad[9], totalLoad[10], totalLoad[11], totalLoad[12], totalLoad[13], totalLoad[14], totalLoad[15], totalLoad[16], totalLoad[17], totalLoad[18], totalLoad[19], totalLoad[20], totalLoad[21], totalLoad[22], totalLoad[23], totalLoad[24], totalLoad[25], totalLoad[26], totalLoad[27], totalLoad[28], totalLoad[29], totalLoad[30], totalLoad[31], totalLoad[32], totalLoad[33], totalLoad[34], totalLoad[35], totalLoad[36], totalLoad[37], totalLoad[38], totalLoad[39], totalLoad[40], totalLoad[41], totalLoad[42], totalLoad[43], totalLoad[44], totalLoad[45], totalLoad[46], totalLoad[47], totalLoad[48], totalLoad[49], totalLoad[50], totalLoad[51], totalLoad[52], totalLoad[53], totalLoad[54], totalLoad[55], totalLoad[56], totalLoad[57], totalLoad[58], totalLoad[59], totalLoad[60], totalLoad[61], totalLoad[62], totalLoad[63], totalLoad[64], totalLoad[65], totalLoad[66], totalLoad[67], totalLoad[68], totalLoad[69], totalLoad[70], totalLoad[71], totalLoad[72], totalLoad[73], totalLoad[74], totalLoad[75], totalLoad[76], totalLoad[77], totalLoad[78], totalLoad[79], totalLoad[80], totalLoad[81], totalLoad[82], totalLoad[83], totalLoad[84], totalLoad[85], totalLoad[86], totalLoad[87], totalLoad[88], totalLoad[89], totalLoad[90], totalLoad[91], totalLoad[92], totalLoad[93], totalLoad[94], totalLoad[95]);
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'totalLoad' ", totalLoad_sum);
 		sent_query();
 
-		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, "total_load_price", totalLoad_price[0], totalLoad_price[1], totalLoad_price[2], totalLoad_price[3], totalLoad_price[4], totalLoad_price[5], totalLoad_price[6], totalLoad_price[7], totalLoad_price[8], totalLoad_price[9], totalLoad_price[10], totalLoad_price[11], totalLoad_price[12], totalLoad_price[13], totalLoad_price[14], totalLoad_price[15], totalLoad_price[16], totalLoad_price[17], totalLoad_price[18], totalLoad_price[19], totalLoad_price[20], totalLoad_price[21], totalLoad_price[22], totalLoad_price[23], totalLoad_price[24], totalLoad_price[25], totalLoad_price[26], totalLoad_price[27], totalLoad_price[28], totalLoad_price[29], totalLoad_price[30], totalLoad_price[31], totalLoad_price[32], totalLoad_price[33], totalLoad_price[34], totalLoad_price[35], totalLoad_price[36], totalLoad_price[37], totalLoad_price[38], totalLoad_price[39], totalLoad_price[40], totalLoad_price[41], totalLoad_price[42], totalLoad_price[43], totalLoad_price[44], totalLoad_price[45], totalLoad_price[46], totalLoad_price[47], totalLoad_price[48], totalLoad_price[49], totalLoad_price[50], totalLoad_price[51], totalLoad_price[52], totalLoad_price[53], totalLoad_price[54], totalLoad_price[55], totalLoad_price[56], totalLoad_price[57], totalLoad_price[58], totalLoad_price[59], totalLoad_price[60], totalLoad_price[61], totalLoad_price[62], totalLoad_price[63], totalLoad_price[64], totalLoad_price[65], totalLoad_price[66], totalLoad_price[67], totalLoad_price[68], totalLoad_price[69], totalLoad_price[70], totalLoad_price[71], totalLoad_price[72], totalLoad_price[73], totalLoad_price[74], totalLoad_price[75], totalLoad_price[76], totalLoad_price[77], totalLoad_price[78], totalLoad_price[79], totalLoad_price[80], totalLoad_price[81], totalLoad_price[82], totalLoad_price[83], totalLoad_price[84], totalLoad_price[85], totalLoad_price[86], totalLoad_price[87], totalLoad_price[88], totalLoad_price[89], totalLoad_price[90], totalLoad_price[91], totalLoad_price[92], totalLoad_price[93], totalLoad_price[94], totalLoad_price[95]);
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", bp.str_sql_allTimeblock, "total_load_price", totalLoad_price[0], totalLoad_price[1], totalLoad_price[2], totalLoad_price[3], totalLoad_price[4], totalLoad_price[5], totalLoad_price[6], totalLoad_price[7], totalLoad_price[8], totalLoad_price[9], totalLoad_price[10], totalLoad_price[11], totalLoad_price[12], totalLoad_price[13], totalLoad_price[14], totalLoad_price[15], totalLoad_price[16], totalLoad_price[17], totalLoad_price[18], totalLoad_price[19], totalLoad_price[20], totalLoad_price[21], totalLoad_price[22], totalLoad_price[23], totalLoad_price[24], totalLoad_price[25], totalLoad_price[26], totalLoad_price[27], totalLoad_price[28], totalLoad_price[29], totalLoad_price[30], totalLoad_price[31], totalLoad_price[32], totalLoad_price[33], totalLoad_price[34], totalLoad_price[35], totalLoad_price[36], totalLoad_price[37], totalLoad_price[38], totalLoad_price[39], totalLoad_price[40], totalLoad_price[41], totalLoad_price[42], totalLoad_price[43], totalLoad_price[44], totalLoad_price[45], totalLoad_price[46], totalLoad_price[47], totalLoad_price[48], totalLoad_price[49], totalLoad_price[50], totalLoad_price[51], totalLoad_price[52], totalLoad_price[53], totalLoad_price[54], totalLoad_price[55], totalLoad_price[56], totalLoad_price[57], totalLoad_price[58], totalLoad_price[59], totalLoad_price[60], totalLoad_price[61], totalLoad_price[62], totalLoad_price[63], totalLoad_price[64], totalLoad_price[65], totalLoad_price[66], totalLoad_price[67], totalLoad_price[68], totalLoad_price[69], totalLoad_price[70], totalLoad_price[71], totalLoad_price[72], totalLoad_price[73], totalLoad_price[74], totalLoad_price[75], totalLoad_price[76], totalLoad_price[77], totalLoad_price[78], totalLoad_price[79], totalLoad_price[80], totalLoad_price[81], totalLoad_price[82], totalLoad_price[83], totalLoad_price[84], totalLoad_price[85], totalLoad_price[86], totalLoad_price[87], totalLoad_price[88], totalLoad_price[89], totalLoad_price[90], totalLoad_price[91], totalLoad_price[92], totalLoad_price[93], totalLoad_price[94], totalLoad_price[95]);
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'LoadSpend(threeLevelPrice)' ", totalLoad_priceSum);
 		sent_query();
 
-		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, "real_buy_grid_price", real_grid_pirce[0], real_grid_pirce[1], real_grid_pirce[2], real_grid_pirce[3], real_grid_pirce[4], real_grid_pirce[5], real_grid_pirce[6], real_grid_pirce[7], real_grid_pirce[8], real_grid_pirce[9], real_grid_pirce[10], real_grid_pirce[11], real_grid_pirce[12], real_grid_pirce[13], real_grid_pirce[14], real_grid_pirce[15], real_grid_pirce[16], real_grid_pirce[17], real_grid_pirce[18], real_grid_pirce[19], real_grid_pirce[20], real_grid_pirce[21], real_grid_pirce[22], real_grid_pirce[23], real_grid_pirce[24], real_grid_pirce[25], real_grid_pirce[26], real_grid_pirce[27], real_grid_pirce[28], real_grid_pirce[29], real_grid_pirce[30], real_grid_pirce[31], real_grid_pirce[32], real_grid_pirce[33], real_grid_pirce[34], real_grid_pirce[35], real_grid_pirce[36], real_grid_pirce[37], real_grid_pirce[38], real_grid_pirce[39], real_grid_pirce[40], real_grid_pirce[41], real_grid_pirce[42], real_grid_pirce[43], real_grid_pirce[44], real_grid_pirce[45], real_grid_pirce[46], real_grid_pirce[47], real_grid_pirce[48], real_grid_pirce[49], real_grid_pirce[50], real_grid_pirce[51], real_grid_pirce[52], real_grid_pirce[53], real_grid_pirce[54], real_grid_pirce[55], real_grid_pirce[56], real_grid_pirce[57], real_grid_pirce[58], real_grid_pirce[59], real_grid_pirce[60], real_grid_pirce[61], real_grid_pirce[62], real_grid_pirce[63], real_grid_pirce[64], real_grid_pirce[65], real_grid_pirce[66], real_grid_pirce[67], real_grid_pirce[68], real_grid_pirce[69], real_grid_pirce[70], real_grid_pirce[71], real_grid_pirce[72], real_grid_pirce[73], real_grid_pirce[74], real_grid_pirce[75], real_grid_pirce[76], real_grid_pirce[77], real_grid_pirce[78], real_grid_pirce[79], real_grid_pirce[80], real_grid_pirce[81], real_grid_pirce[82], real_grid_pirce[83], real_grid_pirce[84], real_grid_pirce[85], real_grid_pirce[86], real_grid_pirce[87], real_grid_pirce[88], real_grid_pirce[89], real_grid_pirce[90], real_grid_pirce[91], real_grid_pirce[92], real_grid_pirce[93], real_grid_pirce[94], real_grid_pirce[95]);
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", bp.str_sql_allTimeblock, "real_buy_grid_price", real_grid_pirce[0], real_grid_pirce[1], real_grid_pirce[2], real_grid_pirce[3], real_grid_pirce[4], real_grid_pirce[5], real_grid_pirce[6], real_grid_pirce[7], real_grid_pirce[8], real_grid_pirce[9], real_grid_pirce[10], real_grid_pirce[11], real_grid_pirce[12], real_grid_pirce[13], real_grid_pirce[14], real_grid_pirce[15], real_grid_pirce[16], real_grid_pirce[17], real_grid_pirce[18], real_grid_pirce[19], real_grid_pirce[20], real_grid_pirce[21], real_grid_pirce[22], real_grid_pirce[23], real_grid_pirce[24], real_grid_pirce[25], real_grid_pirce[26], real_grid_pirce[27], real_grid_pirce[28], real_grid_pirce[29], real_grid_pirce[30], real_grid_pirce[31], real_grid_pirce[32], real_grid_pirce[33], real_grid_pirce[34], real_grid_pirce[35], real_grid_pirce[36], real_grid_pirce[37], real_grid_pirce[38], real_grid_pirce[39], real_grid_pirce[40], real_grid_pirce[41], real_grid_pirce[42], real_grid_pirce[43], real_grid_pirce[44], real_grid_pirce[45], real_grid_pirce[46], real_grid_pirce[47], real_grid_pirce[48], real_grid_pirce[49], real_grid_pirce[50], real_grid_pirce[51], real_grid_pirce[52], real_grid_pirce[53], real_grid_pirce[54], real_grid_pirce[55], real_grid_pirce[56], real_grid_pirce[57], real_grid_pirce[58], real_grid_pirce[59], real_grid_pirce[60], real_grid_pirce[61], real_grid_pirce[62], real_grid_pirce[63], real_grid_pirce[64], real_grid_pirce[65], real_grid_pirce[66], real_grid_pirce[67], real_grid_pirce[68], real_grid_pirce[69], real_grid_pirce[70], real_grid_pirce[71], real_grid_pirce[72], real_grid_pirce[73], real_grid_pirce[74], real_grid_pirce[75], real_grid_pirce[76], real_grid_pirce[77], real_grid_pirce[78], real_grid_pirce[79], real_grid_pirce[80], real_grid_pirce[81], real_grid_pirce[82], real_grid_pirce[83], real_grid_pirce[84], real_grid_pirce[85], real_grid_pirce[86], real_grid_pirce[87], real_grid_pirce[88], real_grid_pirce[89], real_grid_pirce[90], real_grid_pirce[91], real_grid_pirce[92], real_grid_pirce[93], real_grid_pirce[94], real_grid_pirce[95]);
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'realGridPurchase' ", real_grid_pirceSum);
 		sent_query();
 
-		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name,%s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, "real_sell_grid_price", real_sell_pirce[0], real_sell_pirce[1], real_sell_pirce[2], real_sell_pirce[3], real_sell_pirce[4], real_sell_pirce[5], real_sell_pirce[6], real_sell_pirce[7], real_sell_pirce[8], real_sell_pirce[9], real_sell_pirce[10], real_sell_pirce[11], real_sell_pirce[12], real_sell_pirce[13], real_sell_pirce[14], real_sell_pirce[15], real_sell_pirce[16], real_sell_pirce[17], real_sell_pirce[18], real_sell_pirce[19], real_sell_pirce[20], real_sell_pirce[21], real_sell_pirce[22], real_sell_pirce[23], real_sell_pirce[24], real_sell_pirce[25], real_sell_pirce[26], real_sell_pirce[27], real_sell_pirce[28], real_sell_pirce[29], real_sell_pirce[30], real_sell_pirce[31], real_sell_pirce[32], real_sell_pirce[33], real_sell_pirce[34], real_sell_pirce[35], real_sell_pirce[36], real_sell_pirce[37], real_sell_pirce[38], real_sell_pirce[39], real_sell_pirce[40], real_sell_pirce[41], real_sell_pirce[42], real_sell_pirce[43], real_sell_pirce[44], real_sell_pirce[45], real_sell_pirce[46], real_sell_pirce[47], real_sell_pirce[48], real_sell_pirce[49], real_sell_pirce[50], real_sell_pirce[51], real_sell_pirce[52], real_sell_pirce[53], real_sell_pirce[54], real_sell_pirce[55], real_sell_pirce[56], real_sell_pirce[57], real_sell_pirce[58], real_sell_pirce[59], real_sell_pirce[60], real_sell_pirce[61], real_sell_pirce[62], real_sell_pirce[63], real_sell_pirce[64], real_sell_pirce[65], real_sell_pirce[66], real_sell_pirce[67], real_sell_pirce[68], real_sell_pirce[69], real_sell_pirce[70], real_sell_pirce[71], real_sell_pirce[72], real_sell_pirce[73], real_sell_pirce[74], real_sell_pirce[75], real_sell_pirce[76], real_sell_pirce[77], real_sell_pirce[78], real_sell_pirce[79], real_sell_pirce[80], real_sell_pirce[81], real_sell_pirce[82], real_sell_pirce[83], real_sell_pirce[84], real_sell_pirce[85], real_sell_pirce[86], real_sell_pirce[87], real_sell_pirce[88], real_sell_pirce[89], real_sell_pirce[90], real_sell_pirce[91], real_sell_pirce[92], real_sell_pirce[93], real_sell_pirce[94], real_sell_pirce[95]);
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name,%s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", bp.str_sql_allTimeblock, "real_sell_grid_price", real_sell_pirce[0], real_sell_pirce[1], real_sell_pirce[2], real_sell_pirce[3], real_sell_pirce[4], real_sell_pirce[5], real_sell_pirce[6], real_sell_pirce[7], real_sell_pirce[8], real_sell_pirce[9], real_sell_pirce[10], real_sell_pirce[11], real_sell_pirce[12], real_sell_pirce[13], real_sell_pirce[14], real_sell_pirce[15], real_sell_pirce[16], real_sell_pirce[17], real_sell_pirce[18], real_sell_pirce[19], real_sell_pirce[20], real_sell_pirce[21], real_sell_pirce[22], real_sell_pirce[23], real_sell_pirce[24], real_sell_pirce[25], real_sell_pirce[26], real_sell_pirce[27], real_sell_pirce[28], real_sell_pirce[29], real_sell_pirce[30], real_sell_pirce[31], real_sell_pirce[32], real_sell_pirce[33], real_sell_pirce[34], real_sell_pirce[35], real_sell_pirce[36], real_sell_pirce[37], real_sell_pirce[38], real_sell_pirce[39], real_sell_pirce[40], real_sell_pirce[41], real_sell_pirce[42], real_sell_pirce[43], real_sell_pirce[44], real_sell_pirce[45], real_sell_pirce[46], real_sell_pirce[47], real_sell_pirce[48], real_sell_pirce[49], real_sell_pirce[50], real_sell_pirce[51], real_sell_pirce[52], real_sell_pirce[53], real_sell_pirce[54], real_sell_pirce[55], real_sell_pirce[56], real_sell_pirce[57], real_sell_pirce[58], real_sell_pirce[59], real_sell_pirce[60], real_sell_pirce[61], real_sell_pirce[62], real_sell_pirce[63], real_sell_pirce[64], real_sell_pirce[65], real_sell_pirce[66], real_sell_pirce[67], real_sell_pirce[68], real_sell_pirce[69], real_sell_pirce[70], real_sell_pirce[71], real_sell_pirce[72], real_sell_pirce[73], real_sell_pirce[74], real_sell_pirce[75], real_sell_pirce[76], real_sell_pirce[77], real_sell_pirce[78], real_sell_pirce[79], real_sell_pirce[80], real_sell_pirce[81], real_sell_pirce[82], real_sell_pirce[83], real_sell_pirce[84], real_sell_pirce[85], real_sell_pirce[86], real_sell_pirce[87], real_sell_pirce[88], real_sell_pirce[89], real_sell_pirce[90], real_sell_pirce[91], real_sell_pirce[92], real_sell_pirce[93], real_sell_pirce[94], real_sell_pirce[95]);
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'maximumSell' ", real_sell_pirceSum);
 		sent_query();
 
-		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, "FC_price", fuelCell_kW_price[0], fuelCell_kW_price[1], fuelCell_kW_price[2], fuelCell_kW_price[3], fuelCell_kW_price[4], fuelCell_kW_price[5], fuelCell_kW_price[6], fuelCell_kW_price[7], fuelCell_kW_price[8], fuelCell_kW_price[9], fuelCell_kW_price[10], fuelCell_kW_price[11], fuelCell_kW_price[12], fuelCell_kW_price[13], fuelCell_kW_price[14], fuelCell_kW_price[15], fuelCell_kW_price[16], fuelCell_kW_price[17], fuelCell_kW_price[18], fuelCell_kW_price[19], fuelCell_kW_price[20], fuelCell_kW_price[21], fuelCell_kW_price[22], fuelCell_kW_price[23], fuelCell_kW_price[24], fuelCell_kW_price[25], fuelCell_kW_price[26], fuelCell_kW_price[27], fuelCell_kW_price[28], fuelCell_kW_price[29], fuelCell_kW_price[30], fuelCell_kW_price[31], fuelCell_kW_price[32], fuelCell_kW_price[33], fuelCell_kW_price[34], fuelCell_kW_price[35], fuelCell_kW_price[36], fuelCell_kW_price[37], fuelCell_kW_price[38], fuelCell_kW_price[39], fuelCell_kW_price[40], fuelCell_kW_price[41], fuelCell_kW_price[42], fuelCell_kW_price[43], fuelCell_kW_price[44], fuelCell_kW_price[45], fuelCell_kW_price[46], fuelCell_kW_price[47], fuelCell_kW_price[48], fuelCell_kW_price[49], fuelCell_kW_price[50], fuelCell_kW_price[51], fuelCell_kW_price[52], fuelCell_kW_price[53], fuelCell_kW_price[54], fuelCell_kW_price[55], fuelCell_kW_price[56], fuelCell_kW_price[57], fuelCell_kW_price[58], fuelCell_kW_price[59], fuelCell_kW_price[60], fuelCell_kW_price[61], fuelCell_kW_price[62], fuelCell_kW_price[63], fuelCell_kW_price[64], fuelCell_kW_price[65], fuelCell_kW_price[66], fuelCell_kW_price[67], fuelCell_kW_price[68], fuelCell_kW_price[69], fuelCell_kW_price[70], fuelCell_kW_price[71], fuelCell_kW_price[72], fuelCell_kW_price[73], fuelCell_kW_price[74], fuelCell_kW_price[75], fuelCell_kW_price[76], fuelCell_kW_price[77], fuelCell_kW_price[78], fuelCell_kW_price[79], fuelCell_kW_price[80], fuelCell_kW_price[81], fuelCell_kW_price[82], fuelCell_kW_price[83], fuelCell_kW_price[84], fuelCell_kW_price[85], fuelCell_kW_price[86], fuelCell_kW_price[87], fuelCell_kW_price[88], fuelCell_kW_price[89], fuelCell_kW_price[90], fuelCell_kW_price[91], fuelCell_kW_price[92], fuelCell_kW_price[93], fuelCell_kW_price[94], fuelCell_kW_price[95]);
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", bp.str_sql_allTimeblock, "FC_price", fuelCell_kW_price[0], fuelCell_kW_price[1], fuelCell_kW_price[2], fuelCell_kW_price[3], fuelCell_kW_price[4], fuelCell_kW_price[5], fuelCell_kW_price[6], fuelCell_kW_price[7], fuelCell_kW_price[8], fuelCell_kW_price[9], fuelCell_kW_price[10], fuelCell_kW_price[11], fuelCell_kW_price[12], fuelCell_kW_price[13], fuelCell_kW_price[14], fuelCell_kW_price[15], fuelCell_kW_price[16], fuelCell_kW_price[17], fuelCell_kW_price[18], fuelCell_kW_price[19], fuelCell_kW_price[20], fuelCell_kW_price[21], fuelCell_kW_price[22], fuelCell_kW_price[23], fuelCell_kW_price[24], fuelCell_kW_price[25], fuelCell_kW_price[26], fuelCell_kW_price[27], fuelCell_kW_price[28], fuelCell_kW_price[29], fuelCell_kW_price[30], fuelCell_kW_price[31], fuelCell_kW_price[32], fuelCell_kW_price[33], fuelCell_kW_price[34], fuelCell_kW_price[35], fuelCell_kW_price[36], fuelCell_kW_price[37], fuelCell_kW_price[38], fuelCell_kW_price[39], fuelCell_kW_price[40], fuelCell_kW_price[41], fuelCell_kW_price[42], fuelCell_kW_price[43], fuelCell_kW_price[44], fuelCell_kW_price[45], fuelCell_kW_price[46], fuelCell_kW_price[47], fuelCell_kW_price[48], fuelCell_kW_price[49], fuelCell_kW_price[50], fuelCell_kW_price[51], fuelCell_kW_price[52], fuelCell_kW_price[53], fuelCell_kW_price[54], fuelCell_kW_price[55], fuelCell_kW_price[56], fuelCell_kW_price[57], fuelCell_kW_price[58], fuelCell_kW_price[59], fuelCell_kW_price[60], fuelCell_kW_price[61], fuelCell_kW_price[62], fuelCell_kW_price[63], fuelCell_kW_price[64], fuelCell_kW_price[65], fuelCell_kW_price[66], fuelCell_kW_price[67], fuelCell_kW_price[68], fuelCell_kW_price[69], fuelCell_kW_price[70], fuelCell_kW_price[71], fuelCell_kW_price[72], fuelCell_kW_price[73], fuelCell_kW_price[74], fuelCell_kW_price[75], fuelCell_kW_price[76], fuelCell_kW_price[77], fuelCell_kW_price[78], fuelCell_kW_price[79], fuelCell_kW_price[80], fuelCell_kW_price[81], fuelCell_kW_price[82], fuelCell_kW_price[83], fuelCell_kW_price[84], fuelCell_kW_price[85], fuelCell_kW_price[86], fuelCell_kW_price[87], fuelCell_kW_price[88], fuelCell_kW_price[89], fuelCell_kW_price[90], fuelCell_kW_price[91], fuelCell_kW_price[92], fuelCell_kW_price[93], fuelCell_kW_price[94], fuelCell_kW_price[95]);
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'fuelCellSpend' ", fuelCell_kW_priceSum);
 		sent_query();
 
-		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, "hydrogen_consumption", Hydrogen_g_consumption[0], Hydrogen_g_consumption[1], Hydrogen_g_consumption[2], Hydrogen_g_consumption[3], Hydrogen_g_consumption[4], Hydrogen_g_consumption[5], Hydrogen_g_consumption[6], Hydrogen_g_consumption[7], Hydrogen_g_consumption[8], Hydrogen_g_consumption[9], Hydrogen_g_consumption[10], Hydrogen_g_consumption[11], Hydrogen_g_consumption[12], Hydrogen_g_consumption[13], Hydrogen_g_consumption[14], Hydrogen_g_consumption[15], Hydrogen_g_consumption[16], Hydrogen_g_consumption[17], Hydrogen_g_consumption[18], Hydrogen_g_consumption[19], Hydrogen_g_consumption[20], Hydrogen_g_consumption[21], Hydrogen_g_consumption[22], Hydrogen_g_consumption[23], Hydrogen_g_consumption[24], Hydrogen_g_consumption[25], Hydrogen_g_consumption[26], Hydrogen_g_consumption[27], Hydrogen_g_consumption[28], Hydrogen_g_consumption[29], Hydrogen_g_consumption[30], Hydrogen_g_consumption[31], Hydrogen_g_consumption[32], Hydrogen_g_consumption[33], Hydrogen_g_consumption[34], Hydrogen_g_consumption[35], Hydrogen_g_consumption[36], Hydrogen_g_consumption[37], Hydrogen_g_consumption[38], Hydrogen_g_consumption[39], Hydrogen_g_consumption[40], Hydrogen_g_consumption[41], Hydrogen_g_consumption[42], Hydrogen_g_consumption[43], Hydrogen_g_consumption[44], Hydrogen_g_consumption[45], Hydrogen_g_consumption[46], Hydrogen_g_consumption[47], Hydrogen_g_consumption[48], Hydrogen_g_consumption[49], Hydrogen_g_consumption[50], Hydrogen_g_consumption[51], Hydrogen_g_consumption[52], Hydrogen_g_consumption[53], Hydrogen_g_consumption[54], Hydrogen_g_consumption[55], Hydrogen_g_consumption[56], Hydrogen_g_consumption[57], Hydrogen_g_consumption[58], Hydrogen_g_consumption[59], Hydrogen_g_consumption[60], Hydrogen_g_consumption[61], Hydrogen_g_consumption[62], Hydrogen_g_consumption[63], Hydrogen_g_consumption[64], Hydrogen_g_consumption[65], Hydrogen_g_consumption[66], Hydrogen_g_consumption[67], Hydrogen_g_consumption[68], Hydrogen_g_consumption[69], Hydrogen_g_consumption[70], Hydrogen_g_consumption[71], Hydrogen_g_consumption[72], Hydrogen_g_consumption[73], Hydrogen_g_consumption[74], Hydrogen_g_consumption[75], Hydrogen_g_consumption[76], Hydrogen_g_consumption[77], Hydrogen_g_consumption[78], Hydrogen_g_consumption[79], Hydrogen_g_consumption[80], Hydrogen_g_consumption[81], Hydrogen_g_consumption[82], Hydrogen_g_consumption[83], Hydrogen_g_consumption[84], Hydrogen_g_consumption[85], Hydrogen_g_consumption[86], Hydrogen_g_consumption[87], Hydrogen_g_consumption[88], Hydrogen_g_consumption[89], Hydrogen_g_consumption[90], Hydrogen_g_consumption[91], Hydrogen_g_consumption[92], Hydrogen_g_consumption[93], Hydrogen_g_consumption[94], Hydrogen_g_consumption[95]);
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", bp.str_sql_allTimeblock, "hydrogen_consumption", Hydrogen_g_consumption[0], Hydrogen_g_consumption[1], Hydrogen_g_consumption[2], Hydrogen_g_consumption[3], Hydrogen_g_consumption[4], Hydrogen_g_consumption[5], Hydrogen_g_consumption[6], Hydrogen_g_consumption[7], Hydrogen_g_consumption[8], Hydrogen_g_consumption[9], Hydrogen_g_consumption[10], Hydrogen_g_consumption[11], Hydrogen_g_consumption[12], Hydrogen_g_consumption[13], Hydrogen_g_consumption[14], Hydrogen_g_consumption[15], Hydrogen_g_consumption[16], Hydrogen_g_consumption[17], Hydrogen_g_consumption[18], Hydrogen_g_consumption[19], Hydrogen_g_consumption[20], Hydrogen_g_consumption[21], Hydrogen_g_consumption[22], Hydrogen_g_consumption[23], Hydrogen_g_consumption[24], Hydrogen_g_consumption[25], Hydrogen_g_consumption[26], Hydrogen_g_consumption[27], Hydrogen_g_consumption[28], Hydrogen_g_consumption[29], Hydrogen_g_consumption[30], Hydrogen_g_consumption[31], Hydrogen_g_consumption[32], Hydrogen_g_consumption[33], Hydrogen_g_consumption[34], Hydrogen_g_consumption[35], Hydrogen_g_consumption[36], Hydrogen_g_consumption[37], Hydrogen_g_consumption[38], Hydrogen_g_consumption[39], Hydrogen_g_consumption[40], Hydrogen_g_consumption[41], Hydrogen_g_consumption[42], Hydrogen_g_consumption[43], Hydrogen_g_consumption[44], Hydrogen_g_consumption[45], Hydrogen_g_consumption[46], Hydrogen_g_consumption[47], Hydrogen_g_consumption[48], Hydrogen_g_consumption[49], Hydrogen_g_consumption[50], Hydrogen_g_consumption[51], Hydrogen_g_consumption[52], Hydrogen_g_consumption[53], Hydrogen_g_consumption[54], Hydrogen_g_consumption[55], Hydrogen_g_consumption[56], Hydrogen_g_consumption[57], Hydrogen_g_consumption[58], Hydrogen_g_consumption[59], Hydrogen_g_consumption[60], Hydrogen_g_consumption[61], Hydrogen_g_consumption[62], Hydrogen_g_consumption[63], Hydrogen_g_consumption[64], Hydrogen_g_consumption[65], Hydrogen_g_consumption[66], Hydrogen_g_consumption[67], Hydrogen_g_consumption[68], Hydrogen_g_consumption[69], Hydrogen_g_consumption[70], Hydrogen_g_consumption[71], Hydrogen_g_consumption[72], Hydrogen_g_consumption[73], Hydrogen_g_consumption[74], Hydrogen_g_consumption[75], Hydrogen_g_consumption[76], Hydrogen_g_consumption[77], Hydrogen_g_consumption[78], Hydrogen_g_consumption[79], Hydrogen_g_consumption[80], Hydrogen_g_consumption[81], Hydrogen_g_consumption[82], Hydrogen_g_consumption[83], Hydrogen_g_consumption[84], Hydrogen_g_consumption[85], Hydrogen_g_consumption[86], Hydrogen_g_consumption[87], Hydrogen_g_consumption[88], Hydrogen_g_consumption[89], Hydrogen_g_consumption[90], Hydrogen_g_consumption[91], Hydrogen_g_consumption[92], Hydrogen_g_consumption[93], Hydrogen_g_consumption[94], Hydrogen_g_consumption[95]);
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'hydrogenConsumption(g)' ", Hydrogen_g_consumptionSum);
 		sent_query();
 
-		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, "demand_response_feedback", demandResponse_feedback[0], demandResponse_feedback[1], demandResponse_feedback[2], demandResponse_feedback[3], demandResponse_feedback[4], demandResponse_feedback[5], demandResponse_feedback[6], demandResponse_feedback[7], demandResponse_feedback[8], demandResponse_feedback[9], demandResponse_feedback[10], demandResponse_feedback[11], demandResponse_feedback[12], demandResponse_feedback[13], demandResponse_feedback[14], demandResponse_feedback[15], demandResponse_feedback[16], demandResponse_feedback[17], demandResponse_feedback[18], demandResponse_feedback[19], demandResponse_feedback[20], demandResponse_feedback[21], demandResponse_feedback[22], demandResponse_feedback[23], demandResponse_feedback[24], demandResponse_feedback[25], demandResponse_feedback[26], demandResponse_feedback[27], demandResponse_feedback[28], demandResponse_feedback[29], demandResponse_feedback[30], demandResponse_feedback[31], demandResponse_feedback[32], demandResponse_feedback[33], demandResponse_feedback[34], demandResponse_feedback[35], demandResponse_feedback[36], demandResponse_feedback[37], demandResponse_feedback[38], demandResponse_feedback[39], demandResponse_feedback[40], demandResponse_feedback[41], demandResponse_feedback[42], demandResponse_feedback[43], demandResponse_feedback[44], demandResponse_feedback[45], demandResponse_feedback[46], demandResponse_feedback[47], demandResponse_feedback[48], demandResponse_feedback[49], demandResponse_feedback[50], demandResponse_feedback[51], demandResponse_feedback[52], demandResponse_feedback[53], demandResponse_feedback[54], demandResponse_feedback[55], demandResponse_feedback[56], demandResponse_feedback[57], demandResponse_feedback[58], demandResponse_feedback[59], demandResponse_feedback[60], demandResponse_feedback[61], demandResponse_feedback[62], demandResponse_feedback[63], demandResponse_feedback[64], demandResponse_feedback[65], demandResponse_feedback[66], demandResponse_feedback[67], demandResponse_feedback[68], demandResponse_feedback[69], demandResponse_feedback[70], demandResponse_feedback[71], demandResponse_feedback[72], demandResponse_feedback[73], demandResponse_feedback[74], demandResponse_feedback[75], demandResponse_feedback[76], demandResponse_feedback[77], demandResponse_feedback[78], demandResponse_feedback[79], demandResponse_feedback[80], demandResponse_feedback[81], demandResponse_feedback[82], demandResponse_feedback[83], demandResponse_feedback[84], demandResponse_feedback[85], demandResponse_feedback[86], demandResponse_feedback[87], demandResponse_feedback[88], demandResponse_feedback[89], demandResponse_feedback[90], demandResponse_feedback[91], demandResponse_feedback[92], demandResponse_feedback[93], demandResponse_feedback[94], demandResponse_feedback[95]);
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO cost (cost_name, %s) VALUES('%s','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", bp.str_sql_allTimeblock, "demand_response_feedback", demandResponse_feedback[0], demandResponse_feedback[1], demandResponse_feedback[2], demandResponse_feedback[3], demandResponse_feedback[4], demandResponse_feedback[5], demandResponse_feedback[6], demandResponse_feedback[7], demandResponse_feedback[8], demandResponse_feedback[9], demandResponse_feedback[10], demandResponse_feedback[11], demandResponse_feedback[12], demandResponse_feedback[13], demandResponse_feedback[14], demandResponse_feedback[15], demandResponse_feedback[16], demandResponse_feedback[17], demandResponse_feedback[18], demandResponse_feedback[19], demandResponse_feedback[20], demandResponse_feedback[21], demandResponse_feedback[22], demandResponse_feedback[23], demandResponse_feedback[24], demandResponse_feedback[25], demandResponse_feedback[26], demandResponse_feedback[27], demandResponse_feedback[28], demandResponse_feedback[29], demandResponse_feedback[30], demandResponse_feedback[31], demandResponse_feedback[32], demandResponse_feedback[33], demandResponse_feedback[34], demandResponse_feedback[35], demandResponse_feedback[36], demandResponse_feedback[37], demandResponse_feedback[38], demandResponse_feedback[39], demandResponse_feedback[40], demandResponse_feedback[41], demandResponse_feedback[42], demandResponse_feedback[43], demandResponse_feedback[44], demandResponse_feedback[45], demandResponse_feedback[46], demandResponse_feedback[47], demandResponse_feedback[48], demandResponse_feedback[49], demandResponse_feedback[50], demandResponse_feedback[51], demandResponse_feedback[52], demandResponse_feedback[53], demandResponse_feedback[54], demandResponse_feedback[55], demandResponse_feedback[56], demandResponse_feedback[57], demandResponse_feedback[58], demandResponse_feedback[59], demandResponse_feedback[60], demandResponse_feedback[61], demandResponse_feedback[62], demandResponse_feedback[63], demandResponse_feedback[64], demandResponse_feedback[65], demandResponse_feedback[66], demandResponse_feedback[67], demandResponse_feedback[68], demandResponse_feedback[69], demandResponse_feedback[70], demandResponse_feedback[71], demandResponse_feedback[72], demandResponse_feedback[73], demandResponse_feedback[74], demandResponse_feedback[75], demandResponse_feedback[76], demandResponse_feedback[77], demandResponse_feedback[78], demandResponse_feedback[79], demandResponse_feedback[80], demandResponse_feedback[81], demandResponse_feedback[82], demandResponse_feedback[83], demandResponse_feedback[84], demandResponse_feedback[85], demandResponse_feedback[86], demandResponse_feedback[87], demandResponse_feedback[88], demandResponse_feedback[89], demandResponse_feedback[90], demandResponse_feedback[91], demandResponse_feedback[92], demandResponse_feedback[93], demandResponse_feedback[94], demandResponse_feedback[95]);
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE BaseParameter SET value = %f WHERE parameter_name = 'demandResponse_feedbackPrice' ", demandResponse_feedbackSum);
 		sent_query();
@@ -1014,27 +1008,19 @@ void calculateCostInfo(BASEPARAMETER bp, DEMANDRESPONSE dr, PUBLICLOAD pl, ELECT
 		}
 		if (pl.flag)
 		{
-			for (int j = 0; j < pl.forceToStop_number; j++)
+			for (int j = 0; j < pl.stoppable_number; j++)
 			{
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_forceToStop_publicLoad+to_string(j+1)).c_str());
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_stoppable_publicLoad+to_string(j+1)).c_str());
 				int status_tmp = turn_value_to_int(0);
 				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = '5' LIMIT %d, %d", j, j + 1);
 				float power_tmp = turn_value_to_float(0);
 				publicLoad[i] += status_tmp * power_tmp;
 			}
-			for (int j = 0; j < pl.interrupt_number; j++)
+			for (int j = 0; j < pl.deferrable_number; j++)
 			{
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_interrupt_publicLoad+to_string(j+1)).c_str());
+				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_deferrable_publicLoad+to_string(j+1)).c_str());
 				int status_tmp = turn_value_to_int(0);
 				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = '6' LIMIT %d, %d", j, j + 1);
-				float power_tmp = turn_value_to_float(0);
-				publicLoad[i] += status_tmp * power_tmp;
-			}
-			for (int j = 0; j < pl.periodic_number; j++)
-			{
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM GHEMS_control_status WHERE equip_name = '%s' ", i, (pl.str_periodic_publicLoad+to_string(j+1)).c_str());
-				int status_tmp = turn_value_to_int(0);
-				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT power1 FROM load_list WHERE group_id = '7' LIMIT %d, %d", j, j + 1);
 				float power_tmp = turn_value_to_float(0);
 				publicLoad[i] += status_tmp * power_tmp;
 			}
@@ -1135,8 +1121,9 @@ void updateSingleHouseholdCost(BASEPARAMETER bp, DEMANDRESPONSE dr)
 				float P_uavg = turn_value_to_float(0);
 				
 				// D_{u}^{j}
+				// NOTE: Change formula
 				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM `LHEMS_demand_response_participation` WHERE household_id = %d", j, i + 1);
-				int participate = turn_value_to_int(0);
+				int participate = ceil(turn_value_to_float(0));
 
 				// P_{u, grid}^{j}
 				snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `A%d` FROM `LHEMS_control_status` WHERE `equip_name` = 'Pgrid' AND `household_id` = %d ", j, i + 1);
@@ -1145,7 +1132,7 @@ void updateSingleHouseholdCost(BASEPARAMETER bp, DEMANDRESPONSE dr)
 				C_uj[i] = participate * dr.feedback_price * (P_uavg - P_ugrid) * bp.delta_T;
 			}
 
-			float sum_C_uj = accumulate(C_uj.begin(), C_uj.end(), 0);
+			float sum_C_uj = accumulate(C_uj.begin(), C_uj.end(), 0.0);
 
 			for (int i = 0; i < householdTotal; i++)
 			{
@@ -1254,7 +1241,7 @@ int *countPublicLoads_AlreadyOpenedTimes(BASEPARAMETER bp, int publicLoad_num, s
 		for (int i = 0; i < publicLoad_num; i++)
 		{
 			int coun = 0;
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM GHEMS_control_status WHERE equip_name = '%s'", column, (publicLoad_name + to_string(i + 1)).c_str());
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM GHEMS_control_status WHERE equip_name = '%s'", bp.str_sql_allTimeblock, (publicLoad_name + to_string(i + 1)).c_str());
 			fetch_row_value();
 			for (int j = 0; j < bp.sample_time; j++)
 			{
@@ -1297,21 +1284,14 @@ void Global_UCload_rand_operationTime(BASEPARAMETER bp, UNCONTROLLABLELOAD &ucl)
 	functionPrint(__func__);
 
 	float *result = new float[bp.time_block];
+	for (int i = 0; i < bp.time_block; i++)
+		result[i] = 0.0;
 	
-	
-	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE `group_id` = 8");
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE `group_id` = %d", ucl.cems_group_id);
 	ucl.number =  turn_value_to_int(0);
 	
 	if (!ucl.flag)
 	{
-		for (int i = 0; i < ucl.number; i++)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `GHEMS_uncontrollable_load` SET `uncontrollable_load%d` = '0.0' ", i + 1);
-			sent_query();		
-		}
-		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `GHEMS_uncontrollable_load` SET `totalLoad` = '0.0' ");
-		sent_query();
-		
 		ucl.power_array = result;
 	}
 	else

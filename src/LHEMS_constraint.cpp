@@ -7,7 +7,7 @@
 #include <mysql/mysql.h>
 #include <iostream>
 #include "SQLFunction.hpp"
-#include "fifty_LHEMS_function.hpp"
+#include "LHEMS_function.hpp"
 #include "scheduling_parameter.hpp"
 #include "LHEMS_constraint.hpp"
 
@@ -37,35 +37,6 @@ void summation_interruptLoadRa_biggerThan_Qa(INTERRUPTLOAD irl, BASEPARAMETER &b
 		}
 		glp_set_row_name(mip, bp.bnd_row_num + h, "");
 		glp_set_row_bnds(mip, bp.bnd_row_num + h, GLP_LO, ((float)irl.reot[h]), 0.0);
-	}
-	bp.coef_row_num += row_num_maxAddition;
-	bp.bnd_row_num += row_num_maxAddition;
-	saving_coefAndBnds_rowNum(bp.coef_row_num, row_num_maxAddition, bp.bnd_row_num, row_num_maxAddition);
-}
-
-// =-=-=-=-=-=-=- dr -=-=-=-=-=-=-= //
-void pgrid_smallerThan_Pavg(BASEPARAMETER &bp, DEMANDRESPONSE dr, float **coefficient, glp_prob *mip, int row_num_maxAddition)
-{
-	functionPrint(__func__);
-
-	for (int i = 0; i < bp.remain_timeblock; i++)
-	{
-		if (dr.startTime - bp.sample_time >= 0)
-		{
-			for (int i = (dr.startTime - bp.sample_time); i <= (dr.endTime - bp.sample_time); i++)
-			{
-				coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, bp.str_Pgrid)] = 1.0;
-			}
-		}
-		else if (dr.startTime - bp.sample_time < 0)
-		{
-			for (int i = 0; i <= (dr.endTime - bp.sample_time); i++)
-			{
-				coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, bp.str_Pgrid)] = 1.0;
-			}
-		}
-		glp_set_row_name(mip, bp.bnd_row_num + i, "");
-		glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_UP, 0.0, dr.household_CBL);
 	}
 	bp.coef_row_num += row_num_maxAddition;
 	bp.bnd_row_num += row_num_maxAddition;
@@ -536,13 +507,13 @@ void varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(VARYINGLOAD var
 }
 
 // =-=-=-=-=-=-=- objective function -=-=-=-=-=-=-= //
-void setting_LHEMS_objectiveFunction(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, BASEPARAMETER bp, DEMANDRESPONSE dr, COMFORTLEVEL comlv, float* price, int *participate_array, glp_prob *mip)
+void setting_LHEMS_objectiveFunction(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, BASEPARAMETER bp, DEMANDRESPONSE dr, COMFORTLEVEL comlv, glp_prob *mip)
 {
 	functionPrint(__func__);
 	
 	for (int j = 0; j < bp.remain_timeblock; j++)
 	{
-		glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), price[j + bp.sample_time] * bp.delta_T);
+		glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), bp.price[j + bp.sample_time] * bp.delta_T);
 		
 		if (comlv.flag)
 		{	
@@ -567,14 +538,14 @@ void setting_LHEMS_objectiveFunction(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VA
 		{
 			for (int j = 0; j < dr.endTime - bp.sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), (price[j + bp.sample_time] + participate_array[j + (bp.sample_time - dr.startTime)] * dr.feedback_price) * bp.delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), (bp.price[j + bp.sample_time] + dr.participate_array[j + (bp.sample_time - dr.startTime)] * dr.feedback_price) * bp.delta_T);
 			}
 		}
 		else if (bp.sample_time - dr.startTime < 0)
 		{
 			for (int j = dr.startTime - bp.sample_time; j < dr.endTime - bp.sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), (price[j + bp.sample_time] + participate_array[j - (dr.startTime - bp.sample_time)] * dr.feedback_price) * bp.delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), (bp.price[j + bp.sample_time] + dr.participate_array[j - (dr.startTime - bp.sample_time)] * dr.feedback_price) * bp.delta_T);
 			}
 		}
 	}

@@ -20,8 +20,10 @@ class WEBDRIVER:
         self.DHEMSFifty="DHEMS_FiftyHousehold"
         self.user_value="root"
         self.password_value="fuzzy314"
-        self.EV_flag=""
-        self.EM_flag=""
+        self.EV_flag=bool()
+        self.EM_flag=bool()
+        self.HEMS_ucLoad_flag=bool()
+        self.comfortLevel_flag=bool()
         # setting driver then open browser
         options = Options()
         options.add_argument('--headless')
@@ -159,14 +161,15 @@ class WEBDRIVER:
         self.chrome.execute_script("document.documentElement.scrollTop=10000")
         self.chrome.find_element_by_xpath(xpath.baseParameter_table).click()
         self.chrome.execute_script("document.documentElement.scrollTop=10000")
-        self.EM_flag = self.chrome.find_element_by_xpath(xpath.baseParameter_table_EM_flag).get_attribute("value")
-        self.EV_flag = self.chrome.find_element_by_xpath(xpath.baseParameter_table_EV_flag).get_attribute("value")
+        self.EM_flag = bool(int(self.chrome.find_element_by_xpath(xpath.baseParameter_table_EM_flag).get_attribute("value")))
+        self.EV_flag = bool(int(self.chrome.find_element_by_xpath(xpath.baseParameter_table_EV_flag).get_attribute("value")))
+        self.comfortLevel_flag = bool(int(self.chrome.find_element_by_xpath(xpath.baseParameter_table_comfortLevel_flag).get_attribute("value")))
+        self.HEMS_ucLoad_flag = bool(int(self.chrome.find_element_by_xpath(xpath.baseParameter_table_HEMS_ucLoad_flag).get_attribute("value")))
 
         SOC_threshold = self.chrome.find_element_by_xpath(xpath.baseParameter_table_SOCthresh).get_attribute("value")
         dr_mode = self.chrome.find_element_by_xpath(xpath.baseParameter_table_dr_mode).get_attribute("value")
         price = self.chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_price).get_attribute("value")
         weather = self.chrome.find_element_by_xpath(xpath.baseParameter_table_simulate_weather).get_attribute("value")
-        comfortLevel_flag = self.chrome.find_element_by_xpath(xpath.baseParameter_table_comfortLevel_flag).get_attribute("value")
         # 2021/09/07 don't consider history weather
         # example: "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\9.comfortLevel\\summer_price\\sunny\\{SOCinit0.3} or {SOCinit0.3_dr1}\\"
         if int(dr_mode) != 0:
@@ -175,9 +178,10 @@ class WEBDRIVER:
             SOC_threshold = "SOCinit" + SOC_threshold + "\\"
         
         folder_name = ""
-        folder_name += "EM_" if int(self.EM_flag) != 0 else "noEM_"
-        folder_name += "EV_" if int(self.EV_flag) != 0 else "noEV_"
-        folder_name += "coml" if int(comfortLevel_flag) != 0 else "noComl"
+        folder_name += "EM_" if self.EM_flag else "noEM_"
+        folder_name += "EV_" if self.EV_flag else "noEV_"
+        folder_name += "coml_" if self.comfortLevel_flag else "noComl_"
+        folder_name += "HEMSuc" if self.HEMS_ucLoad_flag else "noHEMSuc"
         
         self.screenshot_path = self.screenshot_path + price + "\\" + folder_name + "\\" + weather + "\\" + SOC_threshold
         
@@ -205,8 +209,8 @@ class WEBDRIVER:
         self.chrome.find_element_by_xpath(xpath.range_bar_go).click()
 
         chart_sequence = {
-            'file_name' : ["cost.jpg", "status.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg"],
-            'file_xpath' : [xpath.LHEMS_table, xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15]
+            'file_name' : ["cost.jpg", "status.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg", "16.jpg", "17.jpg", "18.jpg", "19.jpg", "20.jpg", "21.jpg", "22.jpg", "23.jpg"],
+            'file_xpath' : [xpath.LHEMS_table, xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15, xpath.LHEMS_load16, xpath.LHEMS_load17, xpath.LHEMS_load18, xpath.LHEMS_load19, xpath.LHEMS_load20, xpath.LHEMS_load21, xpath.LHEMS_load22, xpath.LHEMS_load23]
         }
         chart_sequence['file_xpath'].reverse()
         chart_sequence['file_name'].reverse()
@@ -223,8 +227,11 @@ class WEBDRIVER:
                     pass
                 for file_xpath, file_name in zip(chart_sequence['file_xpath'], chart_sequence['file_name']):
                     element = self.chrome.find_element_by_xpath(file_xpath)
-                    self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
-                    element.screenshot(self.screenshot_path + id + file_name)
+                    if "none" in element.get_attribute("style"):
+                        pass
+                    else:
+                        self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
+                        element.screenshot(self.screenshot_path + id + file_name)
                 # go to page bottom to click next household button
                 self.chrome.execute_script("document.documentElement.scrollTop=10000")
                 self.chrome.find_element_by_xpath(xpath.LHEMS_nextHousehold_btn).click()
@@ -246,14 +253,14 @@ if __name__ == "__main__":
     ## screenshot_file: name of the file                         ##
     ## choose_DHEMS_DB: 'DHEMS group' Process                    ##
     ###############################################################
-    webpage = WEBDRIVER(url.DHEMS_web_baseParameter, savingFolder="12.EMEV\\both_discharging\\grid500_ess150rate0.7\\")
+    webpage = WEBDRIVER(url.DHEMS_web_baseParameter, savingFolder="13.EMEV_final\\")
     webpage.screenshot_file("LHEMS.jpg")
     webpage.screenshot_file("GHEMS_Price.jpg")
     webpage.screenshot_file("GHEMS_SOC.jpg")
     webpage.screenshot_file("GHEMS_loadModel.jpg")
-    if bool(int(webpage.EM_flag)):
+    if webpage.EM_flag:
         webpage.screenshot_file("GHEMS_EMchargingSOC.jpg")
-    if bool(int(webpage.EV_flag)):
+    if webpage.EV_flag:
         webpage.screenshot_file("GHEMS_EVchargingSOC.jpg")
     webpage.screenshot_file("GHEMS_table.jpg")
     webpage.screenshot_everyHousehold_eachLoad_file()
@@ -270,14 +277,17 @@ if __name__ == "__main__":
     db.exportTable(xpath.text_LHEMS_flag)
     db.exportTable(xpath.text_LHEMS_cost)
     db.exportTable(xpath.text_totalLoad_model)
+    # HEMS uc load
+    if webpage.HEMS_ucLoad_flag:
+        db.exportTable(xpath.text_LHEMS_ucLoad)
     # EM table
-    if bool(int(webpage.EM_flag)):
+    if webpage.EM_flag:
         db.exportTable(xpath.text_EM_Parameter)
         db.exportTable(xpath.text_EM_user_number)
         db.exportTable(xpath.text_EM_user_result)
         db.exportTable(xpath.text_EM_chargingOrDischarging_status)
     # EV table
-    if bool(int(webpage.EV_flag)):
+    if webpage.EV_flag:
         db.exportTable(xpath.text_EV_Parameter)
         db.exportTable(xpath.text_EV_user_number)
         db.exportTable(xpath.text_EV_user_result)

@@ -8,12 +8,9 @@
 #include <iostream>
 #include <numeric>
 #include "SQLFunction.hpp"
-#include "fifty_LHEMS_function.hpp"
+#include "LHEMS_function.hpp"
 #include "LHEMS_constraint.hpp"
 #include "scheduling_parameter.hpp"
-
-int coef_row_num = 0, bnd_row_num = 1;
-char column[400] = "A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,A23,A24,A25,A26,A27,A28,A29,A30,A31,A32,A33,A34,A35,A36,A37,A38,A39,A40,A41,A42,A43,A44,A45,A46,A47,A48,A49,A50,A51,A52,A53,A54,A55,A56,A57,A58,A59,A60,A61,A62,A63,A64,A65,A66,A67,A68,A69,A70,A71,A72,A73,A74,A75,A76,A77,A78,A79,A80,A81,A82,A83,A84,A85,A86,A87,A88,A89,A90,A91,A92,A93,A94,A95";
 
 void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, COMFORTLEVEL comlv, INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYINGLOAD varl, float *uncontrollable_load, int distributed_group_num)
 {
@@ -25,9 +22,9 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		// [0~3] = level, [][0~1] = start or end, [][][0~44] = 3 times * 15 appliances
 		for (int i = 0; i < comlv.comfortLevel; i++)
 		{
-			comfortLevel_startEnd.push_back(get_comfortLevel_timeInterval(bp.household_id, bp.app_count, comlv.total_timeInterval, i + 1));
+			comfortLevel_startEnd.push_back(get_comfortLevel_timeInterval(bp, comlv.total_timeInterval, i + 1));
 		}
-		comlv.weighting = calculate_comfortLevel_weighting(bp, comfortLevel_startEnd, comlv.comfortLevel, comlv.total_timeInterval);
+		calculate_comfortLevel_weighting(bp, comlv, comfortLevel_startEnd);
 	}
 
 	countUninterruptAndVaryingLoads_Flag(bp, uirl, varl);
@@ -47,18 +44,37 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	init_VaryingLoads_OperateTimeAndPower(bp, varl);
 	putValues_VaryingLoads_OperateTimeAndPower(bp, varl);
 
-	// float *weighting_array;
-	int *participate_array;
 	if (dr.mode != 0)
 	{
-		// weighting_array = household_alpha_upperBnds(bp, dr, distributed_group_num);
-		participate_array = household_participation(dr, bp.household_id, "LHEMS_demand_response_participation");
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT MAX(household%d) FROM `LHEMS_demand_response_CBL` WHERE `time_block` BETWEEN %d AND %d AND `comfort_level_flag` = %d", bp.household_id, dr.startTime, dr.endTime - 1, comlv.flag);
+		dr.household_CBL = turn_value_to_float(0);
+		dr.participate_array = household_participation(dr, bp.household_id, "LHEMS_demand_response_participation");
+		bp.Pgrid_max_array.assign(bp.remain_timeblock, bp.Pgrid_max);
+		if (bp.sample_time - dr.startTime >= 0)
+		{
+			for (int j = 0; j < dr.endTime - bp.sample_time; j++)
+			{
+				if (dr.participate_array[j + (bp.sample_time - dr.startTime)] != 0)
+				{
+					bp.Pgrid_max_array[j] = dr.household_CBL * dr.participate_array[j + (bp.sample_time - dr.startTime)];
+				}
+			}
+		}
+		else if (bp.sample_time - dr.startTime < 0)
+		{
+			for (int j = dr.startTime - bp.sample_time; j < dr.endTime - bp.sample_time; j++)
+			{
+				if (dr.participate_array[j - (dr.startTime - bp.sample_time)] != 0)
+				{
+					bp.Pgrid_max_array[j] = dr.household_CBL * dr.participate_array[j + (bp.sample_time - dr.startTime)];
+				}
+			}
+		}
 	}
 
 	// sum by 'row_num_maxAddition' in every constraint below
 	int rowTotal = 0;
 	if (irl.flag) { rowTotal += irl.number; }
-	if (dr.mode != 0) { rowTotal += bp.remain_timeblock; }
 	rowTotal += bp.remain_timeblock;
 	if (ess.flag) { rowTotal += bp.remain_timeblock * 4 + 1; }
 	if (uirl.flag)
@@ -116,11 +132,6 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		summation_interruptLoadRa_biggerThan_Qa(irl, bp, coefficient, mip, irl.number);
 	}
 
-	if (dr.mode != 0)
-	{
-		pgrid_smallerThan_Pavg(bp, dr, coefficient, mip, bp.remain_timeblock);
-	}
-
 	// (Balanced function) Pgrid j - Pess j = sum(Pa j) + Puc j
 	pgridMinusPess_equalTo_ploadPlusPuncontrollLoad(irl, uirl, varl, bp, ess, uncontrollable_load, coefficient, mip, bp.remain_timeblock);
 
@@ -156,7 +167,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 		varyingPSIajToN_biggerThan_varyingDeltaMultiplyByPowerModel(varl, bp, buff, irl.number + uirl.number, coefficient, mip, bp.remain_timeblock);
 	}
 
-	setting_LHEMS_objectiveFunction(irl, uirl, varl, bp, dr, comlv, bp.price, participate_array, mip);
+	setting_LHEMS_objectiveFunction(irl, uirl, varl, bp, dr, comlv, mip);
 
 	int *ia = new int[rowTotal * colTotal + 1];
 	int *ja = new int[rowTotal * colTotal + 1];
@@ -224,10 +235,26 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	{
 		if (z == 0.0)
 		{
-			display_coefAndBnds_rowNum();
-			printf("Error > sol is 0, No Solution, give up the solution\n");
-			printf("%.2f\n", glp_mip_col_val(mip, find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1));
-			return;
+			int count = 0;
+			for (int i = 0; i < irl.number; i++)
+			{
+				count += irl.reot[i];
+			}
+			for (int i = 0; i < uirl.number; i++)
+			{
+				count += uirl.reot[i];
+			}
+			for (int i = 0; i < varl.number; i++)
+			{
+				count += varl.reot[i];
+			}
+			if (count != 0)
+			{
+				display_coefAndBnds_rowNum();
+				printf("Error > sol is 0, No Solution, give up the solution\n");
+				printf("%.2f\n", glp_mip_col_val(mip, find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1));
+				return;
+			}
 		}
 	}
 
@@ -245,17 +272,17 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 				if ((i > irl.number + uirl.number) && (i <= bp.app_count)) //sometimes varying load will have weird, use power model instead of varying load
 				{
 					s[j] = glp_mip_col_val(mip, l);
-					if (s[j] == varl.power_tmp[0][0] || s[j] == varl.power_tmp[0][1] || s[j] == varl.power_tmp[0][2])
+					if (s[j] == varl.power_tmp[i - (irl.number + uirl.number + 1)][0] || s[j] == varl.power_tmp[i - (irl.number + uirl.number + 1)][1] || s[j] == varl.power_tmp[i - (irl.number + uirl.number + 1)][2])
 						s[j] = 1.0;
 				}
 				h = (h + bp.variable);
 				l = (l + bp.variable);
 			}
-			insert_status_into_MySQLTable("LHEMS_control_status", column, s, "equip_name", bp.variable_name[i - 1], "household_id", bp.household_id);
+			insert_status_into_MySQLTable("LHEMS_control_status", bp.str_sql_allTimeblock, s, "equip_name", bp.variable_name[i - 1], "household_id", bp.household_id);
 		}
 		else
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, bp.variable_name[i - 1].c_str(), bp.household_id);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, bp.variable_name[i - 1].c_str(), bp.household_id);
 			fetch_row_value();
 			for (int k = 0; k < bp.sample_time; k++)
 			{
@@ -268,7 +295,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 				if ((i > irl.number + uirl.number) && (i <= bp.app_count)) //sometimes varying load will have weird, use power model instead of varying load
 				{
 					s[j + bp.sample_time] = glp_mip_col_val(mip, l);
-					if (s[j + bp.sample_time] == varl.power_tmp[0][0] || s[j + bp.sample_time] == varl.power_tmp[0][1] || s[j + bp.sample_time] == varl.power_tmp[0][2])
+					if (s[j + bp.sample_time] == varl.power_tmp[i - (irl.number + uirl.number + 1)][0] || s[j + bp.sample_time] == varl.power_tmp[i - (irl.number + uirl.number + 1)][1] || s[j + bp.sample_time] == varl.power_tmp[i - (irl.number + uirl.number + 1)][2])
 						s[j + bp.sample_time] = 1.0;
 				}
 				h = (h + bp.variable);
@@ -280,7 +307,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 			{
 				s[j] = 0;
 			}
-			insert_status_into_MySQLTable("LHEMS_real_status", column, s, "equip_name", bp.variable_name[i - 1], "household_id", bp.household_id);
+			insert_status_into_MySQLTable("LHEMS_real_status", bp.str_sql_allTimeblock, s, "equip_name", bp.variable_name[i - 1], "household_id", bp.household_id);
 		}
 	}
 
@@ -323,7 +350,10 @@ void setting_LHEMS_columnBoundary(INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl, VARYI
 		}
 		if (bp.Pgrid_flag)
 		{
-			glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + i * bp.variable), GLP_DB, 0.0, bp.Pgrid_max);
+			if (dr.mode == 0)
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + i * bp.variable), GLP_DB, 0.0, bp.Pgrid_max);
+			else
+				glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + i * bp.variable), GLP_DB, 0.0, bp.Pgrid_max_array[i]);
 			glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + i * bp.variable), GLP_CV);
 		}
 		if (ess.flag)
@@ -439,7 +469,7 @@ void countUninterruptAndVaryingLoads_Flag(BASEPARAMETER bp, UNINTERRUPTLOAD &uir
 		for (int i = 0; i < uirl.number; i++)
 		{
 			flag = 0;
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (uirl.str_uninterDelta + to_string(i + 1)).c_str(), bp.household_id);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, (uirl.str_uninterDelta + to_string(i + 1)).c_str(), bp.household_id);
 			fetch_row_value();
 			for (int j = 0; j < bp.sample_time; j++)
 			{
@@ -450,7 +480,7 @@ void countUninterruptAndVaryingLoads_Flag(BASEPARAMETER bp, UNINTERRUPTLOAD &uir
 		for (int i = 0; i < varl.number; i++)
 		{
 			flag = 0;
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (varl.str_varyingDelta + to_string(i + 1)).c_str(), bp.household_id);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, (varl.str_varyingDelta + to_string(i + 1)).c_str(), bp.household_id);
 			fetch_row_value();
 			for (int j = 0; j < bp.sample_time; j++)
 			{
@@ -475,7 +505,7 @@ void countLoads_AlreadyOpenedTimes(BASEPARAMETER bp, int *buff)
 		{
 			coun = 0;
 
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, bp.variable_name[i].c_str(), bp.household_id);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, bp.variable_name[i].c_str(), bp.household_id);
 			fetch_row_value();
 			for (int j = 0; j < bp.sample_time; j++)
 			{
@@ -649,7 +679,7 @@ void update_loadModel(BASEPARAMETER bp, INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl,
 
 	for (int i = 0; i < irl.number; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (irl.str_interrupt + to_string(i + 1)).c_str(), bp.household_id);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, (irl.str_interrupt + to_string(i + 1)).c_str(), bp.household_id);
 		fetch_row_value();
 		for (int j = bp.sample_time; j < bp.time_block; j++)
 		{
@@ -658,7 +688,7 @@ void update_loadModel(BASEPARAMETER bp, INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl,
 	}
 	for (int i = 0; i < uirl.number; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (uirl.str_uninterrupt + to_string(i + 1)).c_str(), bp.household_id);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, (uirl.str_uninterrupt + to_string(i + 1)).c_str(), bp.household_id);
 		fetch_row_value();
 		for (int j = bp.sample_time; j < bp.time_block; j++)
 		{
@@ -667,7 +697,7 @@ void update_loadModel(BASEPARAMETER bp, INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl,
 	}
 	for (int i = 0; i < varl.number; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", column, (varl.str_varyingPsi + to_string(i + 1)).c_str(), bp.household_id);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT %s FROM LHEMS_control_status WHERE equip_name = '%s' and household_id = %d", bp.str_sql_allTimeblock, (varl.str_varyingPsi + to_string(i + 1)).c_str(), bp.household_id);
 		fetch_row_value();
 		for (int j = bp.sample_time; j < bp.time_block; j++)
 		{
@@ -700,181 +730,103 @@ void update_loadModel(BASEPARAMETER bp, INTERRUPTLOAD irl, UNINTERRUPTLOAD uirl,
 	}
 }
 
-float *rand_operationTime(BASEPARAMETER bp, int distributed_group_num)
+void HEMS_UCload_rand_operationTime(BASEPARAMETER bp, UNCONTROLLABLELOAD &ucl, int distributed_group_num)
 {
 	functionPrint(__func__);
 	float *result = new float[bp.time_block];
 	for (int i = 0; i < bp.time_block; i++)
 		result[i] = 0.0;
 
-	if (value_receive("BaseParameter", "parameter_name", "uncontrollable_load_flag") == 0)
+	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = %d", ucl.hems_group_id);
+	ucl.number = turn_value_to_int(0);
+
+	if (!ucl.flag)
 	{
 		update_distributed_group("uncontrollable_load_flag", 0, "group_id", distributed_group_num);
-		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `household%d` = '0.0' ", bp.household_id);
-		sent_query();
-		if (bp.distributed_household_id == bp.distributed_householdTotal)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `totalLoad` = '0.0' ");
-			sent_query();
-		}
-		return result;
-	}
-
-	srand(time(NULL));
-	if (bp.sample_time == 0)
-	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT COUNT(*) FROM `load_list` WHERE group_id = 4");
-		int uncontrollableLoad_num = turn_value_to_int(0);
-		for (int i = 0; i < uncontrollableLoad_num; i++)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT uncontrollable_loads, power1 FROM load_list WHERE group_id = 4 LIMIT %d, %d", i, i + 1);
-			fetch_row_value();
-			char *seo_time = mysql_row[0];
-			float power = atof(mysql_row[1]);
-			char *tmp;
-			tmp = strtok(seo_time, "~");
-			vector<int> time_seperate;
-			while (tmp != NULL)
-			{
-				time_seperate.push_back(atoi(tmp));
-				tmp = strtok(NULL, "~");
-			}
-
-			int operate_count = 0;
-			for (int i = time_seperate[0]; i < time_seperate[1] - 1; i++)
-			{
-				if (operate_count != time_seperate[2])
-				{
-					int operate_tmp = rand() % 2;
-					float operate_power = operate_tmp * power;
-					operate_count += operate_tmp;
-					result[i] += operate_power;
-				}
-			}
-			time_seperate.clear();
-		}
-		for (int i = 0; i < bp.time_block; i++)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `household%d` = '%.1f' WHERE `time_block` = %d;", bp.household_id, result[i], i);
-			sent_query();
-		}
-		if (bp.distributed_household_id == bp.distributed_householdTotal)
-		{
-			update_distributed_group("uncontrollable_load_flag", 1, "group_id", distributed_group_num);
-			if (get_distributed_group("COUNT(group_id) = SUM(uncontrollable_load_flag)"))
-			{
-				for (int j = 0; j < bp.time_block; j++)
-				{
-					float power_total = 0.0;
-					for (int i = 1; i <= bp.householdTotal; i++)
-					{
-						snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d FROM `LHEMS_uncontrollable_load` WHERE time_block = %d", i, j);
-						power_total += turn_value_to_float(0);
-					}
-					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `totalLoad` = '%.1f' WHERE `time_block` = %d;", power_total, j);
-					sent_query();
-				}
-			}
-		}
+		ucl.power_array = result;
 	}
 	else
-	{
+	{	
+		if (ucl.generate_flag)
+		{
+			srand(time(NULL));
+			if (bp.sample_time == 0)
+			{
+				for (int i = 0; i < ucl.number; i++)
+				{
+					snprintf(sql_buffer, sizeof(sql_buffer), "SELECT uncontrollable_loads, power1 FROM load_list WHERE group_id = 4 LIMIT %d, %d", i, i + 1);
+					fetch_row_value();
+					char *seo_time = mysql_row[0];
+					float power = atof(mysql_row[1]);
+					char *tmp;
+					tmp = strtok(seo_time, "~");
+					vector<int> time_seperate;
+					while (tmp != NULL)
+					{
+						time_seperate.push_back(atoi(tmp));
+						tmp = strtok(NULL, "~");
+					}
+
+					int operate_count = 0;
+					for (int i = time_seperate[0]; i < time_seperate[1] - 1; i++)
+					{
+						if (operate_count != time_seperate[2])
+						{
+							int operate_tmp = rand() % 2;
+							float operate_power = operate_tmp * power;
+							operate_count += operate_tmp;
+							result[i] += operate_power;
+						}
+					}
+					time_seperate.clear();
+				}
+				for (int i = 0; i < bp.time_block; i++)
+				{
+					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `household%d` = '%.1f' WHERE `time_block` = %d;", bp.household_id, result[i], i);
+					sent_query();
+				}
+				if (bp.distributed_household_id == bp.distributed_householdTotal)
+				{
+					update_distributed_group("uncontrollable_load_flag", 1, "group_id", distributed_group_num);
+					if (get_distributed_group("COUNT(group_id) = SUM(uncontrollable_load_flag)"))
+					{
+						for (int j = 0; j < bp.time_block; j++)
+						{
+							float power_total = 0.0;
+							for (int i = 1; i <= bp.householdTotal; i++)
+							{
+								snprintf(sql_buffer, sizeof(sql_buffer), "SELECT household%d FROM `LHEMS_uncontrollable_load` WHERE time_block = %d", i, j);
+								power_total += turn_value_to_float(0);
+							}
+							snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_uncontrollable_load` SET `totalLoad` = '%.1f' WHERE `time_block` = %d;", power_total, j);
+							sent_query();
+						}
+					}
+				}
+			}
+		}
 		for (int i = 0; i < bp.time_block; i++)
 		{
 			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT `household%d` FROM `LHEMS_uncontrollable_load` WHERE `time_block` = %d;", bp.household_id, i);
 			result[i] = turn_value_to_float(0);
 		}
+		ucl.power_array = result;
 	}
-
-	return result;
 }
 
-float *household_alpha_upperBnds(BASEPARAMETER bp, DEMANDRESPONSE dr, int distributed_group_num)
+float *household_participation(DEMANDRESPONSE dr, int household_id, string table)
 {
 	functionPrint(__func__);
 
 	float *result = new float[dr.endTime - dr.startTime];
-	string sql_table = "LHEMS_history_control_status";
-
-	if (bp.sample_time == 0)
-	{
-		update_distributed_group("demand_response_alpha_flag", 0, "group_id", distributed_group_num);
-		snprintf(sql_buffer, sizeof(sql_buffer), "DELETE FROM `demand_response_alpha` WHERE household_id = %d", bp.household_id);
-		sent_query();
-		if (bp.distributed_household_id == bp.distributed_householdTotal)
-			update_distributed_group("demand_response_alpha_flag", 1, "group_id", distributed_group_num);
-	}
 
 	// =-=-=-=-=-=-=- calculate weighting then turn to alpha -=-=-=-=-=-=-= //
 	for (int i = dr.startTime; i < dr.endTime; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `%s` WHERE `equip_name` = '%s'", i, sql_table.c_str(), bp.str_Pgrid.c_str());
-		float total_load = turn_value_to_float(0);
-		// total load = 0 while all households' Pgrid = 0, when result[] = 0/0 will be nan
-		if (total_load != 0)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `%s` WHERE `equip_name` = '%s' && `household_id` = %d", i, sql_table.c_str(), bp.str_Pgrid.c_str(), bp.household_id);
-			float each_household_load = turn_value_to_float(0);
-			result[i - dr.startTime] = each_household_load / total_load;
-		}
-		else
-		{
-			result[i - dr.startTime] = 0.0;
-		}
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM `%s` WHERE `household_id` = %d", i, table.c_str(), household_id);
+		result[i - dr.startTime] = ceil(turn_value_to_float(0));
 
-		printf("\thousehold %d timeblock %d weighting %.3f\n", bp.household_id, i, result[i - dr.startTime]);
-		result[i - dr.startTime] = (bp.Pgrid_max - result[i - dr.startTime] * dr.minDecrease_power) / bp.Pgrid_max;
-	}
-	if (bp.sample_time != 0)
-	{
-		if (bp.sample_time - dr.endTime < 0)
-		{
-			if (bp.sample_time <= dr.startTime)
-			{
-				for (int i = 0; i < dr.endTime - dr.startTime; i++)
-				{
-					printf("\tUpdate household %d timeblock %d alpha %.3f\n", bp.household_id, i + dr.startTime, result[i]);
-					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `demand_response_alpha` SET A%d = %.3f WHERE household_id = %d AND dr_timeblock = %d", bp.sample_time, result[i], bp.household_id, i + dr.startTime);
-					sent_query();
-				}
-			}
-			else if (bp.sample_time > dr.startTime)
-			{
-				for (int i = 0; i < dr.endTime - bp.sample_time; i++)
-				{
-					snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `demand_response_alpha` SET A%d = %.3f WHERE household_id = %d AND dr_timeblock = %d", bp.sample_time, result[i + bp.sample_time - dr.startTime], bp.household_id, i + bp.sample_time);
-					sent_query();
-					printf("\tUpdate household %d timeblock %d alpha %.3f\n", bp.household_id, i + bp.sample_time, result[i + bp.sample_time - dr.startTime]);
-				}
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < dr.endTime - dr.startTime; i++)
-		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO demand_response_alpha (A0, dr_timeblock, household_id) VALUES('%.3f', %d, '%d');", result[i], i + dr.startTime, bp.household_id);
-			sent_query();
-			printf("\tInsert household %d timeblock %d alpha %.3f\n", bp.household_id, i + dr.startTime, result[i]);
-		}
-	}
-
-	return result;
-}
-
-int *household_participation(DEMANDRESPONSE dr, int household_id, string table)
-{
-	functionPrint(__func__);
-
-	int *result = new int[dr.endTime - dr.startTime];
-
-	// =-=-=-=-=-=-=- calculate weighting then turn to alpha -=-=-=-=-=-=-= //
-	for (int i = dr.startTime; i < dr.endTime; i++)
-	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT SUM(A%d) FROM `%s` WHERE `household_id` = %d", i, table.c_str(), household_id);
-		result[i - dr.startTime] = turn_value_to_int(0);
-
-		printf("\thousehold %d timeblock %d status %d\n", household_id, i, result[i - dr.startTime]);
+		printf("\thousehold %d timeblock %d status %.2f\n", household_id, i, result[i - dr.startTime]);
 	}
 
 	return result;
@@ -927,18 +879,19 @@ void update_distributed_group(string target, int target_value, string condition_
 	sent_query();
 }
 
-vector<vector<int>> get_comfortLevel_timeInterval(int household_id, int app_count, int total_timeInterval, int comfort_level)
+vector<vector<int>> get_comfortLevel_timeInterval(BASEPARAMETER bp, int total_timeInterval, int comfort_level)
 {
 	functionPrint(__func__);
 
+	const string str_joinTwoLoadListTable = "`LHEMS_comfort_level` INNER JOIN `load_list_select` ON LHEMS_comfort_level.appliances_num=load_list_select.number";
 	vector<vector<int>> comfortLevel_startEnd;
 	comfortLevel_startEnd.push_back(vector<int>());
 	comfortLevel_startEnd.push_back(vector<int>());
-	for (int j = 0; j < app_count; j++)
+	for (int j = 0; j < bp.app_count; j++)
 	{
 		for (int i = 0; i < total_timeInterval; i++)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT level%d_startEndTime%d FROM LHEMS_comfort_level where household_id = %d AND appliances_num = %d", comfort_level, i + 1, household_id, j + 1);
+			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT LHEMS_comfort_level.level%d_startEndTime%d FROM %s WHERE household_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", comfort_level, i + 1, str_joinTwoLoadListTable.c_str(), bp.household_id, bp.household_id, j);
 			char *timeString = turn_value_to_string(0);
 			if (atoi(timeString) != -999)
 			{
@@ -962,62 +915,60 @@ vector<vector<int>> get_comfortLevel_timeInterval(int household_id, int app_coun
 	return comfortLevel_startEnd;
 }
 
-float **calculate_comfortLevel_weighting(BASEPARAMETER bp, vector<vector<vector<int>>> comfortLevel_startEnd, int comfortLevel, int total_timeInterval)
+void calculate_comfortLevel_weighting(BASEPARAMETER bp, COMFORTLEVEL &comlv, vector<vector<vector<int>>> comfortLevel_startEnd)
 {
 	functionPrint(__func__);
 
 	// float weighting[app_count][time_block] = {0.0};
-	float **weighting = new float *[bp.app_count];
+	comlv.weighting = new float *[bp.app_count];
 	for (int i = 0; i < bp.app_count; i++)
-		weighting[i] = new float[bp.time_block];
+		comlv.weighting[i] = new float[bp.time_block];
 
 	for (int i = 0; i < bp.app_count; i++)
 	{
 		for (int j = 0; j < bp.time_block; j++)
 		{
-			weighting[i][j]	= 0.0;
+			comlv.weighting[i][j] = 0.0;
 		}
 	}
-	
 		
 	for (int i = 0; i < bp.app_count; i++)
 	{
 		for (int j = 0; j < bp.remain_timeblock; j++)
 		{
-			for (int k = 0; k < total_timeInterval; k++)
+			for (int k = 0; k < comlv.total_timeInterval; k++)
 			{
-				int level1_start_time = comfortLevel_startEnd[0][0][i * total_timeInterval + k];
-				int level2_start_time = comfortLevel_startEnd[1][0][i * total_timeInterval + k];
-				int level3_start_time = comfortLevel_startEnd[2][0][i * total_timeInterval + k];
-				int level4_start_time = comfortLevel_startEnd[3][0][i * total_timeInterval + k];
-				int level1_end_time = comfortLevel_startEnd[0][1][i * total_timeInterval + k];
-				int level2_end_time = comfortLevel_startEnd[1][1][i * total_timeInterval + k];
-				int level3_end_time = comfortLevel_startEnd[2][1][i * total_timeInterval + k];
-				int level4_end_time = comfortLevel_startEnd[3][1][i * total_timeInterval + k];
+				int level1_start_time = comfortLevel_startEnd[0][0][i * comlv.total_timeInterval + k];
+				int level2_start_time = comfortLevel_startEnd[1][0][i * comlv.total_timeInterval + k];
+				int level3_start_time = comfortLevel_startEnd[2][0][i * comlv.total_timeInterval + k];
+				int level4_start_time = comfortLevel_startEnd[3][0][i * comlv.total_timeInterval + k];
+				int level1_end_time = comfortLevel_startEnd[0][1][i * comlv.total_timeInterval + k];
+				int level2_end_time = comfortLevel_startEnd[1][1][i * comlv.total_timeInterval + k];
+				int level3_end_time = comfortLevel_startEnd[2][1][i * comlv.total_timeInterval + k];
+				int level4_end_time = comfortLevel_startEnd[3][1][i * comlv.total_timeInterval + k];
 				if (level1_start_time != level1_end_time && (j + bp.sample_time) >= level1_start_time && (j + bp.sample_time) < level1_end_time)
 				{
-					weighting[i][j + bp.sample_time] += (j + bp.sample_time - level1_start_time) / (level1_end_time - level1_start_time);
+					comlv.weighting[i][j + bp.sample_time] += (j + bp.sample_time - level1_start_time) / (level1_end_time - level1_start_time);
 				}
 				else if (level2_start_time != level2_end_time && (j + bp.sample_time) >= level2_start_time && (j + bp.sample_time) < level2_end_time)
 				{
-					weighting[i][j + bp.sample_time] += (j + bp.sample_time - level2_start_time) / (level2_end_time - level2_start_time) + 1;
+					comlv.weighting[i][j + bp.sample_time] += (j + bp.sample_time - level2_start_time) / (level2_end_time - level2_start_time) + 1;
 				}
 				else if (level3_start_time != level3_end_time && (j + bp.sample_time) >= level3_start_time && (j + bp.sample_time) < level3_end_time)
 				{
-					weighting[i][j + bp.sample_time] += (j + bp.sample_time - level3_start_time) / (level3_end_time - level3_start_time) + 2;
+					comlv.weighting[i][j + bp.sample_time] += (j + bp.sample_time - level3_start_time) / (level3_end_time - level3_start_time) + 2;
 				}
 				else if (level4_start_time != level4_end_time && (j + bp.sample_time) >= level4_start_time && (j + bp.sample_time) < level4_end_time)
 				{
-					weighting[i][j + bp.sample_time] += (j + bp.sample_time - level4_start_time) / (level4_end_time - level4_start_time) + 3;
+					comlv.weighting[i][j + bp.sample_time] += (j + bp.sample_time - level4_start_time) / (level4_end_time - level4_start_time) + 3;
 				}
 				else
 				{
-					weighting[i][j + bp.sample_time] += 10;
+					comlv.weighting[i][j + bp.sample_time] += 10;
 				}
 			}
 		}
 	}
-	return weighting;
 }
 
 void calculateCostInfo(BASEPARAMETER bp)
@@ -1030,16 +981,121 @@ void calculateCostInfo(BASEPARAMETER bp)
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM `LHEMS_control_status` WHERE equip_name = '%s' AND household_id = '%d'", i, bp.str_Pgrid.c_str(), bp.household_id);
 		gridPrice_tmp.push_back(turn_value_to_float(0) * bp.price[i] * bp.delta_T);
 	}
-	float gridPrice_total = accumulate(gridPrice_tmp.begin(), gridPrice_tmp.end(), 0);
+	float gridPrice_total = accumulate(gridPrice_tmp.begin(), gridPrice_tmp.end(), 0.0);
 
 	if (bp.sample_time == 0)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `LHEMS_cost` (household_id, origin_grid_price, %s) VALUES('%d','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", column, bp.household_id, gridPrice_total, gridPrice_tmp[0], gridPrice_tmp[1], gridPrice_tmp[2], gridPrice_tmp[3], gridPrice_tmp[4], gridPrice_tmp[5], gridPrice_tmp[6], gridPrice_tmp[7], gridPrice_tmp[8], gridPrice_tmp[9], gridPrice_tmp[10], gridPrice_tmp[11], gridPrice_tmp[12], gridPrice_tmp[13], gridPrice_tmp[14], gridPrice_tmp[15], gridPrice_tmp[16], gridPrice_tmp[17], gridPrice_tmp[18], gridPrice_tmp[19], gridPrice_tmp[20], gridPrice_tmp[21], gridPrice_tmp[22], gridPrice_tmp[23], gridPrice_tmp[24], gridPrice_tmp[25], gridPrice_tmp[26], gridPrice_tmp[27], gridPrice_tmp[28], gridPrice_tmp[29], gridPrice_tmp[30], gridPrice_tmp[31], gridPrice_tmp[32], gridPrice_tmp[33], gridPrice_tmp[34], gridPrice_tmp[35], gridPrice_tmp[36], gridPrice_tmp[37], gridPrice_tmp[38], gridPrice_tmp[39], gridPrice_tmp[40], gridPrice_tmp[41], gridPrice_tmp[42], gridPrice_tmp[43], gridPrice_tmp[44], gridPrice_tmp[45], gridPrice_tmp[46], gridPrice_tmp[47], gridPrice_tmp[48], gridPrice_tmp[49], gridPrice_tmp[50], gridPrice_tmp[51], gridPrice_tmp[52], gridPrice_tmp[53], gridPrice_tmp[54], gridPrice_tmp[55], gridPrice_tmp[56], gridPrice_tmp[57], gridPrice_tmp[58], gridPrice_tmp[59], gridPrice_tmp[60], gridPrice_tmp[61], gridPrice_tmp[62], gridPrice_tmp[63], gridPrice_tmp[64], gridPrice_tmp[65], gridPrice_tmp[66], gridPrice_tmp[67], gridPrice_tmp[68], gridPrice_tmp[69], gridPrice_tmp[70], gridPrice_tmp[71], gridPrice_tmp[72], gridPrice_tmp[73], gridPrice_tmp[74], gridPrice_tmp[75], gridPrice_tmp[76], gridPrice_tmp[77], gridPrice_tmp[78], gridPrice_tmp[79], gridPrice_tmp[80], gridPrice_tmp[81], gridPrice_tmp[82], gridPrice_tmp[83], gridPrice_tmp[84], gridPrice_tmp[85], gridPrice_tmp[86], gridPrice_tmp[87], gridPrice_tmp[88], gridPrice_tmp[89], gridPrice_tmp[90], gridPrice_tmp[91], gridPrice_tmp[92], gridPrice_tmp[93], gridPrice_tmp[94], gridPrice_tmp[95]);
+		snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `LHEMS_cost` (household_id, origin_grid_price, %s) VALUES('%d','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f');", bp.str_sql_allTimeblock, bp.household_id, gridPrice_total, gridPrice_tmp[0], gridPrice_tmp[1], gridPrice_tmp[2], gridPrice_tmp[3], gridPrice_tmp[4], gridPrice_tmp[5], gridPrice_tmp[6], gridPrice_tmp[7], gridPrice_tmp[8], gridPrice_tmp[9], gridPrice_tmp[10], gridPrice_tmp[11], gridPrice_tmp[12], gridPrice_tmp[13], gridPrice_tmp[14], gridPrice_tmp[15], gridPrice_tmp[16], gridPrice_tmp[17], gridPrice_tmp[18], gridPrice_tmp[19], gridPrice_tmp[20], gridPrice_tmp[21], gridPrice_tmp[22], gridPrice_tmp[23], gridPrice_tmp[24], gridPrice_tmp[25], gridPrice_tmp[26], gridPrice_tmp[27], gridPrice_tmp[28], gridPrice_tmp[29], gridPrice_tmp[30], gridPrice_tmp[31], gridPrice_tmp[32], gridPrice_tmp[33], gridPrice_tmp[34], gridPrice_tmp[35], gridPrice_tmp[36], gridPrice_tmp[37], gridPrice_tmp[38], gridPrice_tmp[39], gridPrice_tmp[40], gridPrice_tmp[41], gridPrice_tmp[42], gridPrice_tmp[43], gridPrice_tmp[44], gridPrice_tmp[45], gridPrice_tmp[46], gridPrice_tmp[47], gridPrice_tmp[48], gridPrice_tmp[49], gridPrice_tmp[50], gridPrice_tmp[51], gridPrice_tmp[52], gridPrice_tmp[53], gridPrice_tmp[54], gridPrice_tmp[55], gridPrice_tmp[56], gridPrice_tmp[57], gridPrice_tmp[58], gridPrice_tmp[59], gridPrice_tmp[60], gridPrice_tmp[61], gridPrice_tmp[62], gridPrice_tmp[63], gridPrice_tmp[64], gridPrice_tmp[65], gridPrice_tmp[66], gridPrice_tmp[67], gridPrice_tmp[68], gridPrice_tmp[69], gridPrice_tmp[70], gridPrice_tmp[71], gridPrice_tmp[72], gridPrice_tmp[73], gridPrice_tmp[74], gridPrice_tmp[75], gridPrice_tmp[76], gridPrice_tmp[77], gridPrice_tmp[78], gridPrice_tmp[79], gridPrice_tmp[80], gridPrice_tmp[81], gridPrice_tmp[82], gridPrice_tmp[83], gridPrice_tmp[84], gridPrice_tmp[85], gridPrice_tmp[86], gridPrice_tmp[87], gridPrice_tmp[88], gridPrice_tmp[89], gridPrice_tmp[90], gridPrice_tmp[91], gridPrice_tmp[92], gridPrice_tmp[93], gridPrice_tmp[94], gridPrice_tmp[95]);
 		sent_query();
 	}
 	else
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `LHEMS_cost` set A0 = '%.3f', A1 = '%.3f', A2 = '%.3f', A3 = '%.3f', A4 = '%.3f', A5 = '%.3f', A6 = '%.3f', A7 = '%.3f', A8 = '%.3f', A9 = '%.3f', A10 = '%.3f', A11 = '%.3f', A12 = '%.3f', A13 = '%.3f', A14 = '%.3f', A15 = '%.3f', A16 = '%.3f', A17 = '%.3f', A18 = '%.3f', A19 = '%.3f', A20 = '%.3f', A21 = '%.3f', A22 = '%.3f', A23 = '%.3f', A24 = '%.3f', A25 = '%.3f', A26 = '%.3f', A27 = '%.3f', A28 = '%.3f', A29 = '%.3f', A30 = '%.3f', A31 = '%.3f', A32 = '%.3f', A33 = '%.3f', A34 = '%.3f', A35 = '%.3f', A36 = '%.3f', A37 = '%.3f', A38 = '%.3f', A39 = '%.3f', A40 = '%.3f', A41 = '%.3f', A42 = '%.3f', A43 = '%.3f', A44 = '%.3f', A45 = '%.3f', A46 = '%.3f', A47 = '%.3f', A48 = '%.3f', A49 = '%.3f', A50 = '%.3f', A51 = '%.3f', A52 = '%.3f', A53 = '%.3f', A54 = '%.3f', A55 = '%.3f', A56 = '%.3f', A57 = '%.3f', A58 = '%.3f', A59 = '%.3f', A60 = '%.3f', A61 = '%.3f', A62 = '%.3f', A63 = '%.3f', A64 = '%.3f', A65 = '%.3f', A66 = '%.3f', A67 = '%.3f', A68 = '%.3f', A69 = '%.3f', A70 = '%.3f', A71 = '%.3f', A72 = '%.3f', A73 = '%.3f', A74 = '%.3f', A75 = '%.3f', A76 = '%.3f', A77 = '%.3f', A78 = '%.3f', A79 = '%.3f', A80 = '%.3f', A81 = '%.3f', A82 = '%.3f', A83 = '%.3f', A84 = '%.3f', A85 = '%.3f', A86 = '%.3f', A87 = '%.3f', A88 = '%.3f', A89 = '%.3f', A90 = '%.3f', A91 = '%.3f', A92 = '%.3f', A93 = '%.3f', A94 = '%.3f', A95 = '%.3f', `origin_grid_price` = ''%.3f, `datetime` = CURRENT_TIMESTAMP WHERE household_id = '%d';", gridPrice_tmp[0], gridPrice_tmp[1], gridPrice_tmp[2], gridPrice_tmp[3], gridPrice_tmp[4], gridPrice_tmp[5], gridPrice_tmp[6], gridPrice_tmp[7], gridPrice_tmp[8], gridPrice_tmp[9], gridPrice_tmp[10], gridPrice_tmp[11], gridPrice_tmp[12], gridPrice_tmp[13], gridPrice_tmp[14], gridPrice_tmp[15], gridPrice_tmp[16], gridPrice_tmp[17], gridPrice_tmp[18], gridPrice_tmp[19], gridPrice_tmp[20], gridPrice_tmp[21], gridPrice_tmp[22], gridPrice_tmp[23], gridPrice_tmp[24], gridPrice_tmp[25], gridPrice_tmp[26], gridPrice_tmp[27], gridPrice_tmp[28], gridPrice_tmp[29], gridPrice_tmp[30], gridPrice_tmp[31], gridPrice_tmp[32], gridPrice_tmp[33], gridPrice_tmp[34], gridPrice_tmp[35], gridPrice_tmp[36], gridPrice_tmp[37], gridPrice_tmp[38], gridPrice_tmp[39], gridPrice_tmp[40], gridPrice_tmp[41], gridPrice_tmp[42], gridPrice_tmp[43], gridPrice_tmp[44], gridPrice_tmp[45], gridPrice_tmp[46], gridPrice_tmp[47], gridPrice_tmp[48], gridPrice_tmp[49], gridPrice_tmp[50], gridPrice_tmp[51], gridPrice_tmp[52], gridPrice_tmp[53], gridPrice_tmp[54], gridPrice_tmp[55], gridPrice_tmp[56], gridPrice_tmp[57], gridPrice_tmp[58], gridPrice_tmp[59], gridPrice_tmp[60], gridPrice_tmp[61], gridPrice_tmp[62], gridPrice_tmp[63], gridPrice_tmp[64], gridPrice_tmp[65], gridPrice_tmp[66], gridPrice_tmp[67], gridPrice_tmp[68], gridPrice_tmp[69], gridPrice_tmp[70], gridPrice_tmp[71], gridPrice_tmp[72], gridPrice_tmp[73], gridPrice_tmp[74], gridPrice_tmp[75], gridPrice_tmp[76], gridPrice_tmp[77], gridPrice_tmp[78], gridPrice_tmp[79], gridPrice_tmp[80], gridPrice_tmp[81], gridPrice_tmp[82], gridPrice_tmp[83], gridPrice_tmp[84], gridPrice_tmp[85], gridPrice_tmp[86], gridPrice_tmp[87], gridPrice_tmp[88], gridPrice_tmp[89], gridPrice_tmp[90], gridPrice_tmp[91], gridPrice_tmp[92], gridPrice_tmp[93], gridPrice_tmp[94], gridPrice_tmp[95], gridPrice_total, bp.household_id);
 		sent_query();
+	}
+}
+
+void getLoads_startEndOperationTime_and_power(INTERRUPTLOAD &irl, BASEPARAMETER bp)
+{
+	const string str_joinTwoLoadListTable = "`load_list` INNER JOIN load_list_select ON load_list.number=load_list_select.number";
+	char *s_time = new char[3];
+	char *token = strtok(s_time, "-");
+	vector<int> time_tmp;
+	irl.start = new int[irl.number];
+	irl.end = new int[irl.number];
+	irl.ot = new int[irl.number];
+	irl.reot = new int[irl.number];
+	irl.power = new float[irl.number];
+
+	for (int i = 0; i < irl.number; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT load_list.household%d_startEndOperationTime FROM %s WHERE load_list_select.group_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", bp.household_id, str_joinTwoLoadListTable.c_str(), irl.group_id, bp.household_id, i);
+		char *seo_time = turn_value_to_string(0);
+		token = strtok(seo_time, "~");
+		while (token != NULL)
+		{
+			time_tmp.push_back(atoi(token));
+			token = strtok(NULL, "~");
+		}
+		irl.start[i] = time_tmp[0];
+		irl.end[i] = time_tmp[1] - 1;
+		irl.ot[i] = time_tmp[2];
+		irl.reot[i] = 0;
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT load_list.power1 FROM %s WHERE load_list_select.group_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", str_joinTwoLoadListTable.c_str(), irl.group_id, bp.household_id, i);
+		irl.power[i] = turn_value_to_float(0);
+		time_tmp.clear();
+	}
+}
+
+void getLoads_startEndOperationTime_and_power(UNINTERRUPTLOAD &uirl, BASEPARAMETER bp)
+{
+	const string str_joinTwoLoadListTable = "`load_list` INNER JOIN load_list_select ON load_list.number=load_list_select.number";
+	char *s_time = new char[3];
+	char *token = strtok(s_time, "-");
+	vector<int> time_tmp;
+	uirl.start = new int[uirl.number];
+	uirl.end = new int[uirl.number];
+	uirl.ot = new int[uirl.number];
+	uirl.reot = new int[uirl.number];
+	uirl.power = new float[uirl.number];
+	uirl.continuous_flag = new bool[uirl.number];
+
+	for (int i = 0; i < uirl.number; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT load_list.household%d_startEndOperationTime FROM %s WHERE load_list_select.group_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", bp.household_id, str_joinTwoLoadListTable.c_str(), uirl.group_id, bp.household_id, i);
+		char *seo_time = turn_value_to_string(0);
+		token = strtok(seo_time, "~");
+		while (token != NULL)
+		{
+			time_tmp.push_back(atoi(token));
+			token = strtok(NULL, "~");
+		}
+		uirl.start[i] = time_tmp[0];
+		uirl.end[i] = time_tmp[1] - 1;
+		uirl.ot[i] = time_tmp[2];
+		uirl.reot[i] = 0;
+		uirl.continuous_flag[i] = 0;
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT load_list.power1 FROM %s WHERE load_list_select.group_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", str_joinTwoLoadListTable.c_str(), uirl.group_id, bp.household_id, i);
+		uirl.power[i] = turn_value_to_float(0);
+		time_tmp.clear();
+	}
+}
+
+void getLoads_startEndOperationTime_and_power(VARYINGLOAD &varl, BASEPARAMETER bp)
+{
+	const string str_joinTwoLoadListTable = "`load_list` INNER JOIN load_list_select ON load_list.number=load_list_select.number";
+	char *s_time = new char[3];
+	char *token = strtok(s_time, "-");
+	vector<int> time_tmp;
+	varl.start = new int[varl.number];
+	varl.end = new int[varl.number];
+	varl.ot = new int[varl.number];
+	varl.reot = new int[varl.number];
+	varl.block_tmp = NEW2D(varl.number, 3, int);
+	varl.power_tmp = NEW2D(varl.number, 3, float);
+	varl.continuous_flag = new bool[varl.number];
+	
+	for (int i = 0; i < varl.number; i++)
+	{
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT load_list.household%d_startEndOperationTime FROM %s WHERE load_list_select.group_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", bp.household_id, str_joinTwoLoadListTable.c_str(), varl.group_id, bp.household_id, i);
+		char *seo_time = turn_value_to_string(0);
+		token = strtok(seo_time, "~");
+		while (token != NULL)
+		{
+			time_tmp.push_back(atoi(token));
+			token = strtok(NULL, "~");
+		}
+		varl.start[i] = time_tmp[0];
+		varl.end[i] = time_tmp[1] - 1;
+		varl.ot[i] = time_tmp[2];
+		varl.reot[i] = 0;
+		varl.continuous_flag[i] = 0;
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT load_list.power1, load_list.power2, load_list.power3, load_list.block1, load_list.block2, load_list.block3 FROM %s WHERE load_list_select.group_id = %d AND load_list_select.household%d = 1 LIMIT 1 OFFSET %d", str_joinTwoLoadListTable.c_str(), varl.group_id, bp.household_id, i);
+		fetch_row_value();
+		for (int z = 0; z < 3; z++)
+			varl.power_tmp[i][z] = turn_float(z);
+		for (int z = 0; z < 3; z++)
+			varl.block_tmp[i][z] = turn_int(z + 3);
+		time_tmp.clear();
 	}
 }

@@ -3,9 +3,8 @@
 
 extern float Hydro_Cons, Hydro_Price;
 
-void summation_forceToStopPublicLoadRa_biggerThan_QaMinusD(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void summation_interruptPublicLoadRa_biggerThan_Qa(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void summation_periodicPublicLoadRa_biggerThan_Qa(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void summation_stoppablePublicLoadRa_biggerThan_QaMinusD(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void summation_deferrablePublicLoadRa_biggerThan_Qa(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 void pgrid_smallerThan_muGridMultiplyByPgridMaxArray(BASEPARAMETER &bp, int dr_mode, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
@@ -56,5 +55,5 @@ void EV_Rdischarging_smallerThan_oneMinusMu(BASEPARAMETER &bp, ELECTRICVEHICLE e
 void EV_previousSOCPlusPchargeMinusPdischargeTransToSOC_biggerThan_SOCmin(BASEPARAMETER &bp, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void EV_previousSOCPlusSummationPchargeMinusPdischargeTransToSOC_biggerThan_SOCthreshold(BASEPARAMETER &bp, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
-void setting_GHEMS_ObjectiveFunction(BASEPARAMETER bp, DEMANDRESPONSE dr, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float* price, glp_prob *mip);
+void setting_GHEMS_ObjectiveFunction(BASEPARAMETER bp, DEMANDRESPONSE dr, ELECTRICMOTOR em, ELECTRICVEHICLE ev, glp_prob *mip);
 #endif

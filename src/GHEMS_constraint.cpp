@@ -13,26 +13,26 @@
 #include "GHEMS_constraint.hpp"
 
 // =-=-=-=-=-=-=- public load -=-=-=-=-=-=-= //
-void summation_forceToStopPublicLoadRa_biggerThan_QaMinusD(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void summation_stoppablePublicLoadRa_biggerThan_QaMinusD(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
-    for (int i = 0; i < pl.forceToStop_number; i++)
+    for (int i = 0; i < pl.stoppable_number; i++)
     {
-        if ((pl.forceToStop_end[i] - bp.sample_time) >= 0)
+        if ((pl.stoppable_end[i] - bp.sample_time) >= 0)
         {
-            if ((pl.forceToStop_start[i] - bp.sample_time) >= 0)
+            if ((pl.stoppable_start[i] - bp.sample_time) >= 0)
             {
-                for (int j = (pl.forceToStop_start[i] - bp.sample_time); j <= (pl.forceToStop_end[i] - bp.sample_time); j++)
+                for (int j = (pl.stoppable_start[i] - bp.sample_time); j <= (pl.stoppable_end[i] - bp.sample_time); j++)
                 {
-                    coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(i + 1))] = 1.0;
+                    coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_stoppable_publicLoad + to_string(i + 1))] = 1.0;
                 }
             }
-            else if ((pl.forceToStop_start[i] - bp.sample_time) < 0)
+            else if ((pl.stoppable_start[i] - bp.sample_time) < 0)
             {
-                for (int j = 0; j <= (pl.forceToStop_end[i] - bp.sample_time); j++)
+                for (int j = 0; j <= (pl.stoppable_end[i] - bp.sample_time); j++)
                 {
-                    coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(i + 1))] = 1.0;
+                    coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_stoppable_publicLoad + to_string(i + 1))] = 1.0;
                 }
             }
             if (dr.mode != 0)
@@ -43,83 +43,52 @@ void summation_forceToStopPublicLoadRa_biggerThan_QaMinusD(BASEPARAMETER &bp, DE
                     {
                         for (int j = (dr.startTime - bp.sample_time); j < (dr.endTime - bp.sample_time); j++)
                         {
-                            coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(i + 1))] = 0.0;
+                            coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_stoppable_publicLoad + to_string(i + 1))] = 0.0;
                         }
                     }
                     else if ((dr.startTime - bp.sample_time) < 0)
                     {
                         for (int j = 0; j < (dr.endTime - bp.sample_time); j++)
                         {
-                            coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(i + 1))] = 0.0;
+                            coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_stoppable_publicLoad + to_string(i + 1))] = 0.0;
                         }
                     }
                 }
             }
         }        
         glp_set_row_name(mip, bp.bnd_row_num + i, "");
-        glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_LO, ((float)pl.forceToStop_remain_operation_time[i]), 0.0);
+        glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_LO, ((float)pl.stoppable_remain_operation_time[i]), 0.0);
     }
     bp.coef_row_num += row_num_maxAddition;
     bp.bnd_row_num += row_num_maxAddition;
     saving_coefAndBnds_rowNum(bp.coef_row_num, row_num_maxAddition, bp.bnd_row_num, row_num_maxAddition);
 }
 
-void summation_interruptPublicLoadRa_biggerThan_Qa(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void summation_deferrablePublicLoadRa_biggerThan_Qa(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
 	functionPrint(__func__);
 
-	for (int i = 0; i < pl.interrupt_number; i++)
+	for (int i = 0; i < pl.deferrable_number; i++)
 	{
-		if ((pl.interrupt_end[i] - bp.sample_time) >= 0)
+		if ((pl.deferrable_end[i] - bp.sample_time) >= 0)
 		{
-			if ((pl.interrupt_start[i] - bp.sample_time) >= 0)
+			if ((pl.deferrable_start[i] - bp.sample_time) >= 0)
 			{
-				for (int j = (pl.interrupt_start[i] - bp.sample_time); j <= (pl.interrupt_end[i] - bp.sample_time); j++)
+				for (int j = (pl.deferrable_start[i] - bp.sample_time); j <= (pl.deferrable_end[i] - bp.sample_time); j++)
 				{
-					coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(i + 1))] = 1.0;
+					coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_deferrable_publicLoad + to_string(i + 1))] = 1.0;
 				}
 			}
-			else if ((pl.interrupt_start[i] - bp.sample_time) < 0)
+			else if ((pl.deferrable_start[i] - bp.sample_time) < 0)
 			{
-				for (int j = 0; j <= (pl.interrupt_end[i] - bp.sample_time); j++)
+				for (int j = 0; j <= (pl.deferrable_end[i] - bp.sample_time); j++)
 				{
-					coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(i + 1))] = 1.0;
+					coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_deferrable_publicLoad + to_string(i + 1))] = 1.0;
 				}
 			}
 		}
 		glp_set_row_name(mip, bp.bnd_row_num + i, "");
-		glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_LO, ((float)pl.interrupt_remain_operation_time[i]), 0.0);
-	}
-	bp.coef_row_num += row_num_maxAddition;
-	bp.bnd_row_num += row_num_maxAddition;
-	saving_coefAndBnds_rowNum(bp.coef_row_num, row_num_maxAddition, bp.bnd_row_num, row_num_maxAddition);
-}
-
-void summation_periodicPublicLoadRa_biggerThan_Qa(BASEPARAMETER &bp, DEMANDRESPONSE dr, PUBLICLOAD pl, float **coefficient, glp_prob *mip, int row_num_maxAddition)
-{
-	functionPrint(__func__);
-
-	for (int i = 0; i < pl.periodic_number; i++)
-	{
-		if ((pl.periodic_end[i] - bp.sample_time) >= 0)
-		{
-			if ((pl.periodic_start[i] - bp.sample_time) >= 0)
-			{
-				for (int j = (pl.periodic_start[i] - bp.sample_time); j <= (pl.periodic_end[i] - bp.sample_time); j++)
-				{
-					coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(i + 1))] = 1.0;
-				}
-			}
-			else if ((pl.periodic_start[i] - bp.sample_time) < 0)
-			{
-				for (int j = 0; j <= (pl.periodic_end[i] - bp.sample_time); j++)
-				{
-					coefficient[bp.coef_row_num + i][j * bp.variable + find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(i + 1))] = 1.0;
-				}
-			}
-		}
-		glp_set_row_name(mip, bp.bnd_row_num + i, "");
-		glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_LO, ((float)pl.periodic_remain_operation_time[i]), 0.0);
+		glp_set_row_bnds(mip, bp.bnd_row_num + i, GLP_LO, ((float)pl.deferrable_remain_operation_time[i]), 0.0);
 	}
 	bp.coef_row_num += row_num_maxAddition;
 	bp.bnd_row_num += row_num_maxAddition;
@@ -284,62 +253,42 @@ void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusP
     
     if (pl.flag)
     {
-        for (int h = 0; h < pl.forceToStop_number; h++)
+        for (int h = 0; h < pl.stoppable_number; h++)
         {
-            if ((pl.forceToStop_end[h] - bp.sample_time) >= 0)
+            if ((pl.stoppable_end[h] - bp.sample_time) >= 0)
             {
-                if ((pl.forceToStop_start[h] - bp.sample_time) >= 0)
+                if ((pl.stoppable_start[h] - bp.sample_time) >= 0)
                 {
-                    for (int i = (pl.forceToStop_start[h] - bp.sample_time); i <= (pl.forceToStop_end[h] - bp.sample_time); i++)
+                    for (int i = (pl.stoppable_start[h] - bp.sample_time); i <= (pl.stoppable_end[h] - bp.sample_time); i++)
                     {
-                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(h + 1))] = pl.forceToStop_power[h];
+                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_stoppable_publicLoad + to_string(h + 1))] = pl.stoppable_power[h];
                     }
                 }
-                else if ((pl.forceToStop_start[h] - bp.sample_time) < 0)
+                else if ((pl.stoppable_start[h] - bp.sample_time) < 0)
                 {
-                    for (int i = 0; i <= (pl.forceToStop_end[h] - bp.sample_time); i++)
+                    for (int i = 0; i <= (pl.stoppable_end[h] - bp.sample_time); i++)
                     {
-                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_forceToStop_publicLoad + to_string(h + 1))] = pl.forceToStop_power[h];
+                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_stoppable_publicLoad + to_string(h + 1))] = pl.stoppable_power[h];
                     }
                 }
             }
         }
-        for (int h = 0; h < pl.interrupt_number; h++)
+        for (int h = 0; h < pl.deferrable_number; h++)
         {
-            if ((pl.interrupt_end[h] - bp.sample_time) >= 0)
+            if ((pl.deferrable_end[h] - bp.sample_time) >= 0)
             {
-                if ((pl.interrupt_start[h] - bp.sample_time) >= 0)
+                if ((pl.deferrable_start[h] - bp.sample_time) >= 0)
                 {
-                    for (int i = (pl.interrupt_start[h] - bp.sample_time); i <= (pl.interrupt_end[h] - bp.sample_time); i++)
+                    for (int i = (pl.deferrable_start[h] - bp.sample_time); i <= (pl.deferrable_end[h] - bp.sample_time); i++)
                     {
-                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(h + 1))] = pl.interrupt_power[h];
+                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_deferrable_publicLoad + to_string(h + 1))] = pl.deferrable_power[h];
                     }
                 }
-                else if ((pl.interrupt_start[h] - bp.sample_time) < 0)
+                else if ((pl.deferrable_start[h] - bp.sample_time) < 0)
                 {
-                    for (int i = 0; i <= (pl.interrupt_end[h] - bp.sample_time); i++)
+                    for (int i = 0; i <= (pl.deferrable_end[h] - bp.sample_time); i++)
                     {
-                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_interrupt_publicLoad + to_string(h + 1))] = pl.interrupt_power[h];
-                    }
-                }
-            }
-        }
-        for (int h = 0; h < pl.periodic_number; h++)
-        {
-            if ((pl.periodic_end[h] - bp.sample_time) >= 0)
-            {
-                if ((pl.periodic_start[h] - bp.sample_time) >= 0)
-                {
-                    for (int i = (pl.periodic_start[h] - bp.sample_time); i <= (pl.periodic_end[h] - bp.sample_time); i++)
-                    {
-                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(h + 1))] = pl.periodic_power[h];
-                    }
-                }
-                else if ((pl.periodic_start[h] - bp.sample_time) < 0)
-                {
-                    for (int i = 0; i <= (pl.periodic_end[h] - bp.sample_time); i++)
-                    {
-                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_periodic_publicLoad + to_string(h + 1))] = pl.periodic_power[h];
+                        coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, pl.str_deferrable_publicLoad + to_string(h + 1))] = pl.deferrable_power[h];
                     }
                 }
             }
@@ -988,27 +937,27 @@ void summation_SOCNegative_biggerThan_targetDischargeSOC(BASEPARAMETER &bp, floa
 }
 
 // =-=-=-=-=-=-=- objective function -=-=-=-=-=-=-= //
-void setting_GHEMS_ObjectiveFunction(BASEPARAMETER bp, DEMANDRESPONSE dr, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float *price, glp_prob *mip)
+void setting_GHEMS_ObjectiveFunction(BASEPARAMETER bp, DEMANDRESPONSE dr, ELECTRICMOTOR em, ELECTRICVEHICLE ev, glp_prob *mip)
 {
     functionPrint(__func__);
 
     for (int j = 0; j < bp.remain_timeblock; j++)
 	{
 		if (bp.Pgrid_flag)
-			glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), price[j + bp.sample_time] * bp.delta_T);
+			glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), bp.price[j + bp.sample_time] * bp.delta_T);
 		if (bp.Psell_flag)
-			glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Psell) + 1 + j * bp.variable), price[j + bp.sample_time] * bp.delta_T * (-1));
+			glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Psell) + 1 + j * bp.variable), bp.price[j + bp.sample_time] * bp.delta_T * (-1));
 		if (bp.Pfc_flag)
 			glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pfct) + 1 + j * bp.variable), Hydro_Price / Hydro_Cons * bp.delta_T); //FC cost
         if (em.flag && em.can_discharge)
         {
             for (int n = 0; n < em.can_charge_amount; n++)         
-			    glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, em.str_discharging + to_string(n + 1)) + 1 + j * bp.variable), -em.normal_charging_power * price[j + bp.sample_time] * bp.delta_T);
+			    glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, em.str_discharging + to_string(n + 1)) + 1 + j * bp.variable), -em.normal_charging_power * bp.price[j + bp.sample_time] * bp.delta_T);
         }
         if (ev.flag && ev.can_discharge)
         {
             for (int n = 0; n < ev.can_charge_amount; n++)         
-			    glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, ev.str_discharging + to_string(n + 1)) + 1 + j * bp.variable), -ev.charging_power * price[j + bp.sample_time] * bp.delta_T);
+			    glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, ev.str_discharging + to_string(n + 1)) + 1 + j * bp.variable), -ev.charging_power * bp.price[j + bp.sample_time] * bp.delta_T);
         }
 	}
 	if (dr.mode != 0)
@@ -1017,14 +966,14 @@ void setting_GHEMS_ObjectiveFunction(BASEPARAMETER bp, DEMANDRESPONSE dr, ELECTR
 		{
 			for (int j = 0; j < dr.endTime - bp.sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), (price[j + bp.sample_time] + dr.feedback_price) * bp.delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), (bp.price[j + bp.sample_time] + dr.feedback_price) * bp.delta_T);
 			}
 		}
 		else if (bp.sample_time - dr.startTime < 0)
 		{
 			for (int j = dr.startTime - bp.sample_time; j < dr.endTime - bp.sample_time; j++)
 			{
-				glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), (price[j + bp.sample_time] + dr.feedback_price) * bp.delta_T);
+				glp_set_obj_coef(mip, (find_variableName_position(bp.variable_name, bp.str_Pgrid) + 1 + j * bp.variable), (bp.price[j + bp.sample_time] + dr.feedback_price) * bp.delta_T);
 			}
 		}
 	}
