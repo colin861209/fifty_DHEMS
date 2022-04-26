@@ -199,7 +199,7 @@ class WEBDRIVER:
 
         chart_sequence = {
             'file_name' : ["cost.jpg", "status.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg", "16.jpg", "17.jpg", "18.jpg", "19.jpg", "20.jpg", "21.jpg", "22.jpg", "23.jpg"],
-            'file_xpath' : [xpath.LHEMS_table, xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15, xpath.LHEMS_load16, xpath.LHEMS_load17, xpath.LHEMS_load18, xpath.LHEMS_load19, xpath.LHEMS_load20, xpath.LHEMS_load21, xpath.LHEMS_load22, xpath.LHEMS_load23]
+            'file_xpath' : [xpath.backup_LHEMS_table, xpath.LHEMS_household_status, xpath.LHEMS_load1, xpath.LHEMS_load2, xpath.LHEMS_load3, xpath.LHEMS_load4, xpath.LHEMS_load5, xpath.LHEMS_load6, xpath.LHEMS_load7, xpath.LHEMS_load8, xpath.LHEMS_load9, xpath.LHEMS_load10, xpath.LHEMS_load11, xpath.LHEMS_load12, xpath.LHEMS_load13, xpath.LHEMS_load14, xpath.LHEMS_load15, xpath.LHEMS_load16, xpath.LHEMS_load17, xpath.LHEMS_load18, xpath.LHEMS_load19, xpath.LHEMS_load20, xpath.LHEMS_load21, xpath.LHEMS_load22, xpath.LHEMS_load23]
         }
         chart_sequence['file_xpath'].reverse()
         chart_sequence['file_name'].reverse()
@@ -211,7 +211,7 @@ class WEBDRIVER:
                 dirExist = os.path.isdir(self.screenshot_path+id)
                 if dirExist:
                     if type == type.RECOVER:
-                        shutil.rmtree(self.screenshot_path + id)
+                        shutil.rmtree(self.screenshot_path + id, ignore_errors=True)
                     elif type == type.SAVEAS:
                         id += "(1)"
                 else:
@@ -284,7 +284,7 @@ if __name__ == "__main__":
     # go to backup LHEMS & GHEMS and screenshot
     # DEL old and save new => Backup_img.RECOVER; SAVE another new => Backup_img.SAVEAS
     if re_screenshot_flag == 'Y':
-        if re_screenshot_type == 1:
+        if re_screenshot_type == '1':
             print("Step >> RECOVER screenshot figures...")
             webpage = WEBDRIVER(url=url.DHEMS_web_backup_GHEMS, screenshot_path=screenshot_path)
             webpage.re_screenshot_file("LHEMS.jpg", xpath.LHEMS_loadSum, webpage.Backup_img.RECOVER)
@@ -297,7 +297,7 @@ if __name__ == "__main__":
                 webpage.re_screenshot_file("GHEMS_EVchargingSOC.jpg", xpath.GHEMS_EVchargingSOC, webpage.Backup_img.RECOVER)
             webpage.re_screenshot_file("GHEMS_table.jpg", xpath.GHEMS_table, webpage.Backup_img.RECOVER)
             webpage.re_screenshot_everyHousehold_eachLoad_file(webpage.Backup_img.RECOVER)
-        elif re_screenshot_type == 2:
+        elif re_screenshot_type == '2':
             print("Step >> SAVEAS screenshot figures...")
             webpage = WEBDRIVER(url=url.DHEMS_web_backup_GHEMS, screenshot_path=screenshot_path)
             webpage.re_screenshot_file("LHEMS.jpg", xpath.LHEMS_loadSum, webpage.Backup_img.SAVEAS)
