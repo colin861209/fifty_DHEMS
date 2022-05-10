@@ -1,22 +1,25 @@
 # fifty_DHEMS
 
-> This project is about my final master drgree topic, the goal is optimization the 50 household's load comsuption deployment and community energy supplying.
+> This project is about my final master drgree topic, the goal is optimization the 50 household's load consumption deployment and community energy supplying.
 
-> Use crontab setting execute time and shell script to do the script, the script will optimize 50 household load deployment first, then feedback the total amount of load to community, final community will optimized the energy supply we have
+> Use crontab setting execute time and shell script will do the script, the script will optimize 50 household load deployment first, then feedback the total amount of load to community, final community will optimized the energy supply we have
 
 > `DHEMS_screenshot/web.py` is automation script for 
 > 1. export related tables to csv
 > 2. screenshot web page
 > 
->> only use on windows OS, and related libs are in `anaconda ENV: webDriver`
+>> only use on Windows OS, and related libs are in `anaconda ENV: webDriver`
 
-> `DHEMS_screenshot/backup.py` automatically upload csv files to backup tables in DB `DHEMS_fiftyHousehold`
-> If upload fail, please check realted tables column amount is correct.
+> `DHEMS_screenshot/backup.py` import csv files automatically to backup tables in DB `DHEMS_fiftyHousehold` and
+> + want to re-screenshot figures (Y/N)
+> + want to recover old figures, please type 1
+> + want to save as new figures, please type 2
+>> If upload fail, please check realted tables column amount is correct.
 ---
 ## Notice & Step
-We should modify parameters from this [website](140.124.42.65/how/BaseParameter.html)
+We should **modify parameters** from this [Link](http://140.124.42.65/how/DHEMS_web/BaseParameter.html) first, and change `real_time` & `Global_real_time` to `0` to do new simulation.
 #### Step
-+ In `基本參數 -> BaseParameter.html` we can modify below parameter to setting scenario.
++ In [基本參數](http://140.124.42.65/how/DHEMS_web/BaseParameter.html) we can modify below parameter to setting different scenario.
 + Also there is something else in Table `BaseParameter`, but it's not necessary to modify.
 
 | Parameter name | Chinese Introduction | Value |
@@ -26,14 +29,15 @@ We should modify parameters from this [website](140.124.42.65/how/BaseParameter.
 | dr_mode | 需量反應模式(設定or新增請至DB) | 0~5 |
 | ElectricVehicle | 電動汽車 | 0/1(add to scenario) |
 | ElectricMotor | 電動機車 | 0/1(add to scenario) |
+| comfortLevel_flag | HEMS舒適度 | 0/1(add to scenario) |
+| uncontrollable_load_flag | HEMS不可控負載 | 0/1(add to scenario) |
 | Global_uncontrollable_load_flag | CEMS不可控負載 | 0/1(add to scenario) |
 | EV_generate_random_user_result | 汽車重新生成資料 | 0/1(重新生成,模擬結束將為0) |
 | EM_generate_random_user_result | 機車重新生成資料 | 0/1(重新生成,模擬結束將為0) |
+| generate_uncontrollable_load_flag | HEMS不可控負載重新生成資料 | 0/1(重新生成,模擬結束將為0) |
 | generate_Global_uncontrollable_load_flag | CEMS不可控負載重新生成資料 | 0/1(重新生成,模擬結束將為0) |
-| comfortLevel_flag | HEMS舒適度 | 0/1(add to scenario) |
-| chart_upperLowerLimit_flag | 圖表固定上下限 | 0/1(啟動) |
 | Pgridmax | 單戶市電最大功率(kW) | 依情景設定 |
-| Cbat | 電池容量(kWh) | 依情景設定 |
+| Cbat | 單戶電池容量(kWh) | 依情景設定 |
 | battery_rate | 電池轉換率 | 依情景設定 |
 | simulate_weather | 模擬天氣 | big_sunny / sunny / cloudy |
 | simulate_price | 模擬電價 | summer_price / not_summer_price / price_value |
@@ -41,21 +45,20 @@ We should modify parameters from this [website](140.124.42.65/how/BaseParameter.
 | SOCmax | 電池電量上限 | 依情景設定 |
 | SOCthres | 電池電量門檻值 | 依情景設定 |
 | ini_SOC | 初始電池電量 | 依情景設定 |
-| uncontrollable_load_flag | HEMS不可控負載 | 0/1(add to scenario)(未含保存功能) |
 | hydrogen_pric | 氫氣價錢 | 依情景設定(當前無使用) |
 
-+ In `電動汽機車參數 -> emevParameter.html` we can modify EM and EV parameter setting.
++ In [電動汽機車參數](http://140.124.42.65/how/DHEMS_web/emevParameter.html) we can modify EM and EV parameter setting.
 + Related table: `EM_Parameter, EM_Parameter_of_randomResult, EV_Parameter, EV_Parameter_of_randomResult`
 
   - EM & EV基本參數
-  
-    | EM Parameter name | EM Chinese Introduction | Value | EV Parameter name | EV Chinese Introduction | Value |
-    |:---:|:---:|:---:|:---:|:---:|:---:|
-    | Total_Charging_Pole | 總充電樁 | 依情景設定 | Normal_Charging_Pole | 一般充電樁 | 依情景設定 |
-    | EV_Upper_SOC | 電池電量上限 | 依情景設定 | EM_Upper_SOC | 電池電量上限 | 依情景設定 |
-    | EV_Lower_SOC | 電池電量下限 | 依情景設定 | EM_Lower_SOC | 電池電量下限 | 依情景設定 |
-    | EV_threshold_SOC | 電池電量門檻值 | 依情景設定 | EM_threshold_SOC | 電池電量門檻值 | 依情景設定 |
-    | Vehicle_can_discharge | 模擬汽車可放電旗標 | 0/1(可放電) | Motor_can_discharge | 模擬機車可放電旗標 | 0/1(可放電) |
+
+  | EM Parameter name | EM Chinese Introduction | Value | EV Parameter name | EV Chinese Introduction | Value |
+  |:---:|:---:|:---:|:---:|:---:|:---:|
+  | Total_Charging_Pole | 總充電樁 | 依情景設定 | Normal_Charging_Pole | 一般充電樁 | 依情景設定 |
+  | EV_Upper_SOC | 電池電量上限 | 依情景設定 | EM_Upper_SOC | 電池電量上限 | 依情景設定 |
+  | EV_Lower_SOC | 電池電量下限 | 依情景設定 | EM_Lower_SOC | 電池電量下限 | 依情景設定 |
+  | EV_threshold_SOC | 電池電量門檻值 | 依情景設定 | EM_threshold_SOC | 電池電量門檻值 | 依情景設定 |
+  | Vehicle_can_discharge | 模擬汽車可放電旗標 | 0/1(可放電) | Motor_can_discharge | 模擬機車可放電旗標 | 0/1(可放電) |
   
   - EM & EV常態分佈用戶設定
   
@@ -68,7 +71,7 @@ We should modify parameters from this [website](140.124.42.65/how/BaseParameter.
   | wait_mean | 停留時間中位數 | 依情景設定 | normal_wait_mean | 停留時間中位數| 依情景設定 |
   | wait_variance | 停留時間變異數 | 依情景設定 | normal_wait_variance | 停留時間變異數| 依情景設定 |
 
-+ In `所有家庭負載 -> index.html` we can modify HEMS scenario
++ In [所有家庭負載](http://140.124.42.65/how/DHEMS_web/index.html) we can modify HEMS scenario
 + Related table: `LHEMS_flag`
 
 | Parameter name | Chinese Introduction | Value |
@@ -78,7 +81,7 @@ We should modify parameters from this [website](140.124.42.65/how/BaseParameter.
 | varying | 變動型負載旗標 | 0/1(啟用) |
 | Pgrid | 市電旗標 | 0/1(啟用) |
 
-+ In `社區負載監控 -> loadFix.html`  
++ In [社區負載監控](http://140.124.42.65/how/DHEMS_web/loadFix.html`)
 + Related table: `GHEMS_flag`
 
 | Parameter name | Chinese Introduction | Value |
@@ -92,13 +95,13 @@ We should modify parameters from this [website](140.124.42.65/how/BaseParameter.
 | Pfc | 燃料電池旗標 | 0/1(啟用) |
 
 ##### Final Step: Command `crontab -e` in terminal, and change execute time
-> if the next minute is 19:04, please type as below, otherwise, just change value in first two number
+> for example: if the next minute is 19:05, please type `05 19` as below
 ![](https://i.imgur.com/lTg0vB3.png)
 
 #### Notice
 
-+ 若曾經終止運行，為與防萬一，請進入140.124.42.65[資料庫](140.124.42.65/phpmyadmin)
-  1. 請至 Table `distributed_group` 設定所有 `household_id` 為1
++ 若曾經終止運行，為與防萬一，請進入140.124.42.65[資料庫](http://140.124.42.65/phpmyadmin)
+  1. 請至 Table `distributed_group` 設定所有 `household_id` 為 1
      - ``` Command: UPDATE `distributed_group` SET `household_id` = 1;```
   2. 請至 Table `BaseParameter` 設定 `next_simulate_timeblock` & `Global_next_simulate_timeblock` 為0
      - ``` Command: UPDATE `BaseParameter` SET `next_simulate_timeblock` = 0, `Global_next_simulate_timeblock`= 0; ```
@@ -106,7 +109,8 @@ We should modify parameters from this [website](140.124.42.65/how/BaseParameter.
 + 若使用`web.py`進行自動化截圖，
 請修改`def setting_screenshot_path`中的`fix_path`為自己電腦的路徑，
 確定環境無問題，再執行(再次提醒：腳本須在Windows執行)
----
+
+## Commit Record
 ### 2021/06/03
 
 + Commit Link [f521b6f](https://github.com/colin861209/fifty_DHEMS/commit/f521b6ffeb56e13600e8cb9f75031692987bd828)
