@@ -23,8 +23,7 @@ $$
     r_{ev,n}^{d,j}, ~v=1,...,V, ~j=0,...,J-1 \\
     \mu_{ev,n}^{j}, ~v=1,...,V, ~j=0,...,J-1 \\
 }}
-\sum_{j=k}^{J-1} \rho_{b}^{j} P^{j}_{grid}T_{s} - 
-\sum_{j=k}^{J-1}\rho_{b}^{j}(\sum_{m=1}^{M} P_{m}^{d,max}r_{em,m}^{d,j} + \sum_{v=1}^{V} P_{v}^{d,max}r_{ev,v}^{d,j})T_{s} -
+\sum_{j=k}^{J-1} \rho_{b}^{j} (P^{j}_{grid}-P_{total}^{d,j}) T_{s} - 
 \sum_{j=\tau_{r}}^{\tau_{r}^{e}} \rho_{f}^{j} (\bar{P}_{base}-P^{j}_{grid}) T_{s},
 \quad if \quad k < \tau_{r}^{s}
 $$
@@ -41,8 +40,7 @@ $$
     r_{ev,n}^{d,j}, ~v=1,...,V, ~j=0,...,J-1 \\
     \mu_{ev,n}^{j}, ~v=1,...,V, ~j=0,...,J-1 \\
 }}
-\sum_{j=k}^{J-1} \rho_{b}^{j} P^{j}_{grid}T_{s} - 
-\sum_{j=k}^{J-1}\rho_{b}^{j}(\sum_{m=1}^{M} P_{m}^{d,max}r_{em,m}^{d,j} + \sum_{v=1}^{V} P_{v}^{d,max}r_{ev,v}^{d,j})T_{s} -
+\sum_{j=k}^{J-1} \rho_{b}^{j} (P^{j}_{grid}-P_{total}^{d,j}) T_{s} - 
 \sum_{j=k}^{\tau_{r}^{e}} \rho_{f}^{j} (\bar{P}_{base}-P^{j}_{grid}) T_{s},
 \quad if \quad \tau_{r}^{s} \leq k \leq \tau_{r}^{e}
 $$
@@ -59,9 +57,12 @@ $$
     r_{ev,n}^{d,j}, ~v=1,...,V, ~j=0,...,J-1 \\
     \mu_{ev,n}^{j}, ~v=1,...,V, ~j=0,...,J-1 \\
 }}
-\sum_{j=k}^{J-1} \rho_{b}^{j} P^{j}_{grid}T_{s} - 
-\sum_{j=k}^{J-1}\rho_{b}^{j}(\sum_{m=1}^{M} P_{m}^{d,max}r_{em,m}^{d,j} + \sum_{v=1}^{V} P_{v}^{d,max}r_{ev,v}^{d,j})T_{s},
+\sum_{j=k}^{J-1} \rho_{b}^{j} (P^{j}_{grid}-P_{total}^{d,j}) T_{s},
 \quad if \quad k > \tau_{r}^{e}
+$$
+
+$$
+P_{total}^{d,j} = \sum_{m=1}^{M}P_{m}^{d, max}r_{em,m}^{d,j} + \sum_{v=1}^{V}P_{v}^{d, max}r_{ev,v}^{d,j}
 $$
 
 * Deamnd Response
@@ -144,6 +145,9 @@ $$
     * $SOC_{em}^{threshold}$ 電動機車離場時規定SOC值
     * $\tau_{em, m}^{s}$ 第n充電柱進場電動機車時刻
     * $\tau_{em, m}^{e}$ 第n充電柱離場電動機車時刻
+    * $\eta_{m}^{c}$ 第m充電柱充電效率
+    * $\eta_{m}^{d}$ 第m充電柱放電效率
+
     * Variable
     
       $$ r_{em, m}^{c, j} \in \{0,1\}, \qquad \forall j \in [\tau_{em, m}^{s}, \tau_{em, m}^{e}], \forall m \in [0,M] $$
@@ -159,9 +163,9 @@ $$
 
       $$ r_{em,m}^{d,j} \leq (1-\mu_{em, m}^{j}), \qquad \forall m \in [0,M] $$
 
-      $$ SOC_{em}^{min} \leq SOC_{em, m}^{j-1} + (\frac{P_{m}^{c, max}r_{em, m}^{c,j}T_{s}}{E_{m}^{cap}} - \frac{P_{m}^{d, max}r_{em, m}^{d, j}T_{s}}{E_{m}^{cap}}), \qquad \forall m \in [0,M] $$
+      $$ SOC_{em}^{min} \leq SOC_{em, m}^{j-1} + (\frac{\eta_{m}^{c}P_{m}^{c, max}r_{em, m}^{c,j}T_{s}}{E_{m}^{cap}} - \frac{\eta_{m}^{d}P_{m}^{d, max}r_{em, m}^{d, j}T_{s}}{E_{m}^{cap}}), \qquad \forall m \in [0,M] $$
       
-      $$ SOC_{em}^{threshold} \leq SOC_{em, m}^{j-1} + \sum_{j=\tau_{em, m}^{s}}^{\tau_{em, m}^{e}} (\frac{P_{m}^{c, max}r_{em, m}^{c,j}T_{s}}{E_{m}^{cap}} - \frac{P_{m}^{d, max}r_{em, m}^{d, j}T_{s}}{E_{m}^{cap}}), \qquad \forall m \in [0,M] $$
+      $$ SOC_{em}^{threshold} \leq SOC_{em, m}^{j-1} + \sum_{j=\tau_{em, m}^{s}}^{\tau_{em, m}^{e}} (\frac{\eta_{m}^{c}P_{m}^{c, max}r_{em, m}^{c,j}T_{s}}{E_{m}^{cap}} - \frac{\eta_{m}^{d}P_{m}^{d, max}r_{em, m}^{d, j}T_{s}}{E_{m}^{cap}}), \qquad \forall m \in [0,M] $$
   ---
 * Electric Vehicle
     * $r_{ev, v}^{c, j}$ 第v充電柱在第j時刻的可充電旗標
@@ -170,6 +174,8 @@ $$
     * $SOC_{ev}^{threshold}$ 電動機車離場時規定SOC值
     * $\tau_{ev, v}^{s}$ 第v充電柱進場電動機車時刻
     * $\tau_{ev, v}^{e}$ 第v充電柱離場電動機車時刻
+    * $\eta_{v}^{c}$ 第v充電柱充電效率
+    * $\eta_{v}^{d}$ 第v充電柱放電效率
     * Variable
     
       $$ r_{ev, v}^{c, j} \in \{0,1\}, \qquad \forall j \in [\tau_{ev, v}^{s}, \tau_{ev, v}^{e}], \forall v \in [0,V] $$
@@ -185,9 +191,9 @@ $$
 
       $$ r_{ev,m}^{d,j} \leq (1-\mu_{ev, v}^{j}), \qquad \forall v \in [0,V] $$
 
-      $$ SOC_{ev}^{min} \leq SOC_{ev, v}^{j-1} + (\frac{P_{v}^{c, max}r_{ev, v}^{c,j}T_{s}}{E_{v}^{cap}} - \frac{P_{v}^{d, max}r_{ev, v}^{d, j}T_{s}}{E_{v}^{cap}}), \qquad \forall v \in [0,V] $$
+      $$ SOC_{ev}^{min} \leq SOC_{ev, v}^{j-1} + (\frac{\eta_{v}^{c}P_{v}^{c, max}r_{ev, v}^{c,j}T_{s}}{E_{v}^{cap}} - \frac{\eta_{v}^{d}P_{v}^{d, max}r_{ev, v}^{d, j}T_{s}}{E_{v}^{cap}}), \qquad \forall v \in [0,V] $$
       
-      $$ SOC_{ev}^{threshold} \leq SOC_{ev, v}^{j-1} + \sum_{j=\tau_{ev, v}^{s}}^{\tau_{ev, v}^{e}} (\frac{P_{v}^{c, max}r_{ev, v}^{c,j}T_{s}}{E_{v}^{cap}} - \frac{P_{v}^{d, max}r_{ev, v}^{d, j}T_{s}}{E_{v}^{cap}}), \qquad \forall v \in [0,V] $$
+      $$ SOC_{ev}^{threshold} \leq SOC_{ev, v}^{j-1} + \sum_{j=\tau_{ev, v}^{s}}^{\tau_{ev, v}^{e}} (\frac{\eta_{v}^{c}P_{v}^{c, max}r_{ev, v}^{c,j}T_{s}}{E_{v}^{cap}} - \frac{\eta_{v}^{d}P_{v}^{d, max}r_{ev, v}^{d, j}T_{s}}{E_{v}^{cap}}), \qquad \forall v \in [0,V] $$
 
 ## Home Enerage Management System (HEMS)
 * $u$ 代表第u個家庭
@@ -201,7 +207,7 @@ $$ \min_{\substack{
     P_{u, a}^{j},~j=0,...,J-1,~a \in A_{u, c3}\\
     P_{u, grid}^{j},~j=0,...,J-1\\
 }}
-\sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+DCL_{u}^{j}) -
+\sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+vL_{u}^{j}) -
 \sum_{j=\tau_{r}}^{\tau_{r}^{e}} \alpha_{u}^{j}\rho_{f}^{j}(\bar{P}_{u, base}-P^{j}_{u,grid}) T_{s},
 \quad if \quad k<\tau_{r}^{s}
 $$
@@ -212,7 +218,7 @@ $$ \min_{\substack{
     P_{u, a}^{j},~j=0,...,J-1,~a \in A_{u, c3}\\
     P_{u, grid}^{j},~j=0,...,J-1\\
 }}
-\sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+DCL_{u}^{j}) -
+\sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+vL_{u}^{j}) -
 \sum_{j=k}^{\tau_{r}^{e}} \alpha_{u}^{j}\rho_{f}^{j}(\bar{P}_{u, base}-P^{j}_{u,grid}) T_{s},
 \quad if \quad \tau_{r}^{s}\leq k \leq \tau_{r}^{e} 
 $$
@@ -223,7 +229,7 @@ $$ \min_{\substack{
     P_{u, a}^{j},~j=0,...,J-1,~a \in A_{u, c3}\\
     P_{u, grid}^{j},~j=0,...,J-1\\
 }}
-\sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+DCL_{u}^{j})
+\sum_{j=k}^{J-1} (\rho_{b}^{j}P^{j}_{u,grid} T_{s}+vL_{u}^{j})
 \quad if \quad  k>\tau_{r}^{e}\\ 
 $$
 <!-- HEMS Constraint -->
@@ -238,7 +244,7 @@ $$
     \right.
   $$
 
-  $$ DCL_{u}^{j} = \sum_{a \in A_{c1} \cup A_{c2} \cup A_{c3}}vw_{u,a}^{j}r_{u,a}^{j} $$
+  $$ L_{u}^{j} = \sum_{a \in A_{c1} \cup A_{c2} \cup A_{c3}}w_{u,a}^{j}r_{u,a}^{j} $$
 * Demand response
     
 	* $\alpha_{u}^{j}$: 住戶u在j時刻是否參與輔助服務
@@ -314,38 +320,33 @@ $$
 ## CEMS & HEMS Cost
 
 ##### HEMS
-* $T_{u, h}^{cost}$ 各住戶原始購買市電電費
-  $$ T_{u, h}^{j} = \rho^{j}P_{u,grid}^{j}T_{s} $$
-  $$ T_{u, h}^{cost} = \sum_{j=0}^{J-1}T_{u, h}^{j} $$
 
-* $T_{u, p}^{cost}$ 各住戶公設花費
-  $$ T_{u, p}^{cost} = \frac{O_{p}^{cost}}{U} $$
-
-* $T_{u, price}^{total}$ 各住戶原始總花費
-  $$ T_{u, price}^{total} = T_{u, h}^{cost}+T_{u, p}^{cost} $$
+* $T_{u}^{total}$ 各住戶原始總花費
+  $$ T_{u}^{total} = \sum_{j=0}^{J-1}(\frac{P_{u, grid}^{j}}{\sum_{u=1}^{U}P_{u, grid}^{j}} \times T^{j, cost}) $$
 
 * $O_{u}^{cost}$ 各住戶最佳化市電花費
   $$ O_{u}^{cost} = \sum_{j=0}^{J-1}(\frac{T_{u, h}^{j}}{\sum_{u=1}^{U}T_{u, h}^{j}} \times O^{j, cost}) $$
 
 * $O_{u, dr}^{feedback}$ 各住戶輔助服務回饋
-  $$ C_{u}^{j} = D_{u}^{j}\rho_{f}^{j}(\bar{P}_{u,base}-P_{u, grid}^{j})T_{s} $$
+  $$ C_{u}^{j} = \alpha_{u}^{j}\rho_{f}^{j}(\bar{P}_{u,base}-P_{u, grid}^{j})T_{s} $$
   $$ O_{u, dr}^{feedback} = \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}}(\frac{ C_{u}^{j}}{\sum_{u=1}^{U}C_{u}^{j}} \times O_{dr}^{j,feedback}) $$
 
 * $O_{u}^{total}$ 各住戶最佳化總花費
   $$ O_{u}^{total} = O_{u}^{cost} - O_{u, dr}^{feedback} $$
 
 * $\eta_{u}^{cost}$ 各住戶節省電費比
-  $$ \eta_{u}^{cost} = \frac{T_{u, price}^{total}-O_{u}^{total}}{T_{u, price}^{total}} $$
+  $$ \eta_{u}^{cost} = \frac{T_{u}^{total}-O_{u}^{total}}{T_{u}^{total}} $$
 
 ##### CEMS
-* $O_{p}^{cost}$ 社區公設花費
-  $$ O_{p}^{cost} = \sum_{j=0}^{J-1}\rho^{j}P_{p}^{j}T_{s} $$
+* $R^{j, cost}$, $R^{cost}$ 社區負載花費
+  $$ R^{j, cost} = \rho^{j}P_{load}^{j}T_{s} $$
+  $$ R^{cost} = \sum_{j=0}^{J-1}T^{j, cost} $$
 
-* $O^{cost}$ 社區總市電花費
+* $O^{j, cost}$, $O^{cost}$ 社區總市電花費
   $$ O^{j, cost} = \rho^{j}P_{grid}^{j}T_{s} $$
   $$ O^{cost} = \sum_{j=0}^{J-1}O^{j, cost} $$
 
-* $O_{dr}^{feedback}$ 社區輔助服務回饋
+* $O_{dr}^{j, feedback}$, $O_{dr}^{feedback}$ 社區輔助服務回饋
   $$ O_{dr}^{j, feedback} = \rho_{f}^{j} (\bar{P}_{base}-P^{j}_{grid}) T_{s} $$
   $$ O_{dr}^{feedback} = \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}}O_{dr}^{j, feedback} $$
 
