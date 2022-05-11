@@ -433,6 +433,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 					sent_query();
 				}
 			}
+			// multiply 3 due to three variables in discharge senario (charge, discharge, mu), otherwise, only one variable (charge)
 			if (em.can_discharge)
 				size_without_EMEV -= em.can_charge_amount * 3;
 			else
@@ -459,6 +460,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 					sent_query();
 				}
 			}
+			// multiply 3 due to three variables in discharge senario (charge, discharge, mu), otherwise, only one variable (charge)
 			if (ev.can_discharge)
 				size_without_EMEV -= ev.can_charge_amount * 3;
 			else

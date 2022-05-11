@@ -54,7 +54,7 @@ int main(void)
 	ess.MIN_power = ess.capacity * ess.battery_rate;
 	ess.MAX_power = ess.capacity * ess.battery_rate;
 
-	// =-=-=-=-=-=-=- determine which mode and get SOC if in need -=-=-=-=-=-=-= //
+	// =-=-=-=-=-=-=- determine real_time is 0 or 1 -=-=-=-=-=-=-= //
 	int real_time = value_receive("BaseParameter", "parameter_name", "real_time");
 	real_time = determine_realTimeOrOneDayMode_andGetSOC(bp, ess, real_time, distributed_group_num);
 	if ((bp.sample_time + 1) == 97)
