@@ -67,7 +67,7 @@ $$
 
 * Deamnd Response
     * $n$ 抑低用電日
-    * $\bar{P}_{base}$ 抑低用電時段平均值 (基準用電容量 CBL)
+    * $\bar{P}_{base}$ 需量反應用電基準值 (基準用電容量 CBL)
     * $E_{s}$ 輔助服務時段最少降載度數
 
     * Formula
