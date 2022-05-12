@@ -13,18 +13,18 @@ import shutil
 
 class WEBDRIVER:
     def __init__(self, url, screenshot_path = "") -> None:
-        self.offset=79
-        self.timeout=30
-        self.fix_path="C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\"
-        self.screenshot_path=self.fix_path+screenshot_path
-        self.DHEMS="DHEMS"
-        self.DHEMS_dr1="DHEMS_dr1"
-        self.DHEMS_dr2="DHEMS_dr2"
-        self.DHEMSFifty="DHEMS_FiftyHousehold"
-        self.user_value="root"
-        self.password_value="fuzzy314"
-        self.nonEmpty_table_array=[]
-        self.backupTable_array = {
+        self.__offset=79
+        self.__timeout=30
+        self.__fix_path="C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\"
+        self.__screenshot_path=self.__fix_path+screenshot_path
+        # self.__DHEMS="DHEMS"
+        # self.__DHEMS_dr1="DHEMS_dr1"
+        # self.__DHEMS_dr2="DHEMS_dr2"
+        # self.__DHEMSFifty="DHEMS_FiftyHousehold"
+        self.__user_value="root"
+        self.__password_value="fuzzy314"
+        self.__nonEmpty_table_array=[]
+        self.__backupTable_array = {
             'rowCount': [
                 xpath.rowCount_backup_BaseParameter, xpath.rowCount_backup_EM_Parameter, xpath.rowCount_backup_EM_user_number, 
                 xpath.rowCount_backup_EM_user_result, xpath.rowCount_backup_EV_Parameter, xpath.rowCount_backup_EV_user_number, 
@@ -43,7 +43,7 @@ class WEBDRIVER:
         options.add_argument('--headless')
         options.add_argument("--disable-notifications")  #不啟用通知
         prefs = {
-            "download.default_directory" : self.screenshot_path, 
+            "download.default_directory" : self.__screenshot_path, 
             "credentials_enable_service": False, 
             "profile.password_manager_enabled": False,
         }
@@ -52,7 +52,7 @@ class WEBDRIVER:
         self.chrome = webdriver.Chrome('C:/Users/sonu/Desktop/howThesis/webDriver/chromedriver', options=options)
         self.chrome.set_window_size(1920, 1080)
         self.chrome.get(url)
-        self.wait = WebDriverWait(self.chrome, timeout=self.timeout)
+        self.__wait = WebDriverWait(self.chrome, timeout=self.__timeout)
 
     def __del__(self):
         self.chrome.close()
@@ -60,15 +60,15 @@ class WEBDRIVER:
     def loginPHPMyAdmin(self):
         username = self.chrome.find_element_by_xpath(xpath.input_username)
         password = self.chrome.find_element_by_xpath(xpath.input_passowrd)
-        username.send_keys(self.user_value)
-        password.send_keys(self.password_value)
+        username.send_keys(self.__user_value)
+        password.send_keys(self.__password_value)
         login = self.chrome.find_element_by_xpath(xpath.btn_login)
         login.click()
         try:
-            self.wait.until(expected_conditions.url_changes(url.phpmyadmin))
+            self.__wait.until(expected_conditions.url_changes(url.phpmyadmin))
             print(f"=-=-=-=-=-=-=-=-=-= Success login DB =-=-=-=-=-=-=-=-=-=")
         except TimeoutException:
-            print(f"Element not visible after {self.timeout} seconds")
+            print(f"Element not visible after {self.__timeout} seconds")
         except Exception as e:
             print(f"An Exception Ocurred: {format(e)}")
 
@@ -78,74 +78,75 @@ class WEBDRIVER:
         DHEMS_group_btn.click()
         try:
             DHEMS_fiftyHousehold = self.chrome.find_element_by_xpath(fiftyHousehold_Xpath)
-            self.wait.until(expected_conditions.visibility_of(DHEMS_fiftyHousehold))
+            self.__wait.until(expected_conditions.visibility_of(DHEMS_fiftyHousehold))
             DHEMS_fiftyHousehold.click()
-            self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.text_create_newTable)))
+            self.__wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.text_create_newTable)))
             print(f"=-=-=-=-=-=-=-=-=-= Success expand DB table =-=-=-=-=-=-=-=-=-=")
-            print(f"=-=-=-=-=-=-=-=-=-= DB table import to ===> {self.screenshot_path} =-=-=-=-=-=-=-=-=-=")
+            print(f"=-=-=-=-=-=-=-=-=-= DB table import to ===> {self.__screenshot_path} =-=-=-=-=-=-=-=-=-=")
         except TimeoutException:
-            print(f"Element not visible after {format(self.timeout)} seconds")
+            print(f"Element not visible after {format(self.__timeout)} seconds")
         except Exception as e:
             print(f"An Exception Ocurred: {format(e)}")
 
-    def checkBackupRowCountIsZero(self):        
+    def __checkBackupRowCountIsZero(self):        
         try:
-            self.nonEmpty_table_array=self.backupTable_array["table"].copy()
-            target_array2 = self.backupTable_array["rowCount"].copy()
-            for target_table in self.backupTable_array['rowCount']:
+            self.__nonEmpty_table_array=self.__backupTable_array["table"].copy()
+            target_array2 = self.__backupTable_array["rowCount"].copy()
+            for target_table in self.__backupTable_array['rowCount']:
                 if self.chrome.find_element_by_xpath(target_table).text == '0':
-                    self.nonEmpty_table_array.pop(target_array2.index(target_table))
+                    self.__nonEmpty_table_array.pop(target_array2.index(target_table))
                     target_array2.pop(target_array2.index(target_table))
-            return len(self.nonEmpty_table_array)
+            return len(self.__nonEmpty_table_array)
         except TimeoutException:
-            print(f"Element not visible after {format(self.timeout)} seconds")
+            print(f"Element not visible after {format(self.__timeout)} seconds")
 
-    def gotoTable(self, target):
+    def __gotoTable(self, target):
         try:
-            self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, target)))
+            self.__wait.until(expected_conditions.element_to_be_clickable((By.XPATH, target)))
             target = self.chrome.find_element_by_xpath(target)
             target.click()
-            self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.serverinfo_table)))
+            self.__wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.serverinfo_table)))
             menubar_table = self.chrome.find_element_by_xpath(xpath.serverinfo_table)
             assert target.text in menubar_table.text
         except TimeoutException:
-            print(f"Element not visible after {format(self.timeout)} seconds")
+            print(f"Element not visible after {format(self.__timeout)} seconds")
         except Exception as e:
             print(f"An Exception Ocurred: {format(e)}")
 
-    def truncateTable(self):
+    def __truncateTable(self):
         try:
             self.chrome.find_element_by_xpath(xpath.btn_operate).click()
-            self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.text_truncate_table)))
+            self.__wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.text_truncate_table)))
             self.chrome.find_element_by_xpath(xpath.text_truncate_table).click()
-            self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.btn_submit_truncate)))
+            self.__wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.btn_submit_truncate)))
             self.chrome.find_element_by_xpath(xpath.btn_submit_truncate).click()
             sleep(1)
         except TimeoutException:
-            print(f"Element not visible after {format(self.timeout)} seconds")
+            print(f"Element not visible after {format(self.__timeout)} seconds")
     
     def verifyBackupTablesIsEmpty(self):
-        while self.checkBackupRowCountIsZero() != 0:
-            for nonEmpty_table in self.nonEmpty_table_array:
-                self.gotoTable(nonEmpty_table)
-                self.truncateTable()
+        while self.__checkBackupRowCountIsZero() != 0:
+            for nonEmpty_table in self.__nonEmpty_table_array:
+                self.__gotoTable(nonEmpty_table)
+                self.__truncateTable()
                 self.chrome.find_element_by_xpath(xpath.text_DB_DHMES_fiftyHousehold).click()
                 sleep(1)
         else:
             print(f"=-=-=-=-=-=-=-=-=-= All back up tables are empty =-=-=-=-=-=-=-=-=-=")
 
-    def gotoImport(self, table_name):
+    def __gotoImport(self, table_name):
         self.chrome.find_element_by_xpath(xpath.btn_import).click()
-        self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.btn_upload_file)))
+        self.__wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.btn_upload_file)))
         upfile = self.chrome.find_element_by_xpath(xpath.btn_upload_file)
-        upfile.send_keys(self.screenshot_path+table_name+".csv")
+        upfile.send_keys(self.__screenshot_path+table_name+".csv")
         sleep(0.5)
         self.chrome.execute_script("document.documentElement.scrollTop=10000")
         self.chrome.find_element_by_xpath(xpath.submit_export).click()
 
     def importTable(self, target_table, import_file_name):
-        self.gotoTable(target_table)
-        self.gotoImport(import_file_name)
+        self.__gotoTable(target_table)
+        sleep(0.5)
+        self.__gotoImport(import_file_name)
         sleep(1)
             
     class Backup_img(Enum):
@@ -169,31 +170,31 @@ class WEBDRIVER:
                 element = self.chrome.find_element_by_xpath(xpath.GHEMS_EVchargingSOC)
             elif "_table" in old_file_name:
                 element = self.chrome.find_element_by_xpath(xpath.GHEMS_table)
-            self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
+            self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.__offset))
         elif "LHEMS" in old_file_name:
             if self.chrome.current_url != url.DHEMS_web_backup_LHEMS:
                 self.chrome.get(url.DHEMS_web_backup_LHEMS)
             element = self.chrome.find_element_by_xpath(xpath.LHEMS_loadSum)
-            self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
+            self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.__offset))
         
-        fileExist = os.path.isfile(self.screenshot_path+old_file_name)
+        fileExist = os.path.isfile(self.__screenshot_path+old_file_name)
         imgExist = self.chrome.find_element_by_xpath(new_web_img).size
         if fileExist and (imgExist['height']!=0) and (imgExist['width']!=0):            
             if type == type.RECOVER:
-                os.remove(self.screenshot_path+old_file_name)
+                os.remove(self.__screenshot_path+old_file_name)
             elif type == type.SAVEAS:
                 old_file_name=old_file_name[:-4]+"(1)"+old_file_name[-4:]
         else:
             pass
         sleep(0.5)
-        element.screenshot(self.screenshot_path+old_file_name)
+        element.screenshot(self.__screenshot_path+old_file_name)
         sleep(0.5)
 
     def re_screenshot_everyHousehold_eachLoad_file(self, type:Backup_img.RECOVER, householdTotal = 50):
         if self.chrome.current_url != url.DHEMS_web_backup_LHEMS:
             self.chrome.get(url.DHEMS_web_backup_LHEMS)
         bar = self.chrome.find_element_by_xpath(xpath.range_bar)
-        self.wait.until(expected_conditions.visibility_of(bar))
+        self.__wait.until(expected_conditions.visibility_of(bar))
         bar.click()
         self.chrome.find_element_by_xpath(xpath.backup_range_bar_go).click()
 
@@ -208,10 +209,10 @@ class WEBDRIVER:
             id = self.chrome.find_element_by_xpath(xpath.LHEMS_household_text).get_attribute("value")
             if int(id) == i+1:
                 print(f"Doing household id {id}")
-                dirExist = os.path.isdir(self.screenshot_path+id)
+                dirExist = os.path.isdir(self.__screenshot_path+id)
                 if dirExist:
                     if type == type.RECOVER:
-                        shutil.rmtree(self.screenshot_path + id, ignore_errors=True)
+                        shutil.rmtree(self.__screenshot_path + id, ignore_errors=True)
                     elif type == type.SAVEAS:
                         id += "(1)"
                 else:
@@ -219,7 +220,7 @@ class WEBDRIVER:
                 id += "\\"
                 # create household num folder
                 try:
-                    os.makedirs(self.screenshot_path + id)
+                    os.makedirs(self.__screenshot_path + id)
                 except FileExistsError:
                     pass
                 for file_xpath, file_name in zip(chart_sequence['file_xpath'], chart_sequence['file_name']):
@@ -227,8 +228,8 @@ class WEBDRIVER:
                     if "none" in element.get_attribute("style"):
                         pass
                     else:
-                        self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
-                        element.screenshot(self.screenshot_path + id + file_name)
+                        self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.__offset))
+                        element.screenshot(self.__screenshot_path + id + file_name)
                 # go to page bottom to click next household button
                 self.chrome.execute_script("document.documentElement.scrollTop=10000")
                 self.chrome.find_element_by_xpath(xpath.LHEMS_nextHousehold_btn).click()

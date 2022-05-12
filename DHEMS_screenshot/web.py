@@ -11,15 +11,16 @@ from utils import URL, Xpath
 
 class WEBDRIVER:
     def __init__(self, url, savingFolder="", screenshot_path = "") -> None:
-        self.offset=79
-        self.timeout=30
+        self.__offset=79
+        self.__timeout=30
+        self.__fix_path="C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\"
         self.screenshot_path=""
-        self.DHEMS="DHEMS"
-        self.DHEMS_dr1="DHEMS_dr1"
-        self.DHEMS_dr2="DHEMS_dr2"
-        self.DHEMSFifty="DHEMS_FiftyHousehold"
-        self.user_value="root"
-        self.password_value="fuzzy314"
+        self.__DHEMS="DHEMS"
+        self.__DHEMS_dr1="DHEMS_dr1"
+        self.__DHEMS_dr2="DHEMS_dr2"
+        self.__DHEMSFifty="DHEMS_FiftyHousehold"
+        self.__user_value="root"
+        self.__password_value="fuzzy314"
         self.EV_flag=bool()
         self.EM_flag=bool()
         self.HEMS_ucLoad_flag=bool()
@@ -40,11 +41,11 @@ class WEBDRIVER:
         options.add_argument("--window-size=1920,1080")
         self.chrome = webdriver.Chrome('C:/Users/sonu/Desktop/howThesis/webDriver/chromedriver', options=options)
         self.chrome.get(url)
-        self.wait = WebDriverWait(self.chrome, timeout=self.timeout)
+        self.wait = WebDriverWait(self.chrome, timeout=self.__timeout)
         # get screenshot path
         if "html" in url:
-            self.choose_DB_by_btn(self.DHEMSFifty)
-            self.setting_screenshot_path(savingFolder)
+            self.__choose_DB_by_btn(self.__DHEMSFifty)
+            self.__setting_screenshot_path(savingFolder)
 
     def __del__(self):
         self.chrome.close()
@@ -52,15 +53,15 @@ class WEBDRIVER:
     def loginPHPMyAdmin(self):
         username = self.chrome.find_element_by_xpath(xpath.input_username)
         password = self.chrome.find_element_by_xpath(xpath.input_passowrd)
-        username.send_keys(self.user_value)
-        password.send_keys(self.password_value)
+        username.send_keys(self.__user_value)
+        password.send_keys(self.__password_value)
         login = self.chrome.find_element_by_xpath(xpath.btn_login)
         login.click()
         try:
             self.wait.until(expected_conditions.url_changes(url.phpmyadmin))
             print(f"=-=-=-=-=-=-=-=-=-= Success login DB =-=-=-=-=-=-=-=-=-=")
         except TimeoutException:
-            print(f"Element not visible after {self.timeout} seconds")
+            print(f"Element not visible after {self.__timeout} seconds")
         except Exception as e:
             print(f"An Exception Ocurred: {format(e)}")
 
@@ -76,11 +77,11 @@ class WEBDRIVER:
             print(f"=-=-=-=-=-=-=-=-=-= Success expand DB table =-=-=-=-=-=-=-=-=-=")
             print(f"=-=-=-=-=-=-=-=-=-= DB table import to ===> {self.screenshot_path} =-=-=-=-=-=-=-=-=-=")
         except TimeoutException:
-            print(f"Element not visible after {format(self.timeout)} seconds")
+            print(f"Element not visible after {format(self.__timeout)} seconds")
         except Exception as e:
             print(f"An Exception Ocurred: {format(e)}")
 
-    def gotoTable(self, target):
+    def __gotoTable(self, target):
         try:
             self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, target)))
             target = self.chrome.find_element_by_xpath(target)
@@ -89,11 +90,11 @@ class WEBDRIVER:
             menubar_table = self.chrome.find_element_by_xpath(xpath.serverinfo_table)
             assert target.text in menubar_table.text
         except TimeoutException:
-            print(f"Element not visible after {format(self.timeout)} seconds")
+            print(f"Element not visible after {format(self.__timeout)} seconds")
         except Exception as e:
             print(f"An Exception Ocurred: {format(e)}")
 
-    def gotoExport(self, table_name, default_type = 'CSV'):
+    def __gotoExport(self, table_name, default_type = 'CSV'):
         self.wait.until(expected_conditions.invisibility_of_element(self.chrome.find_element_by_xpath(xpath.alert_loading)))
         self.wait.until(expected_conditions.element_to_be_clickable((By.XPATH, xpath.btn_export)))
         self.chrome.find_element_by_xpath(xpath.btn_export).click()
@@ -110,14 +111,14 @@ class WEBDRIVER:
             type.click()
             self.chrome.find_element_by_xpath(xpath.submit_export).click()
         except TimeoutException:
-            print(f"Element not visible after {format(self.timeout)} seconds")
+            print(f"Element not visible after {format(self.__timeout)} seconds")
         except Exception as e:
             print(f"An Exception Ocurred: {format(e)}")
 
     def exportTable(self, export_table):
-        self.gotoTable(export_table)
+        self.__gotoTable(export_table)
         sleep(0.5)
-        self.gotoExport(export_table)
+        self.__gotoExport(export_table)
         sleep(0.5)
 
     def screenshot_file(self, file):
@@ -137,16 +138,16 @@ class WEBDRIVER:
                 element = self.chrome.find_element_by_xpath(xpath.GHEMS_EVchargingSOC)
             elif "_table" in file:
                 element = self.chrome.find_element_by_xpath(xpath.GHEMS_table)
-            self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
+            self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.__offset))
         elif "LHEMS" in file:
             self.chrome.get(url.DHEMS_web_index)
             element = self.chrome.find_element_by_xpath(xpath.LHEMS_loadSum)
-            self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
+            self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.__offset))
         sleep(1)
         element.screenshot(self.screenshot_path + file)
         sleep(0.5)
 
-    def choose_DB_by_btn(self, DB_name):
+    def __choose_DB_by_btn(self, DB_name):
         sleep(1)
         webinfo = self.chrome.find_element_by_xpath(xpath.breadcrumb).text
         if DB_name not in webinfo:
@@ -156,8 +157,8 @@ class WEBDRIVER:
             self.chrome.find_element_by_xpath(xpath.btn_sweetalert).click()
             sleep(1)
 
-    def setting_screenshot_path(self, target_folder, fix_path = "C:\\Users\\sonu\\Desktop\\howThesis\\HEMSresult\\"):
-        self.screenshot_path = fix_path + target_folder
+    def __setting_screenshot_path(self, target_folder):
+        self.screenshot_path = self.__fix_path + target_folder
         self.chrome.execute_script("document.documentElement.scrollTop=10000")
         self.chrome.find_element_by_xpath(xpath.baseParameter_table).click()
         self.chrome.execute_script("document.documentElement.scrollTop=10000")
@@ -230,7 +231,7 @@ class WEBDRIVER:
                     if "none" in element.get_attribute("style"):
                         pass
                     else:
-                        self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.offset))
+                        self.chrome.execute_script("document.documentElement.scrollTop="+str(element.location['y']-self.__offset))
                         element.screenshot(self.screenshot_path + id + file_name)
                 # go to page bottom to click next household button
                 self.chrome.execute_script("document.documentElement.scrollTop=10000")
