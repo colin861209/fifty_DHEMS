@@ -187,9 +187,9 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	glp_init_iocp(&parm);
 
 	if (bp.sample_time == 0)
-		parm.tm_lim = 120000;
-	else
 		parm.tm_lim = 60000;
+	else
+		parm.tm_lim = 30000;
 
 	parm.presolve = GLP_ON;
 	parm.msg_lev = GLP_MSG_ERR;

@@ -378,7 +378,7 @@ void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultipl
     saving_coefAndBnds_rowNum(bp.coef_row_num, row_num_maxAddition, bp.bnd_row_num, row_num_maxAddition);
 }
 
-void summation_EMEVPcharge_smallerThan_PgridPlusPessPlusPpv(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM ess, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition)
+void summation_EMEVPcharge_smallerThan_PgridPlusPessPlusPpvPlusSummation_EMEVPdischarge(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM ess, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition)
 {
     functionPrint(__func__);
 
@@ -389,6 +389,7 @@ void summation_EMEVPcharge_smallerThan_PgridPlusPessPlusPpv(BASEPARAMETER &bp, E
             for (int i = 0; i < em.departure_timeblock[n] - bp.sample_time; i++)
             {
                 coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, em.str_charging + to_string(n + 1))] = em.normal_charging_power;
+                coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, em.str_discharging + to_string(n + 1))] = -em.normal_charging_power;
             }
         }
     }
@@ -400,6 +401,7 @@ void summation_EMEVPcharge_smallerThan_PgridPlusPessPlusPpv(BASEPARAMETER &bp, E
             for (int i = 0; i < ev.departure_timeblock[n] - bp.sample_time; i++)
             {
                 coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, ev.str_charging + to_string(n + 1))] = ev.charging_power;
+                coefficient[bp.coef_row_num + i][i * bp.variable + find_variableName_position(bp.variable_name, ev.str_discharging + to_string(n + 1))] = -ev.charging_power;
             }
         }
     }

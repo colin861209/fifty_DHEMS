@@ -25,7 +25,7 @@ Detail formula show in **thesis_mathFormula.md** & **allCase_mathFormula.md**, p
 
 ### Related to *Demand Response*
 + targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs
-+ summation_EMEVPcharge_smallerThan_PgridPlusPessPlusPpv
++ summation_EMEVPcharge_smallerThan_PgridPlusPessPlusPpvPlusSummation_EMEVPdischarge
 
 ### Related to *Fuel Cell*
 + pfcOnPlusPfcOff_equalTo_pfuelCell

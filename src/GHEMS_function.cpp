@@ -196,7 +196,7 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 
 		if ((ev.flag && ev.can_charge_amount) || (em.flag && em.can_charge_amount))
 		{
-			summation_EMEVPcharge_smallerThan_PgridPlusPessPlusPpv(bp, ess, em, ev, coefficient, mip, bp.remain_timeblock);
+			summation_EMEVPcharge_smallerThan_PgridPlusPessPlusPpvPlusSummation_EMEVPdischarge(bp, ess, em, ev, coefficient, mip, bp.remain_timeblock);
 		}
 	}
 
@@ -319,9 +319,9 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	glp_init_iocp(&parm);
 
 	if (bp.sample_time == 0)
-		parm.tm_lim = 120000;
-	else
 		parm.tm_lim = 60000;
+	else
+		parm.tm_lim = 30000;
 
 	parm.presolve = GLP_ON;
 	parm.msg_lev = GLP_MSG_ERR;

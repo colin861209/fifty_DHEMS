@@ -24,7 +24,7 @@ void pgridPlusPfuelCellPlusPsolarMinusPessMinusPsell_equalTo_summationPloadPlusP
 
 // demand response
 void targetLoadReduction_smallerThan_summationPcustomerBaseLineMinusPgridMultiplyByTs(BASEPARAMETER &bp, DEMANDRESPONSE dr, float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void summation_EMEVPcharge_smallerThan_PgridPlusPessPlusPpv(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM ess, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void summation_EMEVPcharge_smallerThan_PgridPlusPessPlusPpvPlusSummation_EMEVPdischarge(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM ess, ELECTRICMOTOR em, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // fuel cell 
 void pfcOnPlusPfcOff_equalTo_pfuelCell(BASEPARAMETER &bp, float **coefficient, glp_prob *mip, int row_num_maxAddition);

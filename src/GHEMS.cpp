@@ -105,9 +105,9 @@ int main(int argc, const char **argv)
 	{
 		ev.total_charging_pole = value_receive("EV_Parameter", "parameter_name", "Total_Charging_Pole");
 		ev.charging_power = value_receive("EV_Parameter", "parameter_name", "Charging_power", 'F');
-		ev.MAX_SOC = value_receive("EV_Parameter", "parameter_name", "EM_Upper_SOC", 'F');
-		ev.threshold_SOC = value_receive("EV_Parameter", "parameter_name", "EM_threshold_SOC", 'F');
-		ev.MIN_SOC = value_receive("EV_Parameter", "parameter_name", "EM_Lower_SOC", 'F');
+		ev.MAX_SOC = value_receive("EV_Parameter", "parameter_name", "EV_Upper_SOC", 'F');
+		ev.threshold_SOC = value_receive("EV_Parameter", "parameter_name", "EV_threshold_SOC", 'F');
+		ev.MIN_SOC = value_receive("EV_Parameter", "parameter_name", "EV_Lower_SOC", 'F');
 		ev.can_discharge = value_receive("EV_Parameter", "parameter_name", "Vehicle_can_discharge");
 		ev.generate_result_flag = value_receive("BaseParameter", "parameter_name", "EV_generate_random_user_result");
 	}

@@ -61,9 +61,17 @@ $$
 \quad if \quad k > \tau_{r}^{e}
 $$
 
+
+* EMEV Formula
+
 $$
 P_{total}^{d,j} = \sum_{m=1}^{M}P_{m}^{d, max}r_{em,m}^{d,j} + \sum_{v=1}^{V}P_{v}^{d, max}r_{ev,v}^{d,j}
 $$
+
+$$
+P_{total}^{c,j} = \sum_{m=1}^{M}P_{m}^{c, max}r_{em,m}^{d,j} + \sum_{v=1}^{V}P_{v}^{c, max}r_{ev,v}^{d,j}
+$$
+
 
 * Deamnd Response
     * $n$ 抑低用電日
@@ -76,11 +84,11 @@ $$
     * Constraint
     $$ E_{s} \leq \sum_{j=\tau_{r}^{s}}^{\tau_{r}^{e}} (\bar{P}_{base} - P_{grid}^{j})T_{s} $$
   
-    $$ \sum_{v=1}^{V}r_{ev, v}^{c, j}P_{ev, v}^{c, max} + \sum_{m=1}^{M}r_{ev, m}^{c, j}P_{em, m}^{c, max} \leq P_{grid}^{j, max}-P_{discharge}^{j,max}+P_{pv}^{j}, \quad j=k...J-1 $$
+    $$ P_{total}^{c,j} \leq P_{total}^{d,j} + P_{grid}^{j, max}-P_{discharge}^{j,max}+P_{pv}^{j}, \quad j=k...J-1 $$
 
 * Blanced Function
     
-    $$ P^{j}_{grid} + P^{j}_{PV} - P^{j}_{ESS} = \sum_{m=1}^{M}(r_{em, m}^{c, j}P_{m}^{c,max}-r_{em, m}^{d, j}P_{m}^{d,max}) + \sum_{v=1}^{V}(r_{ev, v}^{c, j}P_{v}^{c,max}-r_{ev, v}^{d, j}P_{v}^{d,max}) + \sum_{p \in A_{s} \cup A_{d}} P_{p}^{j} + \sum_{a \in A_{uc}}P_{uc}^{j} + \sum_{u=1}^{U}\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} $$
+    $$ P^{j}_{grid} + P^{j}_{PV} + P_{total}^{d,j} - P^{j}_{ESS} = P_{total}^{c,j} + \sum_{p \in A_{s} \cup A_{d}} P_{p}^{j} + \sum_{a \in A_{uc}}P_{uc}^{j} + \sum_{u=1}^{U}\sum_{a \in  A_{c1} \cup A_{c2} \cup A_{c3}} P_{u,a}^{j} $$
 
 * Grid & Sell
     * $P_{grid}^{j, max}$ 社區第j時刻的市電最大功率限制
