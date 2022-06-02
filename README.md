@@ -16,7 +16,10 @@
 > + want to save as new figures, please type 2
 >> If upload fail, please check realted tables column amount is correct.
 ---
+**HackMD** link by [thesis_variableIntro.md](https://hackmd.io/YSm74o4USridqx9PANLS6g), [thesis_mathFormula.md](https://hackmd.io/pvujnbJeQf6bXQqIibQXXQ), [sqlDBIntro.md](https://hackmd.io/6dLY2TRHTPSdbmUgXIIyaQ)
+
 ## Notice & Step
+
 We should **modify parameters** from this [Link](http://140.124.42.65/how/DHEMS_web/BaseParameter.html) first, and change `real_time` & `Global_real_time` to `0` to do new simulation.
 #### Step
 + In [基本參數](http://140.124.42.65/how/DHEMS_web/BaseParameter.html) we can modify below parameter to setting different scenario.
