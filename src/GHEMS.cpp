@@ -189,8 +189,6 @@ int main(int argc, const char **argv)
 		{
 			for (int i = 0; i < em.can_charge_amount; i++)
 				bp.variable_name.push_back(em.str_discharging + to_string(i + 1));
-			for (int i = 0; i < em.can_charge_amount; i++)
-				bp.variable_name.push_back(em.str_mu + to_string(i + 1));
 		}
 	}
 	if (ev.flag)
@@ -201,8 +199,6 @@ int main(int argc, const char **argv)
 		{
 			for (int i = 0; i < ev.can_charge_amount; i++)
 				bp.variable_name.push_back(ev.str_discharging + to_string(i + 1));
-			for (int i = 0; i < ev.can_charge_amount; i++)
-				bp.variable_name.push_back(ev.str_mu + to_string(i + 1));
 		}
 	}
 	bp.variable = bp.variable_name.size();

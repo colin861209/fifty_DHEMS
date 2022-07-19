@@ -268,10 +268,8 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	{
 		if (em.can_discharge)
 		{	
-			// EM's r n c,j <= μ n j
-			EM_Rcharging_smallerThan_mu(bp, em, coefficient, mip, em.can_charge_amount * bp.remain_timeblock);
-			// EM's r n d,j <= (1-μ n j)
-			EM_Rdischarging_smallerThan_oneMinusMu(bp, em, coefficient, mip, em.can_charge_amount * bp.remain_timeblock);
+			// EM's r n c,j + r n d,j <= 1
+			EM_RchargingPlusRdischarging_smallerThan_one(bp, em, coefficient, mip, em.can_charge_amount * bp.remain_timeblock);
 		}
 
 		// EM's SOC min <= SOC j - 1 + ((P n c,max * r n c,j * Ts / E n cap) - (P n d,max * r n d,j * Ts / E n cap))
@@ -285,10 +283,8 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 	{
 		if (ev.can_discharge)
 		{	
-			// EV's r n c,j <= μ n j
-			EV_Rcharging_smallerThan_mu(bp, ev, coefficient, mip, ev.can_charge_amount * bp.remain_timeblock);
-			// EV's r n d,j <= (1-μ n j)
-			EV_Rdischarging_smallerThan_oneMinusMu(bp, ev, coefficient, mip, ev.can_charge_amount * bp.remain_timeblock);
+			// EV's r n c,j + r n d,j <= 1
+			EV_RchargingPlusRdischarging_smallerThan_one(bp, ev, coefficient, mip, em.can_charge_amount * bp.remain_timeblock);
 		}
 
 		// EV's SOC min <= SOC j - 1 + ((P n c,max * r n c,j * Ts / E n cap) - (P n d,max * r n d,j * Ts / E n cap))
@@ -433,9 +429,9 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 					sent_query();
 				}
 			}
-			// multiply 3 due to three variables in discharge senario (charge, discharge, mu), otherwise, only one variable (charge)
+			// multiply 2 due to three variables in discharge senario (charge, discharge), otherwise, only one variable (charge)
 			if (em.can_discharge)
-				size_without_EMEV -= em.can_charge_amount * 3;
+				size_without_EMEV -= em.can_charge_amount * 2;
 			else
 				size_without_EMEV -= em.can_charge_amount;
 		}
@@ -460,9 +456,9 @@ void optimization(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMANDRESPONSE dr, 
 					sent_query();
 				}
 			}
-			// multiply 3 due to three variables in discharge senario (charge, discharge, mu), otherwise, only one variable (charge)
+			// multiply 2 due to three variables in discharge senario (charge, discharge), otherwise, only one variable (charge)
 			if (ev.can_discharge)
-				size_without_EMEV -= ev.can_charge_amount * 3;
+				size_without_EMEV -= ev.can_charge_amount * 2;
 			else
 				size_without_EMEV -= ev.can_charge_amount;
 		}
@@ -653,11 +649,6 @@ void setting_GLPK_columnBoundary(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMA
 					glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, em.str_discharging + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
 					glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, em.str_discharging + to_string(j)) + 1 + i * bp.variable), GLP_BV);
 				}
-				for (int j = 1; j <= em.can_charge_amount; j++)
-				{
-					glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, em.str_mu + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
-					glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, em.str_mu + to_string(j)) + 1 + i * bp.variable), GLP_BV);
-				}
 			}
 		}
 		if (ev.flag)
@@ -673,11 +664,6 @@ void setting_GLPK_columnBoundary(BASEPARAMETER bp, ENERGYSTORAGESYSTEM ess, DEMA
 				{
 					glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, ev.str_discharging + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
 					glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, ev.str_discharging + to_string(j)) + 1 + i * bp.variable), GLP_BV);
-				}
-				for (int j = 1; j <= ev.can_charge_amount; j++)
-				{
-					glp_set_col_bnds(mip, (find_variableName_position(bp.variable_name, ev.str_mu + to_string(j)) + 1 + i * bp.variable), GLP_DB, 0.0, 1.0);
-					glp_set_col_kind(mip, (find_variableName_position(bp.variable_name, ev.str_mu + to_string(j)) + 1 + i * bp.variable), GLP_BV);
 				}
 			}
 		}

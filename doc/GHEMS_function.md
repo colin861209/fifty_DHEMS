@@ -39,7 +39,6 @@
 || str_deferrable_publicLoad |deferrable_publicLoad |
 || str_charging | {EMEV}_charging |
 || str_discharging | {EMEV}_discharging |
-|| str_mu | {EMEV}_mu |
 
 ## Function
 ### determine_realTimeOrOneDayMode_andGetSOC

@@ -44,14 +44,12 @@ void SOCchange_equalTo_PessTransToSOC(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM ess
 void summation_SOCNegative_biggerThan_targetDischargeSOC(BASEPARAMETER &bp, float target_dischargeSOC, float already_dischargeSOC, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // EM
-void EM_Rcharging_smallerThan_mu(BASEPARAMETER &bp, ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void EM_Rdischarging_smallerThan_oneMinusMu(BASEPARAMETER &bp, ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void EM_RchargingPlusRdischarging_smallerThan_one(BASEPARAMETER &bp, ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void EM_previousSOCPlusPchargeMinusPdischargeTransToSOC_biggerThan_SOCmin(BASEPARAMETER &bp, ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void EM_previousSOCPlusSummationPchargeMinusPdischargeTransToSOC_biggerThan_SOCthreshold(BASEPARAMETER &bp, ELECTRICMOTOR em, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 
 // EV
-void EV_Rcharging_smallerThan_mu(BASEPARAMETER &bp, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
-void EV_Rdischarging_smallerThan_oneMinusMu(BASEPARAMETER &bp, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
+void EV_RchargingPlusRdischarging_smallerThan_one(BASEPARAMETER &bp, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void EV_previousSOCPlusPchargeMinusPdischargeTransToSOC_biggerThan_SOCmin(BASEPARAMETER &bp, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 void EV_previousSOCPlusSummationPchargeMinusPdischargeTransToSOC_biggerThan_SOCthreshold(BASEPARAMETER &bp, ELECTRICVEHICLE ev, float **coefficient, glp_prob *mip, int row_num_maxAddition);
 

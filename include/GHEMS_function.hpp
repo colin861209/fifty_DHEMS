@@ -45,7 +45,6 @@ typedef struct
 	vector<float> now_SOC, start_SOC, battery_capacity;
     string str_charging = "EM_charging";
 	string str_discharging = "EM_discharging";
-	string str_mu = "EM_mu";
 } ELECTRICMOTOR;
 
 typedef struct 
@@ -63,7 +62,6 @@ typedef struct
 	vector<float> now_SOC, start_SOC, battery_capacity;
 	string str_charging = "EV_charging";
 	string str_discharging = "EV_discharging";
-	string str_mu = "EV_mu";
 } ELECTRICVEHICLE;
 
 int determine_realTimeOrOneDayMode_andGetSOC(BASEPARAMETER &bp, ENERGYSTORAGESYSTEM &ess, ELECTRICMOTOR em, ELECTRICVEHICLE ev, int real_time);
